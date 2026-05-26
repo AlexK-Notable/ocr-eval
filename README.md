@@ -4,8 +4,8 @@
 
 # RealDocBench
 
-[![RealDoc-Bench on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-Realdoc--Bench-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench)
-[![RealDoc-Bench-Layout on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RealDocBench--Layout-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout)
+[![RealDoc-Bench on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RealDoc--Bench-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench)
+[![RealDoc-Bench-Layout on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RealDoc--Bench--Layout-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout)
 
 A document parsing benchmark that measures two things on real documents:
 
