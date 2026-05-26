@@ -141,7 +141,7 @@ realdoc-bench layout rescore --run-id <id>
 ### Assumptions
 
 - **Block-type vocabulary — 9 classes:** `text`, `heading`, `section_heading`, `header`, `footer`, `page_number`, `figure`, `table`, `key_value`. The dataset's raw COCO `category_id` integers are folded into these on load by `realdoc_bench/layout/normalizers/coco.py`; processor normalizers map vendor output into the same set. Legacy cached `prediction.json` files written under the previous 18-class names load unchanged — a Pydantic `field_validator` coerces them on read.
-- **Dataset:** [`Extend-AI/RealDocBench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDocBench-Layout) (1,500 pages) by default; override with `--dataset <repo-id>`. Manifest + image + COCO blobs all come from HF on first use (or point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at a local snapshot).
+- **Dataset:** [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout) (1,500 pages) by default; override with `--dataset <repo-id>`. Manifest + image + COCO blobs all come from HF on first use (or point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at a local snapshot).
 - **Matching:** axis-aligned IoU, threshold 0.5 (`--iou-threshold` to change). No confidence sweep — every prediction counts positive at IoU ≥ 0.5; mAP is computed separately when `confidence_present=True`.
 - **Adjusted F1 (adjacency only):** after the 1:1 match, unmatched same-type preds with gap < `0.02 × max(page_w, page_h)` are merged and re-scored; symmetric for unmatched GTs.
 - **Cost & latency:** each processor reports `cost_estimate_usd` / `latency_sec` per page when available; aggregates carry `$/page` and `latency_sec/page`, and the snapshot Pareto plots use them.
@@ -150,12 +150,12 @@ realdoc-bench layout rescore --run-id <id>
 
 Distributed via the [Hugging Face Hub](https://huggingface.co/Extend-AI) under the `Extend-AI` org.
 
-- [`Extend-AI/RealDocBench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDocBench-Layout) — 1,500-page layout benchmark with COCO annotations.
-- [`Extend-AI/Realdoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDocBench) — QA-extraction bench (1,359 questions × 581 documents). What `evaluate download` pulls.
+- [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout) — 1,500-page layout benchmark with COCO annotations.
+- [`Extend-AI/RealDoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench) — QA-extraction bench (1,359 questions × 581 documents). What `evaluate download` pulls.
 
 The layout set ships its `manifest.csv` (page list + per-page metadata) alongside `images/` and `annotations/` on HF.
 
 ## License
 
 - Code in this repo: Apache-2.0 (see `LICENSE`).
-- Benchmark datasets live on Hugging Face and carry their own licenses — see the dataset pages: [`Extend-AI/Realdoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDocBench), [`Extend-AI/RealDocBench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDocBench-Layout).
+- Benchmark datasets live on Hugging Face and carry their own licenses — see the dataset pages: [`Extend-AI/RealDoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench), [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout).
