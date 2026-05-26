@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.local
+
+# Build artifacts
+build/
+dist/
+
+# Type-checker / linter caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.basedpyright/
+
+# Run outputs (gitignored, regenerated per invocation)
+runs/
+
+# IDE
+.idea/
+.vscode/
+
+# Local OS junk
+.DS_Store
+.claude/

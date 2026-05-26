@@ -1,0 +1,33 @@
+# Per-provider cost catalog. Used by realdoc_bench.shared.pricing.meter.cost().
+#
+# Two unit kinds:
+#   - "page":   {usd: <$/page>}                       (most layout + parser providers)
+#   - "tokens": {input_usd_per_1k, output_usd_per_1k} (token-billed VLMs / agents)
+#
+# Only providers with a live consumer (a registered parser or layout processor)
+# are listed. Rates are public list prices as of 2026-05-13 and may be stale.
+# The catalog SHA is stamped into every run.yaml so old runs remain interpretable
+# but should not be cost-compared across catalog versions without re-metering.
+
+# ── Hosted parser / layout providers (per page) ─────────────────────────────
+extend_performance_v1_0_0:          {unit: page,   usd: 0.010}
+extend_performance_v2_0_0:          {unit: page,   usd: 0.020}
+extend_v2_0_0:                      {unit: page,   usd: 0.020}
+azure_di:                           {unit: page,   usd: 0.010}
+aws_textract:                       {unit: page,   usd: 0.015}
+reducto:                            {unit: page,   usd: 0.010}
+reducto_agentic:                    {unit: page,   usd: 0.060}
+# LlamaParse: $0.00125/credit. Agentic = 10 credits/page → $0.0125;
+# cost-effective = 3 credits/page → $0.00375.
+llamaparse:                         {unit: page,   usd: 0.0125}
+llamaparse_cost_effective:          {unit: page,   usd: 0.00375}
+
+# ── VLMs invoked as parse providers (token billing) ─────────────────────────
+# Gemini 3.5 Flash standard pay-as-you-go: $1.50 / 1M input, $9.00 / 1M output.
+gemini_3_5_flash:                   {unit: tokens, input_usd_per_1k: 0.0015, output_usd_per_1k: 0.009}
+
+# ── Local / open-source providers (free at inference; cost left null) ────────
+gt_self:                            {unit: page,   usd: 0.0}
+paddle_structure_v3:                {unit: page,   usd: 0.0}
+paddle_ocr_vl:                      {unit: page,   usd: 0.0}
+dots_ocr:                           {unit: page,   usd: 0.0}
