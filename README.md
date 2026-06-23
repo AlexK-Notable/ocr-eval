@@ -14,19 +14,20 @@ A document parsing benchmark that measures two things on real documents:
 
 Each mode reports cost and latency alongside quality.
 
-## Document QA Leaderboard (1,359 questions)
+## Document QA Leaderboard (1,356 questions / 3,742 fields)
 
 | Parser | Per-field Accuracy | Per-question Accuracy |
 | --- | ---: | ---: |
-| **Extend Parse 2.0** | **95.7%** | **90.3%** |
-| LlamaParse (Agentic) | 92.1% | 84.3% |
-| Reducto (Agentic) | 91.1% | 83.1% |
-| Extend v1 | 90.4% | 81.8% |
-| Gemini 3.5 Flash | 89.0% | 81.6% |
-| LlamaParse | 89.0% | 80.4% |
-| Azure DI | 88.8% | 78.9% |
-| Reducto | 88.5% | 80.2% |
-| AWS Textract | 70.5% | 53.6% |
+| **Extend Parse 2.0** | **96.0%** | **90.9%** |
+| LlamaParse (Agentic) | 92.2% | 84.5% |
+| Reducto (Agentic) | 91.4% | 83.8% |
+| Extend v1 | 90.8% | 82.5% |
+| Gemini 3.5 Flash | 89.3% | 82.2% |
+| LlamaParse | 89.2% | 80.8% |
+| Azure DI | 89.1% | 79.6% |
+| Mistral OCR 4 | 88.8% | 81.3% |
+| Reducto | 88.7% | 80.5% |
+| AWS Textract | 70.7% | 54.0% |
 
 ## Layout Leaderboard
 | **Model** | **N** | **Strict F1** | **Adjusted F1** | **Macro F1** | **Precision** | **Recall** |
@@ -47,7 +48,7 @@ uv sync
 All secrets load from `.env` (or `.env.local` for machine-specific overrides; gitignored, wins on conflict) at the repo root — auto-loaded by the CLI. See [`.env.example`](.env.example) for the full list of supported variables. Keys needed per command:
 
 - `score` — `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
-- `parse` — whatever the parsers require: `EXTEND_API_KEY`, `LLAMA_CLOUD_API_KEY`, AWS / Azure creds, …
+- `parse` — whatever the parsers require: `EXTEND_API_KEY`, `LLAMA_CLOUD_API_KEY`, `MISTRAL_API_KEY`, AWS / Azure creds, …
 - `download` and the layout dataset fetch — no key needed (the datasets are public)
 
 **Dataset overrides** — point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at a local snapshot to skip the HF download.
@@ -64,6 +65,8 @@ realdoc-bench evaluate download --run-dir runs/qa --dataset Extend-AI/Realdoc-Be
 
 # 2. Parse every PDF with one or more parsers (idempotent; --force to re-parse)
 realdoc-bench evaluate parse --run-dir runs/qa -p reducto -p aws_textract -p azure_di
+# OCR 4 is available as:
+realdoc-bench evaluate parse --run-dir runs/qa -p mistral_ocr_4
 
 # 3. Score every (question × parser) pair with Gemini 3 Flash + deep_equal
 #    No -p means: score every parser found under <run-dir>/parses/
