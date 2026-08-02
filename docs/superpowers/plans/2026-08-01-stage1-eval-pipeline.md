@@ -26,6 +26,8 @@
 - **D6** Cost preview: `--dry-run` prices the direct leg as an **estimate** (cells × per-entry token estimate × registry `pricing` rates); the transcriber scoring leg has no automated preview (upstream has no hook) and is budgeted in the runbook. In-run control is `--max-spend` (realized cost; overshoot bounded by ≤ `workers` in-flight calls).
 - **D7** Null-gold scoring is **stricter than upstream**: upstream's `score_typed` treats a missing/None answer as matching a null gold (`deep_equal(None, None) → True`). Our `field_outcomes` overrides this at the metrics layer — see Task 4. Published-number comparability is unaffected (upstream rows are compared on upstream's own per-question `match`, which we do not alter).
 - **D8** The local-extractor sensitivity check from the ratified extractor decision is deferred to Stage 3 (roadmap item 4); Stage 1's mitigation is the blocking extractor-validation fixture.
+- **D9** (Task 4 review, C1 ruling) The headline blank-field number is `acc_over_all` over null-gold fields (fail-safe: collapse and invention both score badly). `hallucination_rate` is redefined as incorrect/n_answered — propensity to invent WHEN answering — and is structurally grouped with `n_answered`/`error_rate` in `null_metrics`'s return; report code consumes the dict whole and never renders the rate alone. Additionally: an answer that is present but not a dict is an error row, and a record bearing an `"error"` key is an error row even if `answer` is present (matches upstream report.py's own predicate).
+- **D10** (F11, final review wave) `error_class` gains two more values: `render_error` (a genuine `_render_page`/`ink_coverage` failure on the document itself — missing/corrupt PDF, multi-page swap, blank scan) and `harness_error` (anything else that goes wrong inside `direct.py`'s `do()`, e.g. `_one`'s own request/scoring plumbing raising) — the prior single catch-all mislabelled every non-render failure as a document problem.
 - Cardinality preconditions (fail-closed, before any spend): bank == 1,356 items / 3,742 fields / 188 nulls; checkbox bucket (tags `checkbox_state, handdrawn_check, form_checkbox_grid`) == 429 q / 263 docs / 1,117 fields / 258 boolean (165 True / 93 False); `blank_field` == 122 q / 34 nulls; bucket overlap == 40.
 - Accuracy-over-all (errors incorrect) is the ranking key; every reported number carries its n.
 - Upstream tests must keep passing after every task (`uv run pytest`).
@@ -206,7 +208,7 @@ class RegistryEntry(BaseModel):
     provider_tos_commercial: Literal["ok", "blocked", "conditional"]
     tos_note: str = ""
     provenance: str
-    release_date: str                     # YYYY-MM-DD; contamination flag if > 2026-06-03
+    release_date: str                     # YYYY-MM-DD; contamination flag if > 2026-05-24 (HF createdAt)
     provider_pin: dict | None = None      # OpenRouter: {"order": [...], "allow_fallbacks": False}
     local: bool = False                   # True → serialize cells, preflight required, cost renders "n/a"
     promptable: bool = True               # False for endpoints that accept no prompt (mistral_ocr_4)
@@ -216,7 +218,7 @@ class RegistryEntry(BaseModel):
 
 def load_registry(path: Path) -> list[RegistryEntry]      # validates; raises on duplicate ids
 def get_entry(entries: list[RegistryEntry], id: str) -> RegistryEntry
-CONTAMINATION_CUTOFF = "2026-06-03"
+CONTAMINATION_CUTOFF = "2026-05-24"  # HF createdAt of Extend-AI/RealDoc-Bench (rev-2.1 note: spec cited lastModified 06-03)
 ```
 
 - [ ] **Step 1: Write failing tests**
@@ -295,7 +297,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, model_validator
 
-CONTAMINATION_CUTOFF = "2026-06-03"  # RealDoc-Bench HF publication date
+CONTAMINATION_CUTOFF = "2026-05-24"  # HF createdAt of Extend-AI/RealDoc-Bench (rev-2.1 note: spec cited lastModified 06-03)  # RealDoc-Bench HF publication date
 
 
 class RegistryEntry(BaseModel):

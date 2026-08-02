@@ -1,0 +1,196 @@
+# One entry per (model, serving) pair. api_key_env names the env var; values never live here.
+#
+# Facts below verified 2026-08-02 against:
+#   - HF model card API: https://huggingface.co/api/models/<org>/<name> (createdAt, license tag)
+#   - OpenRouter model + endpoint listings: https://openrouter.ai/api/v1/models,
+#     https://openrouter.ai/api/v1/models/<id>/endpoints
+#   - Public announcements (web search) for closed models with no HF card.
+#   - gate3-conclusion-ranking.md (provider ToS findings, referenced inline where used).
+#
+# Corrections applied to the original seed data's month-level placeholders/guesses (re-verified
+# against the sources listed above, 2026-08-02):
+#   - qwen3-vl-8b-instruct, qwen3-vl-32b-instruct, qwen3.5-9b release dates corrected to
+#     exact HF createdAt.
+#   - dots.ocr HF id redirect-corrected: rednote-hilab/dots.ocr -> dots-studio/dots.ocr
+#     (org renamed/moved on HF; license:mit and weights unchanged).
+#   - glm-ocr release date corrected to HF createdAt (zai-org/GLM-OCR, license:mit confirmed).
+#   - gemini-3.5-flash, mistral-ocr release dates corrected to public announcement dates
+#     (approximate — closed models, no HF card).
+#   - qwen3.5-9b provider_pin corrected: Alibaba does not serve this model on OpenRouter at
+#     all; repinned to DeepInfra on ToS grounds (see that entry for the rationale).
+
+- id: qwen3-vl-8b@openrouter
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-8b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default          # resolved provider recorded per row
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}   # verified: "Alibaba" is the exact
+                                        # first-party endpoint provider_name on OpenRouter (fp8)
+  pricing: {input_per_mtok: 0.117, output_per_mtok: 0.455}     # verified live 2026-08-02 via
+                                        # GET openrouter.ai/api/v1/models/qwen/qwen3-vl-8b-instruct
+                                        # /endpoints, Alibaba/fp8 endpoint (same figure already
+                                        # verified for the qwen3-vl-8b@openrouter-transcriber entry
+                                        # below — identical model+provider)
+  weights_licence: apache-2.0          # verified via HF Qwen/Qwen3-VL-8B-Instruct license tag
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-11"           # HF createdAt (Qwen/Qwen3-VL-8B-Instruct)
+
+- id: qwen3.5-9b@openrouter
+  # NOTE: all Stage 1 vlm-chat candidates predate the dataset — the contamination flag is
+  # exercised by mistral-ocr@mistral (transcriber); flag logic is shape-independent.
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3.5-9b
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["DeepInfra"], allow_fallbacks: false}
+    # CORRECTED from seed's ["Alibaba"]: verified via GET .../qwen/qwen3.5-9b/endpoints that
+    # Alibaba does NOT serve this model on OpenRouter at all — only third-party: SiliconFlow
+    # $0.10/$0.15, DeepInfra $0.10/$0.15, Venice $0.10/$0.15, Parasail $0.10/$0.25, Together
+    # $0.17/$0.25 per Mtok.
+    #
+    # DeepInfra pinned on ToS grounds per gate3-conclusion-ranking.md Part 2: DeepInfra has
+    # "the cleanest commercial ToS found" ("You may use the Services for any legal commercial
+    # purposes unless specifically prohibited below"). SiliconFlow (international) is
+    # disqualified outright — its ToS §3.4(p) "bars any commercial purposes". Together bars
+    # transmitting financial/medical/sensitive personal data, which document OCR routinely
+    # does. Venice and Parasail were not assessed in the survey; DeepInfra is the only
+    # affirmatively-cleared option among the five, not merely the cheapest.
+  pricing: {input_per_mtok: 0.100, output_per_mtok: 0.150}     # verified live 2026-08-02 via
+                                        # GET openrouter.ai/api/v1/models/qwen/qwen3.5-9b/endpoints,
+                                        # DeepInfra/bf16 endpoint (the pinned provider above)
+  weights_licence: apache-2.0          # verified via HF Qwen/Qwen3.5-9B license tag
+  provider_tos_commercial: ok
+  tos_note: >-
+    pinned DeepInfra: cleanest commercial ToS in survey; SiliconFlow barred
+    (no commercial use), Together bars sensitive-data transmission
+  provenance: Alibaba
+  release_date: "2026-02-27"           # HF createdAt (Qwen/Qwen3.5-9B). CORRECTED from seed's
+                                        # placeholder "2026-02-01" + seed comment claiming a
+                                        # contamination flag — verified release_date (2026-02-27)
+                                        # is BEFORE CONTAMINATION_CUTOFF; NOT flagged.
+
+- id: gemini-3.5-flash@google
+  shape: transcriber
+  transport: upstream-parser
+  upstream_parser: gemini_3_5_flash    # confirmed registered: `uv run realdoc-bench evaluate list`
+  api_key_env: GEMINI_API_KEY
+  precision: provider-default
+  weights_licence: closed              # ceiling anchor — non-candidate, flagged in report
+  provider_tos_commercial: ok
+  provenance: Google
+  release_date: "2026-05-19"           # approximate — closed model, no HF card. GA announcement
+                                        # at Google I/O 2026 (web-verified: ai.google.dev changelog,
+                                        # simonwillison.net/2026/May/19/gemini-35-flash). CORRECTED
+                                        # from seed placeholder "2026-03-01".
+
+- id: qwen3-vl-32b@openrouter            # 3rd hosted VLM (input-cheaper than the 8B — survey anomaly)
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-32b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}   # verified: sole endpoint, provider_name "Alibaba"
+  pricing: {input_per_mtok: 0.104, output_per_mtok: 0.416}     # verified exact match vs OpenRouter API
+  weights_licence: apache-2.0          # verified via HF Qwen/Qwen3-VL-32B-Instruct license tag
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-19"           # HF createdAt (Qwen/Qwen3-VL-32B-Instruct)
+
+- id: qwen3-vl-8b@openrouter-transcriber  # the direct-vs-two-stage CALIBRATION PAIR (DoD #3)
+  shape: transcriber
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-8b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}
+  pricing: {input_per_mtok: 0.117, output_per_mtok: 0.455}     # verified exact match vs OpenRouter API
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-11"           # HF createdAt (Qwen/Qwen3-VL-8B-Instruct)
+
+- id: gemini-3.5-flash@google-vlmchat     # frontier CEILING ANCHOR for Section A (vlm-chat)
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  model: gemini-3.5-flash
+  api_key_env: GEMINI_API_KEY
+  precision: provider-default
+  pricing: {input_per_mtok: 1.50, output_per_mtok: 9.00}       # verified live 2026-08-02, two
+                                        # independent sources agree exactly: (1) Google's own
+                                        # pricing page ai.google.dev/gemini-api/docs/pricing,
+                                        # Standard tier, per-1M-tokens table ("Input price $1.50",
+                                        # "Output price (including thinking tokens) $9.00");
+                                        # (2) GET openrouter.ai/api/v1/models -> google/gemini-3.5-flash
+                                        # entry, pricing.prompt=0.0000015, pricing.completion=0.000009
+                                        # (both *1e6 = 1.50 / 9.00)
+  weights_licence: closed                 # non-candidate, flagged in report
+  provider_tos_commercial: ok
+  provenance: Google
+  release_date: "2026-05-19"           # approximate — see gemini-3.5-flash@google above
+
+- id: mistral-ocr@mistral
+  shape: transcriber
+  transport: upstream-parser
+  upstream_parser: mistral_ocr_4          # confirmed registered: `uv run realdoc-bench evaluate list`
+  promptable: false                       # PDF-upload endpoint, no prompt — pdf-direct label in report
+  api_key_env: MISTRAL_API_KEY
+  precision: provider-default
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "zero-retention by contract only (gate3); PDF-upload endpoint, no prompt accepted"
+                                        # F5/ledger T2-N3: the previous note only restated
+                                        # `promptable: false` and omitted gate3's actual ToS
+                                        # finding — Mistral's zero-retention posture here is
+                                        # CONTRACTUAL, not a platform-wide default; report it
+                                        # even though provider_tos_commercial is "ok" (ToS: ok
+                                        # entries now render tos_note too, first 60 chars).
+  provenance: Mistral
+  release_date: "2026-06-23"           # approximate — closed model, no HF card. Web-verified
+                                        # (mistral.ai/news/ocr-4, MarkTechPost 2026-06-23,
+                                        # TechTimes). CORRECTED from seed placeholder "2026-05-01" —
+                                        # this MOVES the date to AFTER CONTAMINATION_CUTOFF: Mistral
+                                        # OCR 4 is now contamination-flagged, the opposite of the
+                                        # seed's implicit assumption. Flag this prominently in the
+                                        # Stage 1 report.
+
+- id: glm-ocr@local-vllm
+  shape: transcriber
+  transport: openai-compat
+  base_url: http://localhost:8000/v1
+  model: zai-org/GLM-OCR               # verified exact HF id (createdAt 2026-01-30, license:mit)
+  api_key_env: null
+  precision: bf16
+  weights_licence: mit
+  provider_tos_commercial: ok          # self-hosted — no provider ToS
+  tos_note: "self-hosted: no provider ToS"
+  provenance: Zhipu
+  release_date: "2026-01-30"           # HF createdAt (zai-org/GLM-OCR). CORRECTED from seed
+                                        # placeholder "2026-04-01".
+  local: true
+
+- id: dots-ocr@local-vllm
+  shape: transcriber
+  transport: openai-compat
+  base_url: http://localhost:8000/v1
+  model: dots-studio/dots.ocr          # CORRECTED from seed's "rednote-hilab/dots.ocr": that HF
+                                        # repo now 307-redirects here (org renamed/moved). Verified
+                                        # live: license:mit unchanged, same model. Provenance kept
+                                        # as RedNote (originating team); confirm at serving bring-up
+                                        # whether upstream branding should read dots-studio instead.
+  api_key_env: null
+  precision: bf16
+  weights_licence: mit                 # verified via HF dots-studio/dots.ocr license tag
+  provider_tos_commercial: ok
+  tos_note: "self-hosted: no provider ToS"
+  provenance: RedNote
+  release_date: "2025-07-30"           # HF createdAt (dots-studio/dots.ocr). CORRECTED from seed
+                                        # placeholder "2025-08-01" — pre-dataset, reproduction target.
+  local: true

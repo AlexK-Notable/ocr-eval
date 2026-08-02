@@ -1,0 +1,4 @@
+# Both pins are asserted at load (preconditions) and stamped into run metadata.
+harness_commit: fb26a6876481de76dc293f722ab4efa71279904d
+dataset_revision: 906170ab201d7b8238a32a9115fc66b4b72e0710
+dataset_repo: Extend-AI/RealDoc-Bench
