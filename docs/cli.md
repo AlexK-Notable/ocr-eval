@@ -100,7 +100,10 @@ uv run ocr-eval report --run-dir runs/stage1 \
 # -> runs/stage1/report.md written
 ```
 
-**Thinking-model empty-response caveat:** observed live against `qwen3-vl:8b` via Ollama —
+**Thinking-model empty-response caveat:** (first check the variant — Ollama's default
+`qwen3-vl:8b` tag is the *Thinking* build; `qwen3-vl:8b-instruct` avoids this failure mode
+entirely and matches the hosted entries' variant, see [`api.md`](api.md)'s Ollama serving note)
+— observed live against `qwen3-vl:8b` via Ollama —
 `STAGE1_CONDITION`'s default `max_tokens: 1024` can be consumed entirely by the model's own
 reasoning tokens, leaving an empty `message.content` and `finish_reason: "length"`. `direct.py`'s
 `_one` handles this as designed: an `error_class: "empty"` row, never a crash. This is why the

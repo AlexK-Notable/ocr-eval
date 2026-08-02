@@ -82,7 +82,20 @@ should be at most 4).
   documents why: `qwen3-vl:8b` served via Ollama is Q4_K_M-quantized, below the project's precision
   policy floor for a headline row ("if only Q4 fits, run hosted instead"). The registry declares
   `precision: provider-default`, which renders as "unknown (not asserted)" in `report.md` rather
-  than a false claim of a specific quant level. See [`cli.md`](cli.md)'s worked example for the
+  than a false claim of a specific quant level. **Check the variant before anything else:**
+  Ollama's default `qwen3-vl:8b` tag resolves to the *Thinking* build (its Modelfile carries
+  `RENDERER`/`PARSER qwen3-vl-thinking` and the Thinking edition's sampling defaults), while the
+  hosted comparison entries pin `qwen/qwen3-vl-8b-instruct` — use `qwen3-vl:8b-instruct` for
+  validation (verified 2026-08-02: 60/60 answered at stock `STAGE1_CONDITION`, median 22
+  completion tokens, vs 41/60 for the thinking build at the same condition). Vendor guidance
+  (both models' HF cards) also discourages greedy decoding outright — Instruct VL tasks:
+  temperature 0.7, top_p 0.8, top_k 20, presence_penalty 1.5, max output 16,384; Thinking VL
+  tasks: temperature 1.0, top_p 0.95, top_k 20, max output 40,960. `STAGE1_CONDITION` pins
+  greedy (temperature 0.0, top_p 1.0) deliberately for reproducibility — a documented divergence
+  from vendor guidance that is empirically benign for the Instruct build at Stage-1 budgets but
+  pathological for the Thinking build (greedy is the documented trigger for endless-repetition
+  loops in Qwen thinking models, matching the runaway signature observed live).
+  See [`cli.md`](cli.md)'s worked example for the
   thinking-model `max_tokens` exhaustion caveat this serving path surfaces live; Ollama's
   OpenAI-compat shim has no code-level way to suppress thinking in this codebase — there is no
   `think` field anywhere in `STAGE1_CONDITION`'s sampling dict. A second shim limit, verified

@@ -1,8 +1,52 @@
 # HARNESS-VALIDATION registry — NOT for model comparison.
-# qwen3-vl:8b via Ollama is Q4_K_M (verified `ollama show` 2026-08-02): below the precision
-# policy's floor for headline comparisons (spec: "if only Q4 fits, run hosted instead").
-# precision is declared provider-default so the report renders "unknown (not asserted)".
+# All entries are Q4_K_M GGUF via Ollama (verified `ollama show`): below the precision policy's
+# floor for headline comparisons (spec: "if only Q4 fits, run hosted instead"). precision is
+# declared provider-default so the report renders "unknown (not asserted)".
 # Purpose: exercise the direct + transcriber legs and the report end-to-end with zero API keys.
+#
+# VARIANT WARNING (verified 2026-08-02): Ollama's default `qwen3-vl:8b` tag resolves to the
+# THINKING build (`RENDERER`/`PARSER qwen3-vl-thinking` in its Modelfile) — NOT the Instruct
+# build the hosted comparison entries pin (`qwen/qwen3-vl-8b-instruct`). The thinking build is
+# the wrong validation target: at stock STAGE1_CONDITION it burns the completion budget on
+# reasoning (41/60 answered), and no finite window fully fixes it (55/60 at num_ctx=16384; the
+# residue is runaway reasoning loops — vendor guidance discourages greedy decoding for it
+# besides; see docs/api.md caveats). `qwen3-vl:8b-instruct` at stock STAGE1_CONDITION: 60/60
+# answered, zero error rows, median 22 completion tokens. USE THE INSTRUCT ENTRIES below for
+# new validation runs.
+
+- id: qwen3-vl-8b-instruct@ollama-validation
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b-instruct
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok    # self-hosted
+  tos_note: "self-hosted validation entry; Instruct build (matches hosted entries' variant) — excluded from any comparative table by policy"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true
+
+- id: qwen3-vl-8b-instruct@ollama-transcriber-validation
+  shape: transcriber
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b-instruct
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  tos_note: "self-hosted validation entry; parse leg only (scoring needs the Gemini extractor key)"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true
+
+# ---- legacy THINKING-build entries -----------------------------------------------------------
+# Kept so existing eval/cache rows and the parse-leg transcript stay attributable to the exact
+# build that produced them (vlm__qwen3-vl-8b@ollama-validation__{4caf39e9ac1f,42581bd83e8a}, the
+# ctx16k experiment rows, and parses/qwen3-vl-8b_ollama-transcriber-validation__*). Do not use
+# for new validation runs.
 
 - id: qwen3-vl-8b@ollama-validation
   shape: vlm-chat
@@ -13,7 +57,7 @@
   precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
   weights_licence: apache-2.0
   provider_tos_commercial: ok    # self-hosted
-  tos_note: "self-hosted validation entry; Q4_K_M — excluded from any comparative table by policy"
+  tos_note: "LEGACY thinking-build validation entry; Q4_K_M — excluded from any comparative table by policy"
   provenance: Alibaba
   release_date: "2025-10-11"
   local: true
@@ -27,7 +71,7 @@
   precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
   weights_licence: apache-2.0
   provider_tos_commercial: ok
-  tos_note: "self-hosted validation entry; parse leg only (scoring needs the Gemini extractor key)"
+  tos_note: "LEGACY thinking-build validation entry; parse leg only (scoring needs the Gemini extractor key)"
   provenance: Alibaba
   release_date: "2025-10-11"
   local: true
@@ -46,7 +90,7 @@
   precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
   weights_licence: apache-2.0
   provider_tos_commercial: ok    # self-hosted
-  tos_note: "self-hosted validation entry; num_ctx=16384 derived model — excluded from any comparative table by policy"
+  tos_note: "LEGACY thinking-build num_ctx=16384 derived model — excluded from any comparative table by policy"
   provenance: Alibaba
   release_date: "2025-10-11"
   local: true

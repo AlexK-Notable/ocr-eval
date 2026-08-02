@@ -244,6 +244,14 @@ succeed and show the row as `(unregistered)` instead.)
 
 ### Real-world note: thinking models exhaust `max_tokens` and return empty content
 
+**First check the variant.** Ollama's default `qwen3-vl:8b` tag resolves to the *Thinking* build
+(`RENDERER`/`PARSER qwen3-vl-thinking` in its Modelfile) — not the Instruct build the hosted
+comparison entries pin. For validation runs, use `qwen3-vl:8b-instruct` (the
+`qwen3-vl-8b-instruct@ollama-validation` registry entry): verified 2026-08-02, it answers 60/60
+at stock `STAGE1_CONDITION` with zero error rows and a median of 22 completion tokens — no
+amended condition, no `num_ctx` surgery. Everything below is retained for anyone who must run a
+thinking-enabled model through this path.
+
 Observed live against `qwen3-vl:8b` via Ollama: `STAGE1_CONDITION`'s `sampling.max_tokens: 1024`
 is consumed entirely by the model's own reasoning/thinking tokens, leaving nothing for the actual
 answer — the response comes back with empty `message.content` and `finish_reason: "length"`. The
