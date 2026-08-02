@@ -1,7 +1,10 @@
+import email.utils
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import fitz  # pymupdf
+import pytest
 
 from ocr_eval_ext.config import RegistryEntry
 from ocr_eval_ext.direct import STAGE1_CONDITION, condition_hash, parser_key, run_direct
@@ -25,6 +28,30 @@ def make_run_dir(tmp_path: Path) -> RunLayout:
         "gold_answer": "a=true",
     }]}
     layout.bank_path.write_text(json.dumps(bank))
+    return layout
+
+
+def make_multi_item_run_dir(tmp_path: Path, n: int) -> RunLayout:
+    """n independent single-page docs/questions — used to exercise the bounded-dispatch
+    submit/wait/refill loop with real concurrency (every other fixture in this file uses a
+    single-item bank, which never reaches the refill path)."""
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    items = []
+    for i in range(n):
+        doc = fitz.open()
+        page = doc.new_page(width=612, height=792)
+        page.insert_text((72, 72), f"Is box {i} checked?  [X] Yes   [ ] No")
+        page.draw_rect(fitz.Rect(72, 100, 220, 160), fill=(0, 0, 0))
+        doc.save(layout.docs_dir / f"doc_{i}.pdf")
+        items.append({
+            "question_id": f"q{i}", "source_file": f"doc_{i}", "domain": "test",
+            "question": f"Is question {i} checkbox marked?", "capabilities": ["checkbox_state"],
+            "gold_dict": {"a": True},
+            "response_format": "Return exactly: a=<boolean>",
+            "gold_answer": "a=true",
+        })
+    layout.bank_path.write_text(json.dumps({"items": items}))
     return layout
 
 
@@ -89,3 +116,138 @@ def test_dry_run_prices_without_calls(tmp_path):
     with MockOpenAI() as mock:
         s = run_direct(layout, [entry(mock.base_url)], dry_run=True)
         assert mock.requests == [] and s["cells"] == 1
+
+
+def _success_body(usage: dict) -> dict:
+    return {"id": "cmpl-1", "model": "org/m1", "provider": "MockProvider",
+            "choices": [{"message": {"role": "assistant", "content": '{"a": true}'}}],
+            "usage": usage}
+
+
+def test_max_spend_aborts_on_priced_mock(tmp_path):
+    """usage.cost drives the abort directly — no registry pricing needed."""
+    layout = make_run_dir(tmp_path)
+    responses = [{"body": _success_body({"prompt_tokens": 100, "completion_tokens": 10,
+                                         "cost": 5.0})}]
+    with MockOpenAI(responses=responses) as mock, \
+         pytest.raises(RuntimeError, match=r"--max-spend 0\.01 exceeded"):
+        run_direct(layout, [entry(mock.base_url)], max_spend_usd=0.01)
+
+
+def test_max_spend_fails_closed_without_cost_or_pricing(tmp_path):
+    """C1 ruling: an unresolvable cost (no usage.cost, no registry pricing) must abort the run
+    rather than being treated as free — this is the mutant `spend += cost or 0.0` would pass."""
+    layout = make_run_dir(tmp_path)
+    with MockOpenAI() as mock, \
+         pytest.raises(RuntimeError, match=r"cannot enforce --max-spend for m1@mock"):
+        run_direct(layout, [entry(mock.base_url)], max_spend_usd=1.0)
+
+
+def test_retry_after_numeric_header_then_success(tmp_path):
+    layout = make_run_dir(tmp_path)
+    responses = [{"status": 429, "headers": {"Retry-After": "0"}}, {"status": 200}]
+    with MockOpenAI(responses=responses) as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "none" and rec["match"] is True
+    assert len(mock.requests) == 2   # one 429, one retry that succeeded
+
+
+def test_retry_after_http_date_header_then_success(tmp_path):
+    layout = make_run_dir(tmp_path)
+    retry_at = email.utils.format_datetime(datetime.now(UTC))  # "now" -> wait clamps to ~0
+    responses = [{"status": 429, "headers": {"Retry-After": retry_at}}, {"status": 200}]
+    with MockOpenAI(responses=responses) as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "none" and rec["match"] is True
+    assert len(mock.requests) == 2
+
+
+def test_permanent_400_fails_after_one_attempt(tmp_path):
+    layout = make_run_dir(tmp_path)
+    responses = [{"status": 400, "message": "bad request"}]
+    with MockOpenAI(responses=responses) as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "api_error"
+    assert len(mock.requests) == 1   # permanent 4xx — no retry burned on it
+
+
+def test_refusal_reply_is_refusal_row(tmp_path):
+    """Companion to the parse_error fixture fix: this is the text that SHOULD classify as
+    refusal (contains the REFUSAL_MARKERS substring "i cannot")."""
+    layout = make_run_dir(tmp_path)
+    with MockOpenAI(reply_text="I cannot help with that") as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "refusal" and "answer" not in rec
+
+
+def test_bounded_dispatch_handles_multiple_cells(tmp_path):
+    """Exercises the submit/wait/refill loop past its first window — every other test here uses
+    a single-item bank and never reaches this path."""
+    n = 6
+    layout = make_multi_item_run_dir(tmp_path, n)
+    with MockOpenAI() as mock:
+        summary = run_direct(layout, [entry(mock.base_url)], workers=2)
+    assert summary["ok"] == n
+    assert len(mock.requests) == n
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    for i in range(n):
+        rec = json.loads(layout.cache_path(f"q{i}", pk).read_text())
+        assert rec["error_class"] == "none"
+
+
+def test_max_spend_bounds_overshoot_to_window_size(tmp_path):
+    """I2: overshoot past the budget must be bounded by `workers`, not by however many cells a
+    naive Executor.map would have already queued. 10 cells, workers=2, each cell costs enough to
+    blow a tiny budget on the very first result — assert the abort happens well short of
+    processing all 10 cells."""
+    n = 10
+    workers = 2
+    layout = make_multi_item_run_dir(tmp_path, n)
+    responses = [{"body": _success_body({"prompt_tokens": 100, "completion_tokens": 10,
+                                         "cost": 5.0})}]
+    with MockOpenAI(responses=responses) as mock, pytest.raises(RuntimeError, match=r"--max-spend"):
+        run_direct(layout, [entry(mock.base_url)], workers=workers, max_spend_usd=0.01)
+    # Generous bound: the window can have up to `workers` cells in flight when the first result
+    # trips the budget, plus the one that tripped it — never anywhere near all 10 cells.
+    assert len(mock.requests) <= workers + 1
+    assert len(mock.requests) < n
+
+
+def test_run_direct_rejects_entry_missing_base_url(tmp_path):
+    """I8: OpenAI(base_url=None) would silently target api.openai.com — must never reach that
+    constructor call for a misconfigured entry."""
+    layout = make_run_dir(tmp_path)
+    bad = RegistryEntry(
+        id="m1@nobaseurl", shape="vlm-chat", transport="upstream-parser",
+        upstream_parser="whatever", api_key_env=None,
+        precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+        provenance="Test", release_date="2025-01-01",
+    )
+    with pytest.raises(ValueError, match="base_url"):
+        run_direct(layout, [bad])
+
+
+def test_no_image_row_has_null_image_fields_and_distinct_cache_key(tmp_path):
+    layout = make_run_dir(tmp_path)
+    with MockOpenAI() as mock:
+        run_direct(layout, [entry(mock.base_url)], no_image=True)
+    no_image_cond = {**STAGE1_CONDITION, "no_image": True}
+    pk_no_image = parser_key("m1@mock", no_image_cond)
+    pk_default = parser_key("m1@mock", STAGE1_CONDITION)
+    assert pk_no_image != pk_default                        # distinct cache key
+    rec = json.loads(layout.cache_path("q1", pk_no_image).read_text())
+    assert rec["image_sha"] is None
+    assert rec["image_px"] is None
+    assert rec["image_bytes"] is None
+    assert rec["error_class"] == "none"                      # the call itself still succeeded
+    # request never carried an image part
+    content = mock.requests[0]["messages"][-1]["content"]
+    assert not any(part.get("type") == "image_url" for part in content)

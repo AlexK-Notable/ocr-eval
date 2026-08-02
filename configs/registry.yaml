@@ -27,6 +27,11 @@
   precision: provider-default          # resolved provider recorded per row
   provider_pin: {order: ["Alibaba"], allow_fallbacks: false}   # verified: "Alibaba" is the exact
                                         # first-party endpoint provider_name on OpenRouter (fp8)
+  pricing: {input_per_mtok: 0.117, output_per_mtok: 0.455}     # verified live 2026-08-02 via
+                                        # GET openrouter.ai/api/v1/models/qwen/qwen3-vl-8b-instruct
+                                        # /endpoints, Alibaba/fp8 endpoint (same figure already
+                                        # verified for the qwen3-vl-8b@openrouter-transcriber entry
+                                        # below — identical model+provider)
   weights_licence: apache-2.0          # verified via HF Qwen/Qwen3-VL-8B-Instruct license tag
   provider_tos_commercial: ok
   provenance: Alibaba
@@ -54,6 +59,9 @@
     # transmitting financial/medical/sensitive personal data, which document OCR routinely
     # does. Venice and Parasail were not assessed in the survey; DeepInfra is the only
     # affirmatively-cleared option among the five, not merely the cheapest.
+  pricing: {input_per_mtok: 0.100, output_per_mtok: 0.150}     # verified live 2026-08-02 via
+                                        # GET openrouter.ai/api/v1/models/qwen/qwen3.5-9b/endpoints,
+                                        # DeepInfra/bf16 endpoint (the pinned provider above)
   weights_licence: apache-2.0          # verified via HF Qwen/Qwen3.5-9B license tag
   provider_tos_commercial: ok
   tos_note: >-
@@ -114,6 +122,14 @@
   model: gemini-3.5-flash
   api_key_env: GEMINI_API_KEY
   precision: provider-default
+  pricing: {input_per_mtok: 1.50, output_per_mtok: 9.00}       # verified live 2026-08-02, two
+                                        # independent sources agree exactly: (1) Google's own
+                                        # pricing page ai.google.dev/gemini-api/docs/pricing,
+                                        # Standard tier, per-1M-tokens table ("Input price $1.50",
+                                        # "Output price (including thinking tokens) $9.00");
+                                        # (2) GET openrouter.ai/api/v1/models -> google/gemini-3.5-flash
+                                        # entry, pricing.prompt=0.0000015, pricing.completion=0.000009
+                                        # (both *1e6 = 1.50 / 9.00)
   weights_licence: closed                 # non-candidate, flagged in report
   provider_tos_commercial: ok
   provenance: Google
