@@ -79,6 +79,13 @@ def _stamp_base_meta(layout: RunLayout, pins: dict, *, mark_partial_corpus: bool
         else:
             meta["dataset_revision"] = pins["dataset_revision"]
             meta["revision_source"] = "pins"
+    # F10: backfill for a run_meta.json stamped before `revision_source` existed (or otherwise
+    # hand-crafted without it) — the branch above only ever sets the key the FIRST time
+    # `dataset_revision` itself gets written, so a legacy meta that already has `dataset_revision`
+    # but never got `revision_source` would carry the gap forever. `setdefault` makes this a
+    # no-op on every meta that already has the key (including the branch above, same call).
+    meta.setdefault("revision_source", "hf_metadata"
+                    if _observed_dataset_revision(layout) == pins["dataset_revision"] else "pins")
     meta.setdefault("harness_commit", pins["harness_commit"])
     if mark_partial_corpus:
         meta["partial_corpus"] = True
@@ -355,7 +362,16 @@ def direct(
     summary = run_direct(layout, chosen, dry_run=dry_run, max_spend_usd=max_spend,
                          limit=limit, no_image=no_image, workers=workers, force=force)
     console.print(summary)
-    if not dry_run and summary.get("error"):
+    if dry_run:
+        return
+    # F3: a rerun that never re-attempts a prior error cell (no --force) still counts that error
+    # under "cached" — surface it explicitly and fail-visible, rather than a summary reading
+    # "cached: N, error: 0" that hides N-of-those-cached being unresolved failures.
+    if summary.get("cached_error"):
+        console.print(f"[red]{summary['cached_error']} cached error cell(s) present — rerun "
+                      f"with --force (or --retry via force) to re-attempt error cells[/red]")
+        raise typer.Exit(2)
+    if summary.get("error"):
         raise typer.Exit(2)   # fail-visible: errors occurred, report will mark them
 
 
@@ -510,6 +526,21 @@ def parse(
     n_fail = len(records) - n_ok
     console.print(f"parse: {n_ok} ok, {n_fail} fail")
     if n_fail:
+        raise typer.Exit(2)
+    # F1: an `ok=true` transcript that is still essentially EMPTY (e.g. a thinking model that
+    # exhausted its completion budget on reasoning and left "## Page 1\n\n" or a few stray
+    # characters — see progress.md's Task 10 local-validation finding) sails through the n_fail
+    # gate above with a false-green ok/fail split. Scoring would then spend one Gemini extractor
+    # call per bank item transcribed by this parser against effectively no content. Floor:
+    # md_length must clear 16 chars per page — generous (well under even the shortest genuine
+    # per-page markdown observed), so this only trips on transcripts that are functionally empty.
+    trivial = [r for r in records if r.ok and r.md_length <= 16 * max(1, r.page_count)]
+    if trivial:
+        stems = [r.stem for r in trivial]
+        console.print(
+            f"[red]parse FAILED — {len(trivial)} transcript(s) too short to score "
+            f"(md_length <= 16 chars/page) (first 10): {stems[:10]} — scoring would spend one "
+            f"extractor call per bank item against no content[/red]")
         raise typer.Exit(2)
 
 

@@ -31,8 +31,16 @@ from ocr_eval_ext.report_md import (
     ServingIdentityError,
     StaleRenderError,
     _beats_majority,
+    _direct_cost_latency,
+    _general_and_strict,
+    _mixed_precision_note,
     _pairwise_separability,
+    _section_mixed_precision_note,
+    _stamp_columns,
+    _tos_stamp,
     _transcript_recall,
+    _transcription_cost_latency,
+    _upstream_construction_metrics,
     build_markdown_report,
 )
 from realdoc_bench.evaluate.runs import RunLayout
@@ -652,6 +660,386 @@ def test_m2_section_b_unregistered_row_shows_unknown_stamp_never_blank(tmp_path)
     md = build_markdown_report(layout, [], iters=50)
     section_b = md.split("## Section B")[1]
     assert "precision: unknown (unregistered)" in section_b
+
+
+# ── R-c: report header renders pymupdf_version from run_meta ───────────────────────────────────
+
+def test_header_renders_pymupdf_version_from_run_meta(tmp_path):
+    layout = _minimal_layout(tmp_path)
+    layout.bank_path.write_text(json.dumps({"items": []}))
+    (layout.root / "run_meta.json").write_text(json.dumps({
+        "dataset_revision": "test-rev", "harness_commit": "test-commit",
+        "renders_verified": True, "pymupdf_version": "1.24.9",
+    }))
+    md = build_markdown_report(layout, [], iters=50)
+    assert "pymupdf version: 1.24.9" in md
+
+
+def test_header_pymupdf_version_falls_back_to_unknown(tmp_path):
+    layout, registry = _build_full_fixture(tmp_path)   # meta fixture carries no pymupdf_version
+    md = build_markdown_report(layout, registry, iters=200, seed=0)
+    assert "pymupdf version: unknown" in md
+
+
+# ── F2: reproduction-gate comparability — upstream construction vs the D7 ranking key ──────────
+
+def test_f2_general_and_strict_vs_upstream_construction_diverge_on_null_key_absent():
+    """The exact D7 divergence: a null-gold field whose answer key is ABSENT. Upstream's own
+    `deep_equal(None, None)` already scored this correct at write time (baked into
+    `field_matches`); the ranking-key `field_outcomes`/`_general_and_strict` (D7) overrides that
+    specific case to incorrect. Same rows, same items — the two constructions must disagree."""
+    items = [{"question_id": "q0", "source_file": "doc_0", "gold_dict": {"notes": None}}]
+    all_fields = [("q0", "notes", None, "doc_0")]
+    rows_by_qid = {
+        # "answer" present (this is an OK row) but does NOT carry "notes" at all — upstream's
+        # own score_typed would have written field_matches["notes"] = True for exactly this case
+        # (deep_equal(None, None) treats key-absent-so-.get()-returns-None the same as explicit
+        # None); D7 disagrees and scores it "incorrect" instead.
+        "q0": {"answer": {}, "field_matches": {"notes": True}, "match": True},
+    }
+    d7_general, _d7_strict = _general_and_strict(rows_by_qid, items, all_fields)
+    upstream_field_pct, _upstream_question_pct, n_ok = _upstream_construction_metrics(rows_by_qid)
+
+    assert d7_general == 0.0                # D7 ranking key: null-gold key-absent -> incorrect
+    assert upstream_field_pct == 1.0         # upstream construction: the same field -> correct
+    assert n_ok == 1
+    assert d7_general != upstream_field_pct  # the two constructions genuinely disagree
+
+
+def test_f2_upstream_construction_metrics_excludes_error_rows():
+    """"over ok rows only" — an error/missing row contributes neither fields nor a question to
+    either denominator."""
+    rows_by_qid = {
+        "q0": {"answer": {"a": True}, "field_matches": {"a": True}, "match": True},
+        "q1": {"error": "boom"},   # not ok — must be excluded entirely
+    }
+    field_pct, question_pct, n_ok = _upstream_construction_metrics(rows_by_qid)
+    assert n_ok == 1
+    assert field_pct == 1.0
+    assert question_pct == 1.0
+
+
+def test_f2_reproduction_gate_block_renders_with_both_diverging_numbers(tmp_path):
+    """End-to-end: the new block exists, carries its caveat label verbatim, and — built from the
+    same D7-divergent fixture as the unit test above — its field% number actually differs from
+    the ranking-key `general/field` number in the Section B table above it."""
+    layout = _minimal_layout(tmp_path)
+    items = [{"question_id": "q0", "source_file": "doc_0", "domain": "test",
+             "question": "any notes?", "capabilities": ["blank_field"],
+             "gold_dict": {"notes": None}}]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    t_pk = f"{safe_name('reprogate@local')}__{condition_hash(TRANSCRIBER_CONDITION)}"
+    rec = {"qid": "q0", "parser": t_pk, "source_file": "doc_0", "domain": "test",
+           "answer": {}, "field_matches": {"notes": True}, "match": True}
+    cpath = layout.cache_path("q0", t_pk)
+    cpath.parent.mkdir(parents=True, exist_ok=True)
+    cpath.write_text(json.dumps(rec))
+    entry = RegistryEntry(id="reprogate@local", shape="transcriber", transport="openai-compat",
+                          base_url="http://reprogate.invalid/v1", model="org/reprogate",
+                          api_key_env=None, precision="bf16", weights_licence="mit",
+                          provider_tos_commercial="ok", provenance="Test",
+                          release_date="2025-01-01", local=True)
+
+    md = build_markdown_report(layout, [entry], iters=50)
+    assert "## Reproduction gate (upstream construction)" in md
+    assert ("upstream construction — for the reproduction gate only; not the ranking key" in md)
+
+    gate_block = md.split("## Reproduction gate (upstream construction)")[1] \
+                   .split("## Separability appendix")[0]
+    section_b_block = md.split("## Section B")[1].split("## Reproduction gate")[0]
+
+    # the SAME field: 100% under upstream construction, 0% under the D7 ranking key.
+    assert "| reprogate@local | 100.0% | 100.0% | 1 |" in gate_block
+    assert "| 0.0% | 100.0% |" in section_b_block   # general/field=0.0%, strict/question=100.0%
+
+
+# ── F4: label disambiguation when >1 parser key resolves to one entry id ───────────────────────
+
+def test_f4_two_condition_hashes_for_one_entry_get_disambiguated_labels(tmp_path):
+    """F4 (live-validation finding): the SAME registry entry direct-answered under two different
+    condition hashes (e.g. default max_tokens vs a widened one for a thinking model) must render
+    with distinguishable labels in the table AND detail bullets AND the separability appendix —
+    instead of both collapsing onto the bare entry.id."""
+    layout = _minimal_layout(tmp_path)
+    items = [
+        {"question_id": "cb0", "source_file": "doc_0", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": True}},
+        {"question_id": "cb1", "source_file": "doc_1", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": False}},
+    ]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+
+    cond_a = STAGE1_CONDITION
+    cond_b = {**STAGE1_CONDITION, "sampling": {**STAGE1_CONDITION["sampling"], "max_tokens": 8192}}
+    pk_a, pk_b = parser_key("vlmDup@mock", cond_a), parser_key("vlmDup@mock", cond_b)
+    assert pk_a != pk_b
+
+    for pk, cond in [(pk_a, cond_a), (pk_b, cond_b)]:
+        for qid, stem, gold in [("cb0", "doc_0", True), ("cb1", "doc_1", False)]:
+            rec = {"qid": qid, "parser": pk, "source_file": stem, "domain": "test",
+                   "condition": cond, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+                   "image_sha": None, "resolved_provider": "ProviderA",
+                   "answer": {"checked": gold}, "field_matches": {"checked": True}, "match": True,
+                   "error_class": "none"}
+            cpath = layout.cache_path(qid, pk)
+            cpath.parent.mkdir(parents=True, exist_ok=True)
+            cpath.write_text(json.dumps(rec))
+
+    entry = RegistryEntry(id="vlmDup@mock", shape="vlm-chat", transport="openai-compat",
+                          base_url="http://vlmDup.invalid/v1", model="org/vlmDup",
+                          api_key_env=None, precision="bf16", weights_licence="mit",
+                          provider_tos_commercial="ok", provenance="Test", release_date="2025-01-01")
+
+    md = build_markdown_report(layout, [entry], iters=50)
+    hash_a, hash_b = pk_a.rsplit("__", 1)[-1], pk_b.rsplit("__", 1)[-1]
+    label_a, label_b = f"vlmDup@mock [cond {hash_a}]", f"vlmDup@mock [cond {hash_b}]"
+
+    section_a = md.split("## Section A")[1].split("## Baseline rows")[0]
+    assert label_a in section_a and label_b in section_a
+    assert "vlmDup@mock |" not in section_a   # the bare (collision-prone) label never renders
+    assert f"- **{label_a}**" in section_a    # detail bullet
+    assert f"- **{label_b}**" in section_a
+
+    appendix = md.split("## Separability appendix")[1]
+    assert label_a in appendix and label_b in appendix
+
+
+def test_f4_find_calibration_pairs_returns_both_condition_hash_pairs():
+    """F4: two direct-QA condition-hash groups for one entry, both matching the same section_b
+    transcriber's model, are TWO distinct legitimate calibration pairs — not something to
+    collapse down to one via entry-object deduplication."""
+    from ocr_eval_ext.report_md import _find_calibration_pairs, _Group
+
+    v_entry = RegistryEntry(id="vDup@mock", shape="vlm-chat", transport="openai-compat",
+                            base_url="http://v.invalid/v1", model="org/dup", api_key_env=None,
+                            precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                            provenance="Test", release_date="2025-01-01")
+    t_entry = RegistryEntry(id="tDup@local", shape="transcriber", transport="openai-compat",
+                            base_url="http://t.invalid/v1", model="org/dup", api_key_env=None,
+                            precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                            provenance="Test", release_date="2025-01-01", local=True)
+    v_pk_a, v_pk_b = "vlm__vDup@mock__aaaaaaaaaaaa", "vlm__vDup@mock__bbbbbbbbbbbb"
+    t_pk = "tDup_local__cccccccccccc"
+    direct_groups = {v_pk_a: _Group(v_pk_a, v_entry, {}), v_pk_b: _Group(v_pk_b, v_entry, {})}
+    section_b_groups = {t_pk: _Group(t_pk, t_entry, {})}
+
+    pairs = _find_calibration_pairs(direct_groups, section_b_groups)
+    assert sorted(pairs) == [(v_pk_a, t_pk), (v_pk_b, t_pk)]
+
+
+def test_f4_calibration_pair_line_uses_disambiguated_labels():
+    """The calibration-pair prose line itself (`_build_cross_shape_note`) must render each
+    condition-hash pair with its OWN disambiguated label, not the shared bare entry.id twice."""
+    from ocr_eval_ext.report_md import _build_cross_shape_note, _disambiguated_labels, _Group
+
+    v_entry = RegistryEntry(id="vDup2@mock", shape="vlm-chat", transport="openai-compat",
+                            base_url="http://v2.invalid/v1", model="org/dup2", api_key_env=None,
+                            precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                            provenance="Test", release_date="2025-01-01")
+    t_entry = RegistryEntry(id="tDup2@local", shape="transcriber", transport="openai-compat",
+                            base_url="http://t2.invalid/v1", model="org/dup2", api_key_env=None,
+                            precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                            provenance="Test", release_date="2025-01-01", local=True)
+    v_pk_a, v_pk_b = "vlm__vDup2@mock__aaaaaaaaaaaa", "vlm__vDup2@mock__bbbbbbbbbbbb"
+    t_pk = "tDup2_local__cccccccccccc"
+    direct_groups = {v_pk_a: _Group(v_pk_a, v_entry, {}), v_pk_b: _Group(v_pk_b, v_entry, {})}
+    section_b_groups = {t_pk: _Group(t_pk, t_entry, {})}
+    direct_labels = _disambiguated_labels(direct_groups)
+    section_b_labels = _disambiguated_labels(section_b_groups)
+
+    lines = _build_cross_shape_note([], [], direct_groups, section_b_groups,
+                                    direct_labels, section_b_labels)
+    text = "\n".join(lines)
+    assert text.count("calibration pair detected") == 2   # one line per condition-hash pair
+    assert "vDup2@mock [cond aaaaaaaaaaaa]" in text
+    assert "vDup2@mock [cond bbbbbbbbbbbb]" in text
+
+
+# ── F5: contract stamp (promptable/not-promptable) + tos_note rendered for ok entries too ───────
+
+def _stamp_entry(**overrides) -> RegistryEntry:
+    base = dict(id="stampX@test", shape="vlm-chat", transport="openai-compat",
+               base_url="http://stampX.invalid/v1", model="org/stampX", api_key_env=None,
+               precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+               provenance="Test", release_date="2025-01-01")
+    base.update(overrides)
+    return RegistryEntry(**base)
+
+
+def test_stamp_columns_renders_promptable_contract():
+    e = _stamp_entry(promptable=True)
+    assert "contract: promptable" in _stamp_columns(e)
+
+
+def test_stamp_columns_renders_not_promptable_contract():
+    e = _stamp_entry(promptable=False)
+    assert "contract: not-promptable" in _stamp_columns(e)
+
+
+def test_stamp_columns_unregistered_includes_contract_as_unknown():
+    assert "contract: unknown (unregistered)" in _stamp_columns(None)
+
+
+def test_tos_stamp_renders_note_for_ok_entries_too():
+    """F5: previously only blocked/conditional entries surfaced tos_note — an `ok`-commercial
+    entry with a real caveat (e.g. mistral-ocr@mistral's zero-retention-by-contract note) used to
+    render a bare "ToS: ok" with the caveat silently dropped."""
+    e = _stamp_entry(provider_tos_commercial="ok",
+                     tos_note="zero-retention by contract only, not platform default")
+    stamp = _tos_stamp(e)
+    assert stamp.startswith("ToS: ok — ")
+    assert "zero-retention by contract only" in stamp
+
+
+def test_tos_stamp_ok_with_no_note_stays_bare():
+    e = _stamp_entry(provider_tos_commercial="ok", tos_note="")
+    assert _tos_stamp(e) == "ToS: ok"
+
+
+def test_tos_stamp_truncates_note_to_60_chars():
+    long_note = "x" * 200
+    e = _stamp_entry(provider_tos_commercial="ok", tos_note=long_note)
+    stamp = _tos_stamp(e)
+    assert stamp == f"ToS: ok — {'x' * 60}"
+    assert len(stamp) < len(long_note)
+
+
+def test_registry_mistral_tos_note_carries_the_gate3_zero_retention_finding():
+    """F5/ledger T2-N3: the registry's own tos_note (not just a test fixture) must state the real
+    gate3 finding, not merely restate `promptable: false`."""
+    from ocr_eval_ext.config import get_entry, load_registry
+
+    entries = load_registry(Path(__file__).resolve().parents[1] / "configs" / "registry.yaml")
+    mistral = get_entry(entries, "mistral-ocr@mistral")
+    assert "zero-retention" in mistral.tos_note.lower()
+    stamp = _tos_stamp(mistral)
+    assert "zero-retention" in stamp.lower()   # survives the 60-char truncation
+
+
+# ── F6: mixed-precision caveat treats "unknown (not asserted)" as its own distinct value ───────
+
+def test_mixed_precision_fires_on_two_known_precisions():
+    note = _mixed_precision_note({"bf16", "fp8-vllm"})
+    assert note is not None and "mixed precision" in note
+
+
+def test_mixed_precision_fires_when_known_mixes_with_unasserted():
+    """F6: a known precision alongside an unasserted one is a real ambiguity — flagged as mixed,
+    not silently treated as "only one known precision, so no caveat"."""
+    note = _mixed_precision_note({"bf16", "unknown (not asserted)"})
+    assert note is not None and "mixed precision" in note
+
+
+def test_mixed_precision_all_unasserted_gets_the_distinct_note():
+    note = _mixed_precision_note({"unknown (not asserted)"})
+    assert note == "precision unasserted across all rows in this section"
+
+
+def test_mixed_precision_single_known_precision_is_silent():
+    assert _mixed_precision_note({"bf16"}) is None
+
+
+def test_mixed_precision_empty_set_is_silent():
+    assert _mixed_precision_note(set()) is None
+
+
+def test_section_mixed_precision_note_uses_precision_label_not_raw_field():
+    """F6: `_section_mixed_precision_note` must build its set from `_precision_label(e)`
+    (provider-default -> "unknown (not asserted)"), not the raw `entry.precision` value that the
+    pre-fix code filtered out entirely."""
+    known = RegistryEntry(id="known@t", shape="vlm-chat", transport="openai-compat",
+                          base_url="http://k.invalid/v1", model="org/k", api_key_env=None,
+                          precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                          provenance="Test", release_date="2025-01-01")
+    unasserted = RegistryEntry(id="unasserted@t", shape="vlm-chat", transport="openai-compat",
+                               base_url="http://u.invalid/v1", model="org/u", api_key_env=None,
+                               precision="provider-default", weights_licence="mit",
+                               provider_tos_commercial="ok", provenance="Test",
+                               release_date="2025-01-01")
+    assert _section_mixed_precision_note([known]) is None
+    note = _section_mixed_precision_note([known, unasserted])
+    assert note is not None and "mixed precision" in note
+    all_unasserted_note = _section_mixed_precision_note([unasserted])
+    assert all_unasserted_note == "precision unasserted across all rows in this section"
+
+
+def test_full_report_all_unasserted_section_a_gets_distinct_note(tmp_path):
+    """End-to-end: a Section A built entirely from provider-default entries renders the distinct
+    all-unasserted note, not the "mixed precision" wording (which would misleadingly imply an
+    actual precision DIFFERENCE exists)."""
+    layout = _minimal_layout(tmp_path)
+    items = [{"question_id": f"q{i}", "source_file": f"doc_{i}", "domain": "test",
+             "question": "checked?", "capabilities": ["checkbox_state"],
+             "gold_dict": {"checked": True}} for i in range(2)]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    entries = []
+    for i, qid in enumerate(["q0", "q1"]):
+        entry_id = f"unasserted{i}@mock"
+        entries.append(RegistryEntry(id=entry_id, shape="vlm-chat", transport="openai-compat",
+                                     base_url=f"http://u{i}.invalid/v1", model=f"org/u{i}",
+                                     api_key_env=None, precision="provider-default",
+                                     weights_licence="mit", provider_tos_commercial="ok",
+                                     provenance="Test", release_date="2025-01-01"))
+        pk = parser_key(entry_id, STAGE1_CONDITION)
+        rec = {"qid": qid, "parser": pk, "source_file": qid.replace("q", "doc_"), "domain": "test",
+               "condition": STAGE1_CONDITION, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+               "image_sha": None, "resolved_provider": "ProviderA",
+               "answer": {"checked": True}, "field_matches": {"checked": True}, "match": True,
+               "error_class": "none"}
+        cpath = layout.cache_path(qid, pk)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps(rec))
+
+    md = build_markdown_report(layout, entries, iters=50)
+    section_a = md.split("## Section A")[1].split("## Baseline rows")[0]
+    assert "precision unasserted across all rows in this section" in section_a
+    assert "mixed precision" not in section_a
+
+
+# ── F7: local rows still render a real measured-latency median; cost stays "n/a" ───────────────
+
+def test_direct_cost_latency_local_row_renders_measured_median_latency():
+    local_entry = RegistryEntry(id="loc@local", shape="vlm-chat", transport="openai-compat",
+                                base_url="http://loc.invalid/v1", model="org/loc",
+                                api_key_env=None, precision="bf16", weights_licence="mit",
+                                provider_tos_commercial="ok", provenance="Test",
+                                release_date="2025-01-01", local=True)
+    rows = [{"latency_sec": 1.0}, {"latency_sec": 3.0}, {"latency_sec": 2.0}]
+    lat, cost = _direct_cost_latency(local_entry, rows)
+    assert lat == "2.00s"     # median of 1/2/3, not "n/a"
+    assert cost == "n/a"      # cost is still never fabricated for a local row
+
+
+def test_direct_cost_latency_local_row_with_no_latency_data_stays_na():
+    local_entry = RegistryEntry(id="loc2@local", shape="vlm-chat", transport="openai-compat",
+                                base_url="http://loc2.invalid/v1", model="org/loc2",
+                                api_key_env=None, precision="bf16", weights_licence="mit",
+                                provider_tos_commercial="ok", provenance="Test",
+                                release_date="2025-01-01", local=True)
+    lat, cost = _direct_cost_latency(local_entry, [])
+    assert lat == "n/a"
+    assert cost == "n/a"
+
+
+def test_transcription_cost_latency_local_row_renders_measured_median_latency(tmp_path):
+    layout = _minimal_layout(tmp_path)
+    local_entry = RegistryEntry(id="tloc@local", shape="transcriber", transport="openai-compat",
+                                base_url="http://tloc.invalid/v1", model="org/tloc",
+                                api_key_env=None, precision="bf16", weights_licence="mit",
+                                provider_tos_commercial="ok", provenance="Test",
+                                release_date="2025-01-01", local=True)
+    parser_dir = layout.parser_dir("tloc_local__cond")
+    parser_dir.mkdir(parents=True, exist_ok=True)
+    for stem, latency in [("doc_0", 1.0), ("doc_1", 3.0), ("doc_2", 2.0)]:
+        (parser_dir / f"{stem}.json").write_text(json.dumps({
+            "parser": "tloc_local__cond", "stem": stem, "ok": True, "page_count": 1,
+            "latency_sec": latency, "cost_usd": 0.01, "md_length": 20,
+            "elapsed_total": latency, "error": "",
+        }))
+    lat, cost = _transcription_cost_latency(layout, local_entry, "tloc_local__cond")
+    assert lat == "2.00s"    # median of 1/2/3, not "n/a"
+    assert cost == "n/a"     # cost is still never fabricated for a local row, even though
+                              # cost_usd sidecars exist on disk
 
 
 # ── M6: the separability appendix states its sign convention exactly once ────────────────────────

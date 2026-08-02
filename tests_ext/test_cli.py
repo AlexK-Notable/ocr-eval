@@ -230,6 +230,26 @@ def test_stamp_prefers_qa_bank_metadata_sidecar_over_trees_dir(tmp_path, monkeyp
     assert meta["revision_source"] == "hf_metadata"
 
 
+# ── F10: revision_source is backfilled on legacy meta that never got the key ───────────────────
+
+def test_revision_source_backfilled_on_legacy_meta_missing_the_key(tmp_path, monkeypatch):
+    """A run_meta.json written before `revision_source` existed (or otherwise hand-crafted
+    without it) — `dataset_revision`/`harness_commit` present and matching pins, but no
+    `revision_source` key at all — must gain the key on the NEXT successful preflight rather than
+    carrying the gap forever (the original stamping branch only sets it the first time
+    `dataset_revision` itself gets written)."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _fake_layout_with_one_good_page(tmp_path)
+    pins = yaml.safe_load(PINS_PATH.read_text())
+    (layout.root / "run_meta.json").write_text(json.dumps({
+        "dataset_revision": pins["dataset_revision"], "harness_commit": pins["harness_commit"]}))
+
+    result = runner.invoke(app, ["verify", "--run-dir", str(layout.root), "--skip-renders"])
+    assert result.exit_code == 0, result.output
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta["revision_source"] == "pins"   # no .cache/huggingface/ present in this fake layout
+
+
 # ── I1: warm PNG cache must not disarm the multi-page sweep ────────────────────────────────────
 
 def test_verify_catches_pdf_swapped_to_multi_page_despite_warm_cache(tmp_path, monkeypatch):
@@ -430,6 +450,78 @@ def _write_vlm_chat_registry(path: Path) -> None:
     }])
 
 
+def _make_direct_run_dir(tmp_path: Path) -> RunLayout:
+    """Unlike `_make_rescore_run_dir` (plain text only — fine there, since `rescore` never
+    renders), this PDF carries a filled rectangle so `ink_coverage` clears direct.py's blank-
+    render floor — needed here because these tests exercise the real `ocr-eval direct` render
+    path, not just cache-row rescoring."""
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 72), "Is question 1 checkbox marked?")
+    page.draw_rect(fitz.Rect(72, 100, 400, 400), fill=(0, 0, 0))
+    doc.save(layout.docs_dir / "doc_1.pdf")
+    bank = {"items": [{
+        "question_id": "q1", "source_file": "doc_1", "domain": "test",
+        "question": "Is question 1 checkbox marked?", "capabilities": ["checkbox_state"],
+        "gold_dict": {"a": True},
+        "response_format": "Return exactly: a=<boolean>",
+        "gold_answer": "a=true",
+    }]}
+    layout.bank_path.write_text(json.dumps(bank))
+    return layout
+
+
+def _write_vlm_chat_registry_with_url(path: Path, base_url: str) -> None:
+    _write_registry(path, [{
+        "id": "m1@mock", "shape": "vlm-chat", "transport": "openai-compat",
+        "base_url": base_url, "model": "org/m1", "api_key_env": None,
+        "precision": "bf16", "weights_licence": "mit", "provider_tos_commercial": "ok",
+        "provenance": "Test", "release_date": "2025-01-01",
+    }])
+
+
+# ── F3: a rerun (no --force) that only ever revisits cached rows must not hide cached errors ───
+
+def test_direct_cli_exits_2_on_rerun_over_cached_error_row(tmp_path, monkeypatch):
+    """A rerun with no --force never re-attempts a cached cell — including one that recorded an
+    error last time. Before F3, that error sat silently inside the aggregate `cached` count
+    forever; now `run_direct` breaks it out as `cached_error` and the CLI fails visibly."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_direct_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(responses=[{"status": 400, "message": "bad request"}]) as mock:
+        _write_vlm_chat_registry_with_url(registry_yaml, mock.base_url)
+        first = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
+                                    "--registry", str(registry_yaml), "-m", "m1@mock"])
+        assert first.exit_code == 2, first.output   # fresh error this run
+
+        second = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
+                                     "--registry", str(registry_yaml), "-m", "m1@mock"])
+    assert second.exit_code == 2, second.output
+    out = _plain(second.output).lower()
+    assert "cached error" in out
+    assert "--force" in out
+
+
+def test_direct_cli_exits_0_on_rerun_over_cached_ok_row(tmp_path, monkeypatch):
+    """Companion positive control: a rerun over a cleanly-cached ok row must stay exit 0 — F3's
+    cached_error gate must not fire on cached_ok."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_direct_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(reply_text='{"a": true}') as mock:
+        _write_vlm_chat_registry_with_url(registry_yaml, mock.base_url)
+        first = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
+                                    "--registry", str(registry_yaml), "-m", "m1@mock"])
+        assert first.exit_code == 0, first.output
+
+        second = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
+                                     "--registry", str(registry_yaml), "-m", "m1@mock"])
+    assert second.exit_code == 0, second.output
+
+
 def test_direct_dry_run_passthrough(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
     layout = _make_rescore_run_dir(tmp_path)
@@ -579,6 +671,58 @@ def test_parse_cli_produces_markdown_via_mock_server(tmp_path, monkeypatch):
     assert cond == TRANSCRIBER_CONDITION
 
 
+# ── F1: a parse whose "ok" transcripts are functionally empty must fail visibly, not silently ──
+
+def test_parse_cli_fails_on_trivial_transcripts(tmp_path, monkeypatch):
+    """A thinking-model-exhausted-its-budget transcript (or any other near-empty but `ok=true`
+    parse) must not sail through the plain n_fail gate — scoring it would spend one extractor
+    call per bank item against effectively no content. Simplest reproduction per the brief:
+    monkeypatch `run_parse` to return `ParseRecord`-shaped fakes directly."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="trivialparse@local")
+    parser_name = f"trivialparse_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    from realdoc_bench.evaluate.parse import ParseRecord
+
+    def fake_run_parse(layout_arg, parsers, **kwargs):
+        return [ParseRecord(parser_name, "doc_1", True, False, page_count=1, md_length=9)]
+
+    monkeypatch.setattr(parse_mod, "run_parse", fake_run_parse)
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", parser_name])
+    assert result.exit_code == 2
+    out = _plain(result.output)
+    assert "doc_1" in out
+    assert "1 transcript" in out
+
+
+def test_parse_cli_passes_on_transcripts_above_the_content_floor(tmp_path, monkeypatch):
+    """Positive control for the F1 gate: a transcript comfortably above the floor must not trip
+    it — exit 0, same as before F1 existed."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="realparse@local")
+    parser_name = f"realparse_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    from realdoc_bench.evaluate.parse import ParseRecord
+
+    def fake_run_parse(layout_arg, parsers, **kwargs):
+        return [ParseRecord(parser_name, "doc_1", True, False, page_count=1,
+                            md_length=200)]
+
+    monkeypatch.setattr(parse_mod, "run_parse", fake_run_parse)
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", parser_name])
+    assert result.exit_code == 0, result.output
+
+
 def test_parse_cli_rejects_unknown_parser_name(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
     layout = _make_transcriber_run_dir(tmp_path)
@@ -679,7 +823,7 @@ def test_parse_allow_partial_corpus_bypasses_corpus_check(tmp_path, monkeypatch)
         {"question_id": "q2", "source_file": "missing_doc", "gold_dict": {"a": 1}},
     ]}))
     registry_yaml = tmp_path / "registry.yaml"
-    with MockOpenAI(reply_text="hello") as mock:
+    with MockOpenAI(reply_text="hello world") as mock:   # > F1's content floor (16 chars/page)
         _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1",
                                                   entry_id="partialcorpus@local")
         parser_name = f"partialcorpus_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
@@ -710,7 +854,7 @@ def test_partial_corpus_flag_is_sticky_across_a_later_full_preflight(tmp_path, m
         {"question_id": "q1", "source_file": "present", "gold_dict": {"a": 1}},
     ]}))
     registry_yaml = tmp_path / "registry.yaml"
-    with MockOpenAI(reply_text="hello") as mock:
+    with MockOpenAI(reply_text="hello world") as mock:   # > F1's content floor (16 chars/page)
         _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1",
                                                   entry_id="stickytest@local")
         parser_name = f"stickytest_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"

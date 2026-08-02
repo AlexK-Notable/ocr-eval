@@ -170,18 +170,29 @@ class OpenAICompatVisionParser(VisionParserBase):
         lock-protected fallback `_call_page` uses when it runs on a page-worker thread that never
         primed `self._tl.providers` (page_concurrency>1 / RDB_PAGE_CONCURRENCY fan-out). Anything
         captured there is merged into `resolved_providers`, but the result is explicitly flagged
-        `provider_attribution: "degraded"` — under fan-out, `_fanout_providers` is shared across
-        WHATEVER documents happen to be concurrently fanning out pages at that moment, so per-
-        document precision is not guaranteed the way it is at the enforced page_concurrency=1."""
+        `provider_attribution: "degraded"`.
+
+        DISCLOSURE (corrects an understatement in the NEW-1 description above): contamination of
+        `_fanout_providers` is NOT limited to documents that are concurrently fanning out pages
+        "at that moment" — it also required both docs to fan out AND overlap in time, but the
+        drain below used to run only on the SUCCESS path (no `try`/`finally`). A document whose
+        `super().parse()` raised partway through fan-out left its already-captured providers
+        sitting in the shared set undrained; the NEXT document to drain it — even a later,
+        non-concurrent, non-fanning one — would silently inherit them. L2 fix: the drain now runs
+        in a `finally` block so a failed document's providers are cleared unconditionally and can
+        never leak into a later, unrelated document's result."""
         self._tl.providers = set()
-        result = super().parse(pdf_path, cache_dir=cache_dir)
-        providers = set(self._tl.providers)
-        degraded = False
-        with self._fanout_lock:
-            if self._fanout_providers:
-                providers |= self._fanout_providers
+        try:
+            result = super().parse(pdf_path, cache_dir=cache_dir)
+        finally:
+            # L2: drain _fanout_providers unconditionally — including when parse() raised — so a
+            # document whose fan-out failed never leaves residual providers for a LATER
+            # document's drain to inherit (see the DISCLOSURE above).
+            with self._fanout_lock:
+                fanout = set(self._fanout_providers)
                 self._fanout_providers.clear()
-                degraded = True
+        providers = set(self._tl.providers) | fanout
+        degraded = bool(fanout)
         if providers:
             raw = dict(result.raw or {})
             raw["resolved_providers"] = sorted(providers)

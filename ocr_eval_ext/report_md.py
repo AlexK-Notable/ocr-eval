@@ -165,15 +165,48 @@ def _row_label(pk: str, entry: RegistryEntry | None) -> str:
     return entry.id if entry is not None else f"{pk} (unregistered)"
 
 
+def _disambiguated_labels(groups: dict[str, _Group]) -> dict[str, str]:
+    """F4 (live-validation finding): when more than one parser key in ONE groups dict (Section A's
+    direct_groups, or Section B's section_b_groups) resolves to the SAME registry entry id —
+    e.g. the same vlm-chat entry direct-answered under two different condition hashes, the
+    live-reproduced case — plain `_row_label` (`entry.id`) collides across both rows and a reader
+    can no longer tell them apart in the table, detail bullets, or appendix.
+
+    Disambiguates by appending ` [cond <hash>]`, where `<hash>` is the parser key's own trailing
+    condition-hash segment (`vlm__<id>__<hash>` / `<safe_name>__<hash>` both end in exactly the
+    12-hex-char `condition_hash` output) — only for entries whose id appears more than once in
+    THIS dict. Unregistered rows (`entry is None`) already render a unique `{pk} (unregistered)`
+    label per key and never need disambiguation."""
+    id_counts: dict[str, int] = defaultdict(int)
+    for g in groups.values():
+        if g.entry is not None:
+            id_counts[g.entry.id] += 1
+    labels: dict[str, str] = {}
+    for pk, g in groups.items():
+        label = _row_label(pk, g.entry)
+        if g.entry is not None and id_counts[g.entry.id] > 1:
+            label = f"{label} [cond {pk.rsplit('__', 1)[-1]}]"
+        labels[pk] = label
+    return labels
+
+
 def _stamp_columns(entry: RegistryEntry | None) -> str:
-    """precision/licence/ToS/contaminated in one string. M2: a row whose parser key never
-    resolved to a registry entry renders "unknown (unregistered)" across all four — never blank,
-    never silently omitted."""
+    """precision/licence/ToS/contaminated/contract in one string. M2: a row whose parser key
+    never resolved to a registry entry renders "unknown (unregistered)" across all five — never
+    blank, never silently omitted.
+
+    F5: `contract` is `promptable`/`not-promptable` from `entry.promptable` — a pdf-direct
+    upload endpoint (e.g. `mistral-ocr@mistral`) accepts no prompt at all, which is a materially
+    different contract from a chat-style endpoint and deserves its own stamp rather than being
+    buried in free-text `tos_note`."""
     if entry is None:
         return ("precision: unknown (unregistered) · licence: unknown (unregistered) "
-                "· ToS: unknown (unregistered) · contaminated: unknown (unregistered)")
+                "· ToS: unknown (unregistered) · contaminated: unknown (unregistered) "
+                "· contract: unknown (unregistered)")
+    contract = "promptable" if entry.promptable else "not-promptable"
     return (f"precision: {_precision_label(entry)} · licence: {entry.weights_licence} "
-           f"· {_tos_stamp(entry)} · contaminated: {'yes' if entry.contaminated else 'no'}")
+           f"· {_tos_stamp(entry)} · contaminated: {'yes' if entry.contaminated else 'no'} "
+           f"· contract: {contract}")
 
 
 @dataclass
@@ -254,6 +287,39 @@ def _general_and_strict(rows_by_qid: dict[str, dict], items: list[dict],
                     if (rows_by_qid.get(it["question_id"]) or {}).get("match") is True)
     strict = q_correct / n_items if n_items else 0.0
     return general, strict
+
+
+def _upstream_construction_metrics(rows_by_qid: dict[str, dict]) -> tuple[float, float, int]:
+    """F2 (MERGE GATE): field%/question% using UPSTREAM's OWN scoring semantics — read straight
+    from each row's stored `field_matches`/`match` (upstream's `score_typed`/`deep_equal`
+    output, written at score time), with NO D7 re-scoring layered on top and NO acc-over-all-style
+    denominator expansion. Restricted to "ok" rows only (`_error_class_of(row) == "none"`) — an
+    error/missing row carries no `field_matches` to read.
+
+    THIS is the number the reproduction gate (`docs/superpowers/specs/table3-snapshot.md`) must
+    compare against the paper/README targets — never `_general_and_strict`'s D7-corrected
+    `general/field`/`strict/question` columns in the main Section B table, which is the RANKING
+    KEY for this report and diverges from upstream specifically on null-gold fields: upstream's
+    `deep_equal(None, None)` already scores a key-absent answer as correct (baked into
+    `field_matches` at write time — nothing to recompute here), while `field_outcomes` (D7)
+    overrides exactly that case to "incorrect" for the ranking key. On the full RealDoc-Bench bank
+    that's 188/3742 = 5.02% of all fields — comparing the WRONG columns against upstream's
+    published numbers can look like up to a ~5pp systematic gap that has nothing to do with the
+    model or harness under test."""
+    total_fields = correct_fields = 0
+    n_ok = question_correct = 0
+    for row in rows_by_qid.values():
+        if _error_class_of(row) != "none":
+            continue
+        fm = row.get("field_matches") or {}
+        total_fields += len(fm)
+        correct_fields += sum(1 for v in fm.values() if v)
+        n_ok += 1
+        if row.get("match") is True:
+            question_correct += 1
+    field_pct = correct_fields / total_fields if total_fields else 0.0
+    question_pct = question_correct / n_ok if n_ok else 0.0
+    return field_pct, question_pct, n_ok
 
 
 def _beats_majority(model_outcomes: list[FieldOutcome], majority_outcomes: list[FieldOutcome],
@@ -410,11 +476,15 @@ def _check_stale_renders(layout: RunLayout, rows: list[dict], render_cache: dict
 
 def _direct_cost_latency(entry: RegistryEntry | None, rows: list[dict]) -> tuple[str, str]:
     """Section A: sourced straight from the vlm__ cache rows' own usage/latency_sec (the same
-    fields `direct.py`'s `track()` reads). `local: true` always renders "n/a" for both — never a
-    fake $0.00 (rule carried from Task 6's max-spend review)."""
-    if entry is not None and entry.local:
-        return "n/a", "n/a"
+    fields `direct.py`'s `track()` reads).
+
+    F7: `local: true` still always renders "n/a" for COST — never a fake $0.00 (rule carried from
+    Task 6's max-spend review) — but LATENCY is real, locally-measured wall-clock time regardless
+    of serving cost, so it now renders the same median-of-`latency_sec` every other row gets."""
     latencies = [r["latency_sec"] for r in rows if isinstance(r.get("latency_sec"), int | float)]
+    lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
+    if entry is not None and entry.local:
+        return lat, "n/a"
     total_cost, any_cost = 0.0, False
     for r in rows:
         usage = r.get("usage") or {}
@@ -425,7 +495,6 @@ def _direct_cost_latency(entry: RegistryEntry | None, rows: list[dict]) -> tuple
         if cost is not None:
             total_cost += cost
             any_cost = True
-    lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
     cost = f"${total_cost:.4f}" if any_cost else "n/a"
     return lat, cost
 
@@ -443,28 +512,32 @@ def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
     is indistinguishable on disk from "confirmed free". Heuristically detected here: every sidecar
     read back is exactly `0.0` AND the registry entry (if resolved) carries no `pricing` — render
     "n/a (unpriced)", never a fabricated "$0.0000" that would misrepresent an unknown cost as a
-    confirmed one."""
-    if entry is not None and entry.local:
-        return "n/a", "n/a"
+    confirmed one.
+
+    F7: `local: true` still always renders "n/a" for COST, but LATENCY is measured wall-clock time
+    from the same per-stem `latency_sec` sidecar field every other row reads — read it BEFORE the
+    local short-circuit so a local transcriber's median latency renders instead of a blanket
+    "n/a"."""
     parser_dir = layout.parser_dir(parser_key)
-    if not parser_dir.exists():
-        return "n/a", "n/a"
     latencies: list[float] = []
     costs: list[float] = []
-    for meta_path in parser_dir.glob("*.json"):
-        if meta_path.name == "condition.json":     # sidecar, not a per-stem parse record
-            continue
-        try:
-            meta = json.loads(meta_path.read_text())
-        except Exception:
-            continue
-        if not meta.get("ok"):
-            continue
-        if isinstance(meta.get("latency_sec"), int | float):
-            latencies.append(meta["latency_sec"])
-        if isinstance(meta.get("cost_usd"), int | float):
-            costs.append(meta["cost_usd"])
+    if parser_dir.exists():
+        for meta_path in parser_dir.glob("*.json"):
+            if meta_path.name == "condition.json":     # sidecar, not a per-stem parse record
+                continue
+            try:
+                meta = json.loads(meta_path.read_text())
+            except Exception:
+                continue
+            if not meta.get("ok"):
+                continue
+            if isinstance(meta.get("latency_sec"), int | float):
+                latencies.append(meta["latency_sec"])
+            if isinstance(meta.get("cost_usd"), int | float):
+                costs.append(meta["cost_usd"])
     lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
+    if entry is not None and entry.local:
+        return lat, "n/a"
     if not costs:
         cost = "n/a"
     elif sum(costs) == 0.0 and (entry is None or not entry.pricing):
@@ -553,32 +626,48 @@ def _fmt_hallucination(null_block: dict) -> str:
 
 
 def _tos_stamp(entry: RegistryEntry) -> str:
+    """F5: an `ok`-commercial entry's `tos_note` is now rendered too (e.g. mistral-ocr@mistral's
+    "zero-retention by contract only" — a real caveat that doesn't rise to blocked/conditional
+    but is still worth surfacing, not just restated-and-buried in the registry comments). Every
+    branch truncates to the first 60 chars so one long note can't blow out a table row."""
+    note = f" — {entry.tos_note[:60]}" if entry.tos_note else ""
     if entry.provider_tos_commercial == "blocked":
-        note = f" — {entry.tos_note}" if entry.tos_note else ""
         return f"⚠ ToS: blocked{note}"
     if entry.provider_tos_commercial == "conditional":
-        note = f" — {entry.tos_note}" if entry.tos_note else ""
         return f"⚠ ToS: conditional{note}"
-    return "ToS: ok"
+    return f"ToS: ok{note}"
 
 
 def _precision_label(entry: RegistryEntry) -> str:
     return "unknown (not asserted)" if entry.precision == "provider-default" else entry.precision
 
 
-def _mixed_precision_note(known_precisions: set[str]) -> str | None:
-    if len(known_precisions) > 1:
+def _mixed_precision_note(precision_labels: set[str]) -> str | None:
+    """F6: `precision_labels` is a set of DISPLAY labels (`_precision_label` output), so
+    "unknown (not asserted)" is its own distinct value here — mixing a known precision with an
+    unasserted one is flagged as mixed too (a real ambiguity: the unasserted row's actual serving
+    precision could match or differ from the known ones, and nothing here can tell which). The
+    all-unasserted case is deliberately NOT folded into "mixed precision" — it renders a separate,
+    less alarming note instead (there is no known precision difference to warn about, just an
+    absence of any assertion at all)."""
+    if len(precision_labels) > 1:
         return (f"**mixed precision** in this section: models are served at different pinned "
-                f"precisions ({', '.join(sorted(known_precisions))}) — cross-model deltas may "
+                f"precisions ({', '.join(sorted(precision_labels))}) — cross-model deltas may "
                 f"reflect serving precision, not model quality alone.")
+    if precision_labels == {"unknown (not asserted)"}:
+        return "precision unasserted across all rows in this section"
     return None
 
 
 def _section_mixed_precision_note(entries: list[RegistryEntry | None]) -> str | None:
     """I4: the SAME mixed-precision caveat Section A gets, extracted so Section B carries it too
-    — a transcriber section mixing e.g. bf16 and fp8-vllm rows deserves the identical warning."""
-    known = {e.precision for e in entries if e is not None and e.precision != "provider-default"}
-    return _mixed_precision_note(known)
+    — a transcriber section mixing e.g. bf16 and fp8-vllm rows deserves the identical warning.
+
+    F6: the set is built from `_precision_label(e)`, not the raw `entry.precision` field, so a
+    provider-default entry contributes "unknown (not asserted)" as its own value instead of being
+    silently dropped from the comparison."""
+    labels = {_precision_label(e) for e in entries if e is not None}
+    return _mixed_precision_note(labels)
 
 
 def _error_classes_str(counts: dict[str, int]) -> str:
@@ -725,14 +814,25 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
 
     extractor_id = meta.get("extractor_id", "not yet scored")
 
+    # F4: precompute the disambiguated label for every row ONCE per section, so a live-
+    # reproduced entry (same registry id, two different condition hashes) renders distinguishable
+    # labels everywhere it appears — section tables, detail bullets, the appendix, and the
+    # calibration-pair lines below — instead of colliding on the bare `entry.id`.
+    direct_labels = _disambiguated_labels(direct_groups)
+    section_b_labels = _disambiguated_labels(section_b_groups)
+
     lines: list[str] = []
     lines += _build_header(meta, items)
-    lines += _build_section_a(direct_groups, vlm_data, stale_report)
+    lines += _build_section_a(direct_groups, vlm_data, stale_report, direct_labels)
     lines += _build_baselines(baselines, checkbox_fields, no_image_groups, vlm_data)
-    lines += _build_cross_shape_note(checkbox_items, blank_items, direct_groups, section_b_groups)
-    lines += _build_section_b(section_b_groups, section_b_data, extractor_id, layout)
+    lines += _build_cross_shape_note(checkbox_items, blank_items, direct_groups, section_b_groups,
+                                     direct_labels, section_b_labels)
+    lines += _build_section_b(section_b_groups, section_b_data, extractor_id, layout,
+                              section_b_labels)
+    lines += _build_reproduction_gate(section_b_groups, section_b_labels)
     lines += _build_separability_appendix(direct_groups, section_b_groups, vlm_data,
-                                          section_b_data, iters=iters, seed=seed, alpha=alpha)
+                                          section_b_data, direct_labels, section_b_labels,
+                                          iters=iters, seed=seed, alpha=alpha)
     lines += _build_staleness_section(staleness_warnings)
     lines += _build_stale_render_section(stale_report)
 
@@ -757,6 +857,10 @@ def _build_header(meta: dict, items: list[dict]) -> list[str]:
         f"Harness commit: {meta.get('harness_commit', 'unknown')}",
         f"Extractor: {meta.get('extractor_id', 'not yet scored')}",
         f"Renders verified: {meta.get('renders_verified', False)}",
+        # R-c: pymupdf renders the PDF pages this whole report's D3 STALE-RENDER check and every
+        # image_sha are computed against — stamped by `verify`'s full sweep (I2b), never
+        # re-derived here (this module never imports pymupdf directly).
+        f"pymupdf version: {meta.get('pymupdf_version', 'unknown')}",
         f"Bank items in this report: {len(items)}",
         "",
         "**Dataset licence: CC-BY-4.0** — Extend-AI/RealDoc-Bench. Figures reproduced/derived "
@@ -784,7 +888,8 @@ def _build_header(meta: dict, items: list[dict]) -> list[str]:
 
 
 def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict],
-                     stale_report: dict[str, dict[str, str]]) -> list[str]:
+                     stale_report: dict[str, dict[str, str]],
+                     labels: dict[str, str]) -> list[str]:
     lines = ["## Section A — Direct QA (vlm-chat)", ""]
     if not direct_groups:
         return [*lines, "_no vlm-chat rows in this run_", ""]
@@ -795,12 +900,11 @@ def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict]
              "acc-over-all | hallucination_rate | general/field | strict/question | beats "
              "majority |",
              "|---|---|---|---|---|---|---|---|"]
-    ordered = sorted(direct_groups, key=lambda k: _row_label(k, direct_groups[k].entry))
+    ordered = sorted(direct_groups, key=lambda k: labels[k])
     for pk in ordered:
         g = direct_groups[pk]
         m: RowMetrics = vlm_data[pk]["metrics"]
-        label = _row_label(pk, g.entry)
-        head = _incomplete_head(label, m.n_seen, m.n_expected)
+        head = _incomplete_head(labels[pk], m.n_seen, m.n_expected)
         pol = m.checkbox["polarity"]
         polarity = f"checked {_pct(pol['checked'].acc_over_all)} / unchecked {_pct(pol['unchecked'].acc_over_all)}"
         if pk in stale_report:
@@ -816,9 +920,8 @@ def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict]
     for pk in ordered:
         g = direct_groups[pk]
         m = vlm_data[pk]["metrics"]
-        label = _row_label(pk, g.entry)
         lines.append(
-            f"- **{label}** — {_stamp_columns(g.entry)} "
+            f"- **{labels[pk]}** — {_stamp_columns(g.entry)} "
             f"· providers seen: {', '.join(vlm_data[pk]['providers']) or '(none recorded)'} "
             f"· median latency: {vlm_data[pk]['latency']} "
             f"· realized cost: {vlm_data[pk]['cost']} "
@@ -850,21 +953,44 @@ def _build_baselines(baselines: dict, checkbox_fields: list[tuple],
 
 
 def _find_calibration_pairs(direct_groups: dict[str, _Group],
-                            section_b_groups: dict[str, _Group]) -> list[tuple[RegistryEntry, RegistryEntry]]:
+                            section_b_groups: dict[str, _Group]) -> list[tuple[str, str]]:
     """The registered direct-vs-two-stage calibration cell: one model registered under BOTH
     shapes (matched by the underlying `model` string — the same weights served the same way,
     just prompted differently). Unregistered vlm__ groups (entry=None) have no `.model` to match
-    against and are correctly excluded."""
-    vlm_entries = [g.entry for g in direct_groups.values() if g.entry is not None]
-    transcriber_entries = [g.entry for g in section_b_groups.values()
-                           if g.entry is not None and g.entry.transport == "openai-compat"]
-    return [(v, t) for v in vlm_entries for t in transcriber_entries
-            if v.model and t.model and v.model == t.model]
+    against and are correctly excluded.
+
+    F4: returns parser-KEY pairs `(v_pk, t_pk)`, not entry pairs — condition-hash disambiguation
+    means the SAME registry entry can now legitimately back more than one group in a dict (two
+    condition hashes for one entry), so matching/rendering must stay keyed on the parser key, not
+    collapse back onto the shared entry object. Deduped on `(v_pk, t_pk)` — a defensive, explicit
+    guard against ever rendering the exact same pair twice (dict keys are already unique, so this
+    is a no-op in practice, but a cheap one worth keeping now that the matching loop is written by
+    hand instead of a list comprehension over already-deduplicated entry lists)."""
+    pairs: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for v_pk, vg in direct_groups.items():
+        v = vg.entry
+        if v is None or not v.model:
+            continue
+        for t_pk, tg in section_b_groups.items():
+            t = tg.entry
+            if t is None or t.transport != "openai-compat" or not t.model:
+                continue
+            if v.model != t.model:
+                continue
+            key = (v_pk, t_pk)
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append(key)
+    return pairs
 
 
 def _build_cross_shape_note(checkbox_items: list[dict], blank_items: list[dict],
                             direct_groups: dict[str, _Group],
-                            section_b_groups: dict[str, _Group]) -> list[str]:
+                            section_b_groups: dict[str, _Group],
+                            direct_labels: dict[str, str],
+                            section_b_labels: dict[str, str]) -> list[str]:
     overlap = len({i["question_id"] for i in checkbox_items} & {i["question_id"] for i in blank_items})
     lines = [
         "## Cross-shape comparison note", "",
@@ -877,17 +1003,20 @@ def _build_cross_shape_note(checkbox_items: list[dict], blank_items: list[dict],
         "**Metric definitions:**", "", METRIC_DEFINITIONS, "",
     ]
     pairs = _find_calibration_pairs(direct_groups, section_b_groups)
-    for v, t in pairs:
-        lines.append(f"**Direct-vs-two-stage calibration pair detected:** `{v.id}` (Section A, "
-                     f"direct) vs `{t.id}` (Section B, transcribe-then-extract) — same "
-                     f"underlying model (`{v.model}`); see the separability appendix for the "
-                     f"paired delta between their rows.")
+    for v_pk, t_pk in pairs:
+        v = direct_groups[v_pk].entry
+        lines.append(f"**Direct-vs-two-stage calibration pair detected:** "
+                     f"`{direct_labels[v_pk]}` (Section A, direct) vs `{section_b_labels[t_pk]}` "
+                     f"(Section B, transcribe-then-extract) — same underlying model "
+                     f"(`{v.model}`); see the separability appendix for the paired delta between "
+                     f"their rows.")
         lines.append("")
     return lines
 
 
 def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[str, dict],
-                     extractor_id: str, layout: RunLayout) -> list[str]:
+                     extractor_id: str, layout: RunLayout,
+                     labels: dict[str, str]) -> list[str]:
     lines = ["## Section B — Transcribe-then-extract", "",
              f"_Cost/latency below describe the TRANSCRIPTION LEG only — the extractor "
              f"(`{extractor_id}`) call is a separate, shared cost not attributed per-row._", ""]
@@ -901,13 +1030,12 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
              "general/field | strict/question | transcript-recall | input | beats majority |",
              "|---|---|---|---|---|---|---|---|---|"]
     ordered = sorted(section_b_groups,
-                     key=lambda pk: (section_b_groups[pk].entry is None,
-                                     _row_label(pk, section_b_groups[pk].entry)))
+                     key=lambda pk: (section_b_groups[pk].entry is None, labels[pk]))
     for pk in ordered:
         g = section_b_groups[pk]
         d = section_b_data[pk]
         m: RowMetrics = d["metrics"]
-        label = f"{_row_label(pk, g.entry)} + extractor {extractor_id}"
+        label = f"{labels[pk]} + extractor {extractor_id}"
         head = _incomplete_head(label, m.n_seen, m.n_expected)
         if d["same_family"]:
             head += " (same-family scoring)"
@@ -924,9 +1052,8 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
         g = section_b_groups[pk]
         d = section_b_data[pk]
         m = d["metrics"]
-        label = _row_label(pk, g.entry)
         detail = [
-            f"- **{label}**",
+            f"- **{labels[pk]}**",
             _stamp_columns(g.entry),
             "provider: n/a (not persisted)",     # D4/Task-8 note: upstream never persists
                                                   # ParseResult.raw
@@ -943,18 +1070,50 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
     return lines
 
 
-def _appendix_label(pk: str, entry: RegistryEntry | None, m: RowMetrics) -> str:
+def _build_reproduction_gate(section_b_groups: dict[str, _Group],
+                             labels: dict[str, str]) -> list[str]:
+    """F2 (MERGE GATE): the reproduction gate (paper Table 3 / README targets,
+    `docs/superpowers/specs/table3-snapshot.md`) must compare against THIS block, never the
+    ranking-key `general/field`/`strict/question` columns in the Section B table above — those
+    two constructions diverge on null-gold fields (D7 ruling; see `_upstream_construction_metrics`
+    docstring for the exact size of the gap)."""
+    lines = ["## Reproduction gate (upstream construction)", "",
+             "_upstream construction — for the reproduction gate only; not the ranking key._ "
+             "Recomputed straight from each row's stored `field_matches`/`match` (upstream's own "
+             "`score_typed`/`deep_equal` semantics — a null-gold key-absent answer counts as "
+             "upstream scored it), over ok rows only, with NO D7 re-scoring applied. Point the "
+             "paper/README reproduction-target comparison at THIS table, never at the "
+             "`general/field`/`strict/question` columns above.", ""]
+    if not section_b_groups:
+        return [*lines, "_no transcriber rows in this run_", ""]
+    lines += ["| row | field% (upstream) | question% (upstream) | n (ok rows) |",
+             "|---|---|---|---|"]
+    ordered = sorted(section_b_groups,
+                     key=lambda pk: (section_b_groups[pk].entry is None, labels[pk]))
+    for pk in ordered:
+        g = section_b_groups[pk]
+        field_pct, question_pct, n_ok = _upstream_construction_metrics(g.rows_by_qid)
+        lines.append(f"| {labels[pk]} | {_pct(field_pct)} | {_pct(question_pct)} | {n_ok} |")
+    lines.append("")
+    return lines
+
+
+def _appendix_label(label: str, m: RowMetrics) -> str:
     """I5: any row group whose n_seen falls short of n_expected carries the SAME `[INCOMPLETE
     k/N]` marker in the separability appendix that its leaderboard row carries — a paired delta
-    against a partial matrix must be visibly partial too, not just quietly discounted."""
-    base = _row_label(pk, entry)
+    against a partial matrix must be visibly partial too, not just quietly discounted.
+
+    F4: takes the already-disambiguated label (from `_disambiguated_labels`) rather than
+    re-deriving it from `_row_label(pk, entry)` — so a live-reproduced entry's `[cond <hash>]`
+    suffix carries into the appendix instead of colliding back down to the bare `entry.id`."""
     if m.n_seen < m.n_expected:
-        return f"{base} [INCOMPLETE {m.n_seen}/{m.n_expected}]"
-    return base
+        return f"{label} [INCOMPLETE {m.n_seen}/{m.n_expected}]"
+    return label
 
 
 def _build_separability_appendix(direct_groups: dict[str, _Group], section_b_groups: dict[str, _Group],
                                  vlm_data: dict[str, dict], section_b_data: dict[str, dict],
+                                 direct_labels: dict[str, str], section_b_labels: dict[str, str],
                                  *, iters: int, seed: int, alpha: float) -> list[str]:
     lines = ["## Separability appendix", "",
              "Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section "
@@ -962,7 +1121,7 @@ def _build_separability_appendix(direct_groups: dict[str, _Group], section_b_gro
              "cross-shape note above). Sign convention: Δ = first label minus second label (a "
              "positive Δ favors the FIRST name listed in each comparison).", ""]
     section_a_items = [
-        (_appendix_label(pk, direct_groups[pk].entry, vlm_data[pk]["metrics"]),
+        (_appendix_label(direct_labels[pk], vlm_data[pk]["metrics"]),
          vlm_data[pk]["metrics"].checkbox_outcomes)
         for pk in direct_groups
     ]
@@ -970,7 +1129,7 @@ def _build_separability_appendix(direct_groups: dict[str, _Group], section_b_gro
     lines += _pairwise_separability(section_a_items, iters=iters, seed=seed, alpha=alpha) or ["_fewer than 2 rows_"]
     lines.append("")
     section_b_items = [
-        (_appendix_label(pk, section_b_groups[pk].entry, section_b_data[pk]["metrics"]),
+        (_appendix_label(section_b_labels[pk], section_b_data[pk]["metrics"]),
          section_b_data[pk]["metrics"].checkbox_outcomes)
         for pk in section_b_groups
     ]

@@ -127,6 +127,25 @@ def test_ci_width_increases_as_alpha_shrinks():
     lo05, hi05 = cluster_bootstrap_ci(outs, seed=9, alpha=0.05)
     lo20, hi20 = cluster_bootstrap_ci(outs, seed=9, alpha=0.20)
     assert (hi05 - lo05) > (hi20 - lo20)
+    # [L-c] The width comparison alone passes a single-tail mutant (one that ignores alpha on
+    # just the lo OR just the hi percentile, while still moving the other enough to widen the
+    # overall interval) — pin BOTH tails moving in the expected direction independently.
+    assert lo05 < lo20
+    assert hi05 > hi20
+
+
+def test_paired_delta_ci_width_increases_as_alpha_shrinks():
+    # [L-c] Same two-sided-alpha assertion as above, for `paired_delta_ci` — a distinct
+    # percentile call site from `cluster_bootstrap_ci`'s, so this is needed to kill a
+    # paired-function-specific single-tail/hardcoded-percentile mutant that the
+    # `cluster_bootstrap_ci` test above cannot reach.
+    a = [mk(f"d{i}", "correct" if i % 2 else "incorrect") for i in range(40)]
+    b = [mk(f"d{i}", "correct" if i % 3 else "incorrect") for i in range(40)]
+    lo05, hi05 = paired_delta_ci(a, b, seed=9, alpha=0.05)
+    lo20, hi20 = paired_delta_ci(a, b, seed=9, alpha=0.20)
+    assert (hi05 - lo05) > (hi20 - lo20)
+    assert lo05 < lo20
+    assert hi05 > hi20
 
 
 def test_invalid_alpha_raises():

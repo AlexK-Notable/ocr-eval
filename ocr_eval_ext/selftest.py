@@ -55,7 +55,12 @@ FIXTURES: list[dict] = [
      "answer": {"notes": "The slow green fox walked"}, "expect_match": False},
     # Mixed boolean+text template: confirms build_template/widen_types_from_gold keep per-field
     # typing distinct (the boolean field renders <boolean>, not <string>) and string_keys returns
-    # exactly {"name"} — not "{}" (collapsed template) and not {"active", "name"} (over-included).
+    # exactly {"name"} — not "{}" (collapsed template). NOTE (correcting an earlier overclaim):
+    # this fixture does NOT discriminate a string_keys over-inclusion bug (e.g. {"active",
+    # "name"}) — fuzzy_equal() calls deep_equal() first and short-circuits True on two equal
+    # Python booleans regardless of whether "active" wrongly ended up fuzzy-eligible, so an
+    # over-included "active" key is silently absorbed and expect_match stays True either way.
+    # Over-inclusion specifically is NOT killed by any fixture here.
     {"kind": "mixed_boolean_text_template_keeps_types_distinct",
      "rf": "Return exactly: active=<boolean>; name=<text>",
      "gold": {"active": True, "name": "Maria Isabella Rodriguez Torres"},

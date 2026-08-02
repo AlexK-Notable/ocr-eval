@@ -29,6 +29,11 @@ file's gate rule before step 4 or step 6 below. Registry entries referenced by i
   `selftest` or `preflight`, neither of which touches a run dir or calls `_preflight` at all)
   fails closed on this automatically; no manual check needed beyond making sure you haven't
   checked out something unrelated.
+- **Harness-pin ruling (L-f, carried from Task 7):** a deliberate re-pin of `harness_commit` in
+  `configs/pins.yaml` bricks every already-stamped run dir BY DESIGN (`_preflight`'s
+  `harness_commit` cross-check fails closed the instant the pin changes) — this is not a bug to
+  route around; migrate by starting a new run dir at the new pin, or hand-edit that run dir's
+  `run_meta.json` `harness_commit` field if you specifically intend to carry it forward.
 
 ## The numbered sequence
 
@@ -72,10 +77,15 @@ The `-p` argument above is the raw upstream parser name, but `report.md` labels 
 Section B row by the RESOLVED REGISTRY id instead (`report_md.py`'s `_row_label` renders
 `entry.id`, never the parser key) — after step 9 builds `report.md`, look for the
 **`gemini-3.5-flash@google`** row (`configs/registry.yaml`'s entry with
-`upstream_parser: gemini_3_5_flash`), not a literal `gemini_3_5_flash` string, and compare its
-`general/field` / `strict/question` columns against
+`upstream_parser: gemini_3_5_flash`), not a literal `gemini_3_5_flash` string, under the
+**"Reproduction gate (upstream construction)"** block, and compare its `field% (upstream)` /
+`question% (upstream)` columns against
 [`table3-snapshot.md`](superpowers/specs/table3-snapshot.md)'s README row (89.3% / 82.2%) —
-investigate before spending on any hosted candidate below if either is outside ±2.5pp.
+investigate before spending on any hosted candidate below if either is outside ±2.5pp. **Never**
+compare the Section B leaderboard table's `general/field`/`strict/question` columns here instead
+— those are this report's ranking key, scored under this harness's stricter D7 null-gold rule, and
+diverge from upstream's own (README-published) numbers by up to ~5pp on null-gold fields alone
+(see `table3-snapshot.md`'s D7 divergence note).
 
 **5. Hosted OCR endpoint** (needs `MISTRAL_API_KEY`; upstream parser name is `mistral_ocr_4` — NOT
 `mistral_ocr`)
@@ -109,8 +119,11 @@ uv run ocr-eval parse --run-dir runs/stage1 -p dots-ocr_local-vllm__<cond>
 uv run ocr-eval score --run-dir runs/stage1 -p dots-ocr_local-vllm__<cond> --limit 20   # smoke first
 uv run ocr-eval score --run-dir runs/stage1 -p dots-ocr_local-vllm__<cond>              # full corpus
 ```
-`dots-ocr@local-vllm`'s row is the **open-weight reproduction check** — compare its
-`report.md` row (after step 9) against
+`dots-ocr@local-vllm`'s row is the **open-weight reproduction check** — after step 9 builds
+`report.md`, compare its row under the **"Reproduction gate (upstream construction)"** block
+(`field% (upstream)` / `question% (upstream)`), **not** the Section B leaderboard table's
+`general/field`/`strict/question` columns (ranking key, D7-diverged — see
+`table3-snapshot.md`'s D7 divergence note), against
 [`table3-snapshot.md`](superpowers/specs/table3-snapshot.md) §1's `dots.ocr` entry
 (70.6±3.6 / 61.4±3.5). Setup caveats apply: this is our serving stack (vLLM, this GPU, this
 `--max-model-len`), not the paper's — document any residual gap in `report.md` rather than
@@ -148,7 +161,10 @@ uv run ocr-eval report --run-dir runs/stage1
 ```
 → `runs/stage1/report.md`. Renames any pre-existing `dashboard.html` to
 `dashboard-upstream-UNSEGREGATED.html` (see Warnings). This is the point to actually do the
-step-4 and step-6 snapshot comparisons called out above.
+step-4 and step-6 snapshot comparisons called out above. R-c: the report header also prints
+`pymupdf version: <...>` straight from `run_meta.json`'s `pymupdf_version` (stamped by `verify`'s
+full sweep, step 3) — worth checking alongside the D3 STALE-RENDER section if a run's renders ever
+need to be reproduced on a different machine.
 
 **10. Cache-hit rerun (DoD #5)** — re-run step 7's exact `--max-spend` command verbatim:
 ```
@@ -292,6 +308,10 @@ uv run ocr-eval verify --run-dir runs/stage1 --skip-renders   # cardinality + fa
                                                                 # already verified in step 3, no
                                                                 # need to re-sweep 581 PDFs here
 uv run ocr-eval selftest --extractor              # green pass
+grep '"renders_verified": true' runs/stage1/run_meta.json      # R-a: UNPIPED — read the tool's
+                                                                # own pass/fail line directly, per
+                                                                # lrn-ea833a5b (never trust an exit
+                                                                # code read downstream of a pipe)
 ```
 Fail-closed demonstration: temporarily flip one `expect_match` (or `gold`) value in
 `ocr_eval_ext/selftest.py`'s `FIXTURES`/`EXTRACTOR_FIXTURES`, re-run `uv run ocr-eval selftest
@@ -318,17 +338,24 @@ Gemini, ±2.5pp; §1 for dots.ocr, CI-overlap-with-documented-caveats — see th
 **3. ≥3 hosted VLM rows, ≥1 local specialist (BF16), ≥1 hosted OCR endpoint, frontier anchor,
 calibration pair.**
 ```
-grep -E "qwen3-vl-8b@openrouter \||qwen3\.5-9b@openrouter \||qwen3-vl-32b@openrouter \|" \
-  runs/stage1/report.md   # 3 hosted VLM — anchored on the " |" table-cell delimiter so this
-                           # excludes the qwen3-vl-8b@openrouter-transcriber calibration row
-                           # (Section B) and the "calibration pair detected" prose line, both of
-                           # which contain "qwen3-vl-8b@openrouter" as a substring but never
-                           # followed directly by " |"
-grep "glm-ocr@local-vllm\|dots-ocr@local-vllm" runs/stage1/report.md                                    # local specialist (BF16)
-grep "mistral-ocr@mistral" runs/stage1/report.md                                                        # hosted OCR endpoint
-grep "gemini-3.5-flash@google-vlmchat" runs/stage1/report.md                                            # frontier ceiling anchor
-grep "calibration pair detected" runs/stage1/report.md                                                  # calibration pair
+grep -E "^- \*\*qwen3-vl-8b@openrouter\*\* —|^- \*\*qwen3\.5-9b@openrouter\*\* —|^- \*\*qwen3-vl-32b@openrouter\*\* —" \
+  runs/stage1/report.md   # 3 hosted VLM (Section A, direct-QA detail bullets: `report_md.py`'s
+                           # `_build_section_a` renders `- **<id>** — <stamp>...`)
+grep -E "^- \*\*gemini-3\.5-flash@google-vlmchat\*\* —" runs/stage1/report.md   # frontier ceiling anchor (also Section A)
+grep -E "^- \*\*(glm-ocr@local-vllm|dots-ocr@local-vllm)\*\* ·" runs/stage1/report.md   # local
+                           # specialist (BF16) — Section B (transcribe-then-extract) detail
+                           # bullets use a DIFFERENT separator than Section A's (`_build_section_b`
+                           # joins its bullet fields with " · ", not " — ") — `- **<id>** · <stamp>...`
+grep -E "^- \*\*mistral-ocr@mistral\*\* ·" runs/stage1/report.md   # hosted OCR endpoint (also Section B)
+grep "calibration pair detected" runs/stage1/report.md            # calibration pair
 ```
+R-b: every grep above is anchored on the STABLE detail-bullet line (`- **<id>** ` + section-specific
+separator), never a table cell. A table cell's leading text can carry an `[INCOMPLETE k/N]` marker
+or (F4) a `[cond <hash>]` disambiguation suffix before its closing `" |"`, either of which breaks a
+naive `"<id> |"`-anchored grep; the bullet line's closing `**` is unaffected by both and still
+excludes e.g. the `qwen3-vl-8b@openrouter-transcriber` calibration row and the "calibration pair
+detected" prose line, both of which contain `qwen3-vl-8b@openrouter` as a substring but are never
+followed directly by the closing `**`.
 
 **4. Baselines + CIs + polarity split + shape segregation present in `report.md`.**
 ```
@@ -342,7 +369,10 @@ grep -E "\[[0-9]+\.[0-9]%, [0-9]+\.[0-9]%\]" runs/stage1/report.md | head -3   #
 uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@openrouter -m qwen3.5-9b@openrouter \
   -m qwen3-vl-32b@openrouter -m gemini-3.5-flash@google-vlmchat --max-spend 40
 ```
-(step 10 above — confirm the printed `cached` count equals total cells, `ok`/`error` both `0`).
+(step 10 above — confirm the printed `cached` count equals total cells, `ok`/`error` both `0`, AND
+`cached_error` is `0` — F3: a non-zero `cached_error` means a previous run left error cells behind
+that this plain rerun never re-attempted; `direct` now exits 2 in that case with a message to
+rerun with `--force` to re-attempt them).
 
 **6. Keys were rotated before first hosted call.**
 ```

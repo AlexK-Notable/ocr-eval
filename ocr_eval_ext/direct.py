@@ -216,12 +216,27 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
         cond = {**cond, "no_image": True}
 
     cells = []
+    # F3: tally existing (skipped-because-cached) cache rows into cached_ok/cached_error by their
+    # own error_class (none vs anything else) WHILE building the cell list — cheap (one read per
+    # already-on-disk row we're about to skip anyway) and gives `run_direct`'s caller visibility
+    # into "cached" no longer meaning "cached and fine": a prior run's error cells silently sit
+    # there forever otherwise, since a plain rerun without --force never re-attempts them.
+    cached_ok = cached_error = 0
     for e in entries:
         pk = parser_key(e.id, cond)
         for it in items:
             cpath = layout.cache_path(it["question_id"], pk)
             if force or not cpath.exists():
                 cells.append((e, it, cpath))
+            else:
+                try:
+                    existing_error_class = json.loads(cpath.read_text()).get("error_class")
+                except Exception:
+                    existing_error_class = "unknown"   # unreadable/corrupt row — never "ok" by default
+                if existing_error_class == "none":
+                    cached_ok += 1
+                else:
+                    cached_error += 1
 
     if dry_run:
         # ESTIMATE (labelled so in output): ~1,600 image tokens/page + prompt ~400 in, ~120 out.
@@ -246,7 +261,11 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                                  "never silently folded in as $0"}
 
     png_cache = layout.root / "docs_png"
-    summary = {"ok": 0, "error": 0, "cached": len(entries) * len(items) - len(cells)}
+    # "cached" is kept as cached_ok + cached_error for compat with every caller/test that reads
+    # the aggregate count alone (e.g. the DoD #5 cache-hit rerun check) — cached_ok/cached_error
+    # are the new, more precise breakdown `direct`'s CLI wrapper uses to fail visibly on error cells.
+    summary = {"ok": 0, "error": 0, "cached": cached_ok + cached_error,
+              "cached_ok": cached_ok, "cached_error": cached_error}
     spend = 0.0
     clients = {}
     for e in entries:
@@ -263,6 +282,13 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
     hosted_cells = [c for c in cells if not c[0].local]
 
     def do(cell) -> tuple[RegistryEntry, dict]:
+        """F11: the catch-all is split by WHICH step failed. `_render_page`/`ink_coverage` are the
+        only two calls that can genuinely fail because of the DOCUMENT (missing/corrupt PDF,
+        multi-page swap, blank scan) — those, and only those, get `error_class: "render_error"`.
+        Anything else that goes wrong in this cell (prompt/template construction, `_one`'s own
+        request plumbing raising instead of returning a row, ...) is a HARNESS bug, not a
+        render/document problem, and gets `error_class: "harness_error"` instead — conflating the
+        two used to make every non-render failure look like a bad scan."""
         e, it, cpath = cell
         base = {
             "qid": it.get("question_id"), "parser": parser_key(e.id, cond),
@@ -278,16 +304,21 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                 # "nothing was sent" rather than reporting the hash of an image the model never saw
                 rec = _one(clients[e.id], e, it, None, cond, base, prompt)
             else:
-                png = _render_page(layout, it["source_file"], cond, png_cache)
-                if ink_coverage(png) < 0.001:
-                    rec = {**base, "error": "blank render", "error_class": "render_error"}
+                try:
+                    png = _render_page(layout, it["source_file"], cond, png_cache)
+                    blank = ink_coverage(png) < 0.001
+                except Exception as render_exc:
+                    rec = {**base, "error": str(render_exc)[:300], "error_class": "render_error"}
                 else:
-                    dims = Image.open(io.BytesIO(png)).size
-                    base = {**base, "image_sha": hashlib.sha256(png).hexdigest(),
-                            "image_px": list(dims), "image_bytes": len(png)}
-                    rec = _one(clients[e.id], e, it, png, cond, base, prompt)
-        except Exception as exc:  # one bad doc costs one cell, never the run
-            rec = {**base, "error": str(exc)[:300], "error_class": "render_error"}
+                    if blank:
+                        rec = {**base, "error": "blank render", "error_class": "render_error"}
+                    else:
+                        dims = Image.open(io.BytesIO(png)).size
+                        base = {**base, "image_sha": hashlib.sha256(png).hexdigest(),
+                                "image_px": list(dims), "image_bytes": len(png)}
+                        rec = _one(clients[e.id], e, it, png, cond, base, prompt)
+        except Exception as exc:  # anything past render/ink-coverage: a harness bug, not the doc
+            rec = {**base, "error": str(exc)[:300], "error_class": "harness_error"}
         _atomic_write_json(cpath, rec)
         return e, rec
 

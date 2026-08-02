@@ -394,3 +394,57 @@ def test_page_fanout_never_crashes_and_flags_degraded_attribution(tmp_path):
     assert set(result.raw["resolved_providers"]) == {"ProviderA", "ProviderB"}
     assert result.raw["provider_attribution"] == (
         "degraded (page fan-out; cross-document attribution not guaranteed)")
+
+
+# ── L2: the fan-out drain must run in try/finally, or a failed document leaks providers ────────
+
+def test_page_fanout_failed_document_never_leaks_providers_into_next_document(tmp_path):
+    """L2 (parked from Task 8, closed in the final review wave): before this fix, the
+    `_fanout_providers` drain in `parse()` only ran on the SUCCESS path — a document that raised
+    partway through fan-out left its already-captured provider(s) sitting in the shared,
+    per-instance `_fanout_providers` set forever. The NEXT `parse()` call on that SAME instance
+    (upstream `run_parse` shares one instance across every document) would then silently inherit
+    them via its own drain, even though it is a completely separate, non-concurrent document.
+
+    Construct exactly that on one `FanoutParser` instance: doc A has 2 pages under
+    `page_concurrency=4` — one page succeeds (captures "ProviderLeak" via the page-worker-thread
+    fallback set, since a page-worker thread never primes `self._tl.providers`), the other 400s
+    permanently, so `doc A`'s `parse()` call raises overall. `ThreadPoolExecutor.__exit__`
+    (`shutdown(wait=True)`) still waits for BOTH page calls to finish before the exception
+    propagates, so the successful page's capture into `_fanout_providers` is guaranteed to have
+    already happened by the time doc A's `parse()` raises. Doc B is then a single-page,
+    non-fanning document parsed by the SAME instance — it must show ONLY its own provider."""
+    pdf_a = tmp_path / "a.pdf"
+    doc = fitz.open()
+    doc.new_page(width=200, height=200)
+    doc.new_page(width=200, height=200)
+    doc.save(pdf_a)
+    pdf_b = tmp_path / "b.pdf"
+    doc = fitz.open()
+    doc.new_page(width=200, height=200)
+    doc.save(pdf_b)
+
+    class FanoutParser(OpenAICompatVisionParser):
+        page_concurrency = 4
+
+    responses = [
+        {"body": {"id": "1", "model": "m", "provider": "ProviderLeak",
+                  "choices": [{"message": {"role": "assistant", "content": "page ok"}}],
+                  "usage": {"prompt_tokens": 1, "completion_tokens": 1}}},
+        {"status": 400, "message": "boom"},
+        {"body": {"id": "2", "model": "m", "provider": "ProviderB",
+                  "choices": [{"message": {"role": "assistant", "content": "page ok"}}],
+                  "usage": {"prompt_tokens": 1, "completion_tokens": 1}}},
+    ]
+    from openai import APIStatusError
+
+    with MockOpenAI(responses=responses) as mock:
+        p = FanoutParser(base_url=mock.base_url, model="org/m")
+        with pytest.raises(APIStatusError):
+            p.parse(pdf_a)   # one page succeeds (captures ProviderLeak), one 400s permanently
+                              # -> the whole document raises
+
+        result_b = p.parse(pdf_b)   # SAME instance, a later, unrelated, non-fanning document
+
+    assert result_b.raw["resolved_providers"] == ["ProviderB"]
+    assert "provider_attribution" not in (result_b.raw or {})

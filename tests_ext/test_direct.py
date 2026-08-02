@@ -235,6 +235,76 @@ def test_run_direct_rejects_entry_missing_base_url(tmp_path):
         run_direct(layout, [bad])
 
 
+# ── F3: cached rows are tallied into cached_ok/cached_error while building the cell list ───────
+
+def test_run_direct_tallies_cached_ok_and_cached_error(tmp_path):
+    layout = make_multi_item_run_dir(tmp_path, 2)
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    ok_row = {"qid": "q0", "parser": pk, "answer": {"a": True},
+              "field_matches": {"a": True}, "match": True, "error_class": "none"}
+    err_row = {"qid": "q1", "parser": pk, "error": "boom", "error_class": "api_error"}
+    for qid, rec in [("q0", ok_row), ("q1", err_row)]:
+        cpath = layout.cache_path(qid, pk)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps(rec))
+
+    with MockOpenAI() as mock:
+        summary = run_direct(layout, [entry(mock.base_url)])   # no --force: both cells are cached
+
+    assert mock.requests == []                # neither cell was re-attempted
+    assert summary["cached_ok"] == 1
+    assert summary["cached_error"] == 1
+    assert summary["cached"] == 2              # kept as the sum, for callers reading it alone
+
+
+def test_run_direct_cached_error_tally_treats_corrupt_row_as_error_not_ok(tmp_path):
+    layout = make_run_dir(tmp_path)
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    cpath = layout.cache_path("q1", pk)
+    cpath.parent.mkdir(parents=True, exist_ok=True)
+    cpath.write_text("{not valid json")
+
+    with MockOpenAI() as mock:
+        summary = run_direct(layout, [entry(mock.base_url)])
+
+    assert mock.requests == []
+    assert summary["cached_ok"] == 0
+    assert summary["cached_error"] == 1
+
+
+# ── F11: catch-all split — only _render_page/ink_coverage failures are render_error ────────────
+
+def test_harness_error_when_scoring_raises_after_a_good_render(tmp_path, monkeypatch):
+    """F11: a failure AFTER a perfectly good render/ink-coverage check (here, `score_typed` inside
+    `_one` raising) is a harness bug, not a document/render problem — it must land as
+    `error_class: "harness_error"`, never the `render_error` bucket that a genuinely bad scan
+    gets."""
+    import ocr_eval_ext.direct as direct_mod
+
+    layout = make_run_dir(tmp_path)
+    monkeypatch.setattr(direct_mod, "score_typed",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("scorer exploded")))
+    with MockOpenAI(reply_text='{"a": true}') as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "harness_error"
+    assert "scorer exploded" in rec["error"]
+
+
+def test_render_error_still_used_for_a_genuine_render_failure(tmp_path):
+    """Positive control for the F11 split: a document whose PDF doesn't exist at all (the
+    original catch-all's canonical case) must still land as `error_class: "render_error"`, not
+    the new `harness_error` bucket."""
+    layout = make_run_dir(tmp_path)
+    (layout.docs_dir / "doc_1.pdf").unlink()   # _render_page can no longer find the source PDF
+    with MockOpenAI(reply_text='{"a": true}') as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "render_error"
+
+
 def test_no_image_row_has_null_image_fields_and_distinct_cache_key(tmp_path):
     layout = make_run_dir(tmp_path)
     with MockOpenAI() as mock:

@@ -113,7 +113,9 @@ def test_direct_to_report_seam_with_asymmetric_gold(tmp_path):
         # order to bank-item order so each scripted reply lands on the item it was written for.
         summary = run_direct(layout, [entry], workers=1)
 
-    assert summary == {"ok": 2, "error": 0, "cached": 0}
+    # F3: summary now also breaks "cached" out into cached_ok/cached_error — both 0 here since
+    # neither cell was cached at all (a fresh run, no pre-existing rows).
+    assert summary == {"ok": 2, "error": 0, "cached": 0, "cached_ok": 0, "cached_error": 0}
     assert len(mock.requests) == 2       # exactly one call per bank item, no network beyond mock
 
     # Both cache rows landed, both correct, against their OWN (differing) gold — proves this

@@ -7,7 +7,8 @@
 #   - Public announcements (web search) for closed models with no HF card.
 #   - gate3-conclusion-ranking.md (provider ToS findings, referenced inline where used).
 #
-# Corrections applied to the task-2-brief.md seed's month-level placeholders/guesses:
+# Corrections applied to the original seed data's month-level placeholders/guesses (re-verified
+# against the sources listed above, 2026-08-02):
 #   - qwen3-vl-8b-instruct, qwen3-vl-32b-instruct, qwen3.5-9b release dates corrected to
 #     exact HF createdAt.
 #   - dots.ocr HF id redirect-corrected: rednote-hilab/dots.ocr -> dots-studio/dots.ocr
@@ -144,7 +145,13 @@
   precision: provider-default
   weights_licence: closed
   provider_tos_commercial: ok
-  tos_note: "PDF-upload endpoint (pdf-direct label); no prompt accepted"
+  tos_note: "zero-retention by contract only (gate3); PDF-upload endpoint, no prompt accepted"
+                                        # F5/ledger T2-N3: the previous note only restated
+                                        # `promptable: false` and omitted gate3's actual ToS
+                                        # finding — Mistral's zero-retention posture here is
+                                        # CONTRACTUAL, not a platform-wide default; report it
+                                        # even though provider_tos_commercial is "ok" (ToS: ok
+                                        # entries now render tos_note too, first 60 chars).
   provenance: Mistral
   release_date: "2026-06-23"           # approximate — closed model, no HF card. Web-verified
                                         # (mistral.ai/news/ocr-4, MarkTechPost 2026-06-23,

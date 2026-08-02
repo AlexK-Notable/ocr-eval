@@ -24,9 +24,12 @@ mode entirely; see the caveat under that table below).
 reproduction run). These three rows were carried into `docs/superpowers/plans/
 2026-08-01-stage1-eval-pipeline.md` from an earlier survey pass over the RealDocBench paper, not
 independently re-derived from the arXiv PDF by this task. Format is `per-field accuracy ± 95% CI
-half-width / per-question accuracy ± 95% CI half-width` — the same two-number shape as this
-report's `general/field` and `strict/question` columns (per-field / per-question), not the
-Layout benchmark's F1 family.
+half-width / per-question accuracy ± 95% CI half-width` — this is UPSTREAM's own scoring
+construction. It maps onto `report.md`'s **"Reproduction gate (upstream construction)"** block
+(`field% (upstream)` / `question% (upstream)`, Section B only) — NOT onto the Section B
+leaderboard table's `general/field`/`strict/question` ranking-key columns, which use a different,
+stricter null-gold rule (D7) and are not upstream-comparable. Read the D7 divergence note below
+before comparing anything against this table.
 
 | Model | Per-field accuracy | Per-question accuracy | Reproduction candidate for |
 | --- | ---: | ---: | --- |
@@ -43,14 +46,28 @@ gate on a wrong number. Only `dots.ocr` has a registered Stage 1 candidate (`dot
 are listed here for completeness/future reference only.
 
 **CI overlap is the pass condition**, not exact-value match: DoD #2 asks for the local reproduction
-run's own bootstrap CI (from `report.md`'s Section B row, `general/field` and `strict/question`
-columns — note: `report.md` does not currently render a CI on those two columns the way it does on
-`checkbox acc-over-all`/`blank-null acc-over-all`; compare point estimates against this table's
-range and treat overlap-by-eye as the practical criterion until/unless a CI is added to those
-columns) to overlap this table's stated interval. A residual gap is expected and must be
-*documented*, not treated as an automatic fail — `configs/registry.yaml`'s own local-serving setup
-(this repo's vLLM version/precision/prompt) is not the paper's serving stack; see
-`docs/local-serving.md` for what is/isn't controlled.
+run's point estimates from `report.md`'s **"Reproduction gate (upstream construction)"** block
+(`field% (upstream)` / `question% (upstream)`, restricted to ok rows, computed straight from each
+row's stored `field_matches`/`match` — no D7 re-scoring) — **never** the Section B leaderboard
+table's `general/field`/`strict/question` columns above it, which are this report's ranking key
+and are not upstream-comparable (see the D7 divergence below). `report.md` does not currently
+render a CI on the Reproduction gate block's two columns the way it does on `checkbox
+acc-over-all`/`blank-null acc-over-all`; compare point estimates against this table's stated range
+and treat overlap-by-eye as the practical criterion until/unless a CI is added there. A residual
+gap is expected and must be *documented*, not treated as an automatic fail —
+`configs/registry.yaml`'s own local-serving setup (this repo's vLLM version/precision/prompt) is
+not the paper's serving stack; see `docs/local-serving.md` for what is/isn't controlled.
+
+**D7 divergence (read this before comparing anything against this table or the README row below):**
+the ranking-key `general/field` column in `report.md`'s Section B leaderboard table is scored under
+this harness's OWN, stricter null-gold rule (D7) — a null-gold field counts correct only on an
+explicit, key-PRESENT `null` answer. Upstream's own `deep_equal(None, None)` instead awards a
+MISSING (key-absent) answer as correct too. On the full RealDoc-Bench bank that is
+188/3742 = 5.02% of all fields. Comparing the ranking-key column against a paper- or README-sourced
+(upstream-scored) number can look like a systematic gap of **up to ~5 percentage points that has
+nothing to do with the model, harness, or serving stack under test** — wider than the whole ±2.5pp
+tolerance in §2 below. Always compare against the "Reproduction gate (upstream construction)"
+block instead; it is built specifically to avoid this trap.
 
 ---
 
@@ -81,11 +98,14 @@ below for that reason, not because it ranks first.*
 | AWS Textract | 70.7% | 54.0% |
 
 **Tolerance:** `docs/runbook-stage1.md` step 4 treats a Stage 1 `gemini_3_5_flash` run as within
-tolerance of this row when both columns land within ±2.5pp of 89.3% / 82.2%. Outside that band,
-investigate (harness/render/prompt/template divergence, dataset-revision drift, or an extractor
-generation change) before proceeding to spend on the remaining candidates — this is the
-pipeline-level positive control the paper-table reproduction gate (§1) can't stand in for on its
-own, since it exercises a *closed* model this harness can call directly, live, on demand.
+tolerance of this row when both columns of `report.md`'s **"Reproduction gate (upstream
+construction)"** block (`field% (upstream)` / `question% (upstream)`) land within ±2.5pp of
+89.3% / 82.2% — never the Section B leaderboard table's `general/field`/`strict/question` columns,
+which are subject to the same D7 divergence described in §1 above. Outside that band, investigate
+(harness/render/prompt/template divergence, dataset-revision drift, or an extractor generation
+change) before proceeding to spend on the remaining candidates — this is the pipeline-level
+positive control the paper-table reproduction gate (§1) can't stand in for on its own, since it
+exercises a *closed* model this harness can call directly, live, on demand.
 
 Mistral OCR 4 (88.8% / 81.3%) is listed here for completeness — it is `mistral-ocr@mistral` in
 `configs/registry.yaml`, the hosted-OCR-endpoint candidate in the Stage 1 DoD categories (§3 of
