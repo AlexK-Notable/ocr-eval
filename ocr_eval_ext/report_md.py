@@ -11,15 +11,26 @@ disk.
 
 Hard-fail rulings this module enforces (never silently degrade to a warning):
   - D3 STALE-RENDER: a `vlm__*` row's stored `image_sha` must still match a freshly recomputed
-    render of the same doc under the row's own `condition`. A mismatch means the row was scored
-    against a page image that no longer exists (a swapped PDF, a changed render pipeline) — the
-    row's own answer/score no longer means what the row claims it means. `StaleRenderError`
-    unless the caller passes `allow_stale_render=True`.
+    render of the same doc under the row's own `condition`. The re-render is done into a FRESH,
+    empty temp directory for the duration of one `build_markdown_report` call — NEVER the run's
+    own `docs_png` cache, which is cache-first and would just read back the very PNG that
+    produced `image_sha` in the first place, making the check tautological (a swapped PDF would
+    sail through unnoticed — review finding C1). A doc that cannot be re-rendered at all (missing
+    file, corrupt, page count changed, ...) while a row still references its `image_sha` is
+    itself a failure — RENDER-UNAVAILABLE — folded into the same failing set as a hash mismatch,
+    never silently treated as "probably fine" (review finding C2). `StaleRenderError` unless the
+    caller passes `allow_stale_render=True`. Applies to every parser key with the `vlm__` prefix,
+    REGISTERED OR NOT — an unresolvable `vlm__` key is still a direct-QA row with a real
+    `image_sha`, not a Section B row (review finding I1).
   - D4 serving identity: `vlm__*` cache keys do NOT pin the resolved serving provider (an
     OpenRouter route can differ per request). If two rows filed under the SAME parser key
     resolved to different providers, the key is comparing answers from two different serving
     stacks under one label — `ServingIdentityError`, unconditionally (no escape hatch: unlike
-    staleness this is not something a caller should be able to wave through).
+    staleness this is not something a caller should be able to wave through). Also shape-keyed,
+    not registration-keyed (I1): applies to every `vlm__` parser key. A missing/falsy
+    `resolved_provider` counts as its own distinct value, `"(empty)"`, rather than being dropped
+    from the comparison — a mix of "resolved to ProviderA" and "nothing recorded" is still an
+    identity inconsistency (review finding M7).
 
 D9 ruling (metrics.py) carried into this report: the headline blank-field number is
 `null_metrics()["overall"].acc_over_all`, never `hallucination_rate` alone — every render of
@@ -36,6 +47,7 @@ import hashlib
 import json
 import re
 import statistics
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import combinations
@@ -65,15 +77,20 @@ EXTRACTOR_FAMILY_PROVENANCE = "google"
 _CHECKBOX_GLYPH_RE = re.compile(r"[☒☐☑]|\[x\]|\[ \]", re.IGNORECASE)
 _TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 
+# Sentinel for a doc whose current render could not be recomputed at all (C2). Never collides
+# with a real sha256 hexdigest, which is exactly 64 lowercase hex characters.
+_RENDER_FAILED = "RENDER_FAILED"
+
 
 class ReportError(RuntimeError):
     """Base for hard-fail conditions build_markdown_report refuses to silently paper over."""
 
 
 class StaleRenderError(ReportError):
-    """D3: a vlm__ row's image_sha no longer matches the current render. `.report_md` carries
-    the full report text (STALE-RENDER section included) for a caller that wants to inspect it
-    before deciding whether to retry with --allow-stale-render."""
+    """D3: a vlm__ row's image_sha no longer matches the current render, or the current render
+    could not be recomputed at all (RENDER-UNAVAILABLE). `.report_md` carries the full report
+    text (STALE-RENDER section included) for a caller that wants to inspect it before deciding
+    whether to retry with --allow-stale-render."""
 
     def __init__(self, message: str, report_md: str | None = None):
         super().__init__(message)
@@ -120,8 +137,7 @@ def _resolve_entry(parser_key: str, entries: list[RegistryEntry]) -> RegistryEnt
     """vlm__<id>__<hash> by entry-id segment; openai-compat transcribers by
     safe_name(entry.id) + "__" prefix; upstream-parser entries by e.upstream_parser EXACTLY
     (safe_name(e.id) is the WRONG string for these — see module docstring / task brief).
-    Returns None for anything that doesn't resolve — callers route None into Section B's
-    "(unregistered)" bucket rather than crashing."""
+    Returns None for anything that doesn't resolve — callers must not assume a resolved entry."""
     if parser_key.startswith("vlm__"):
         rest = parser_key[len("vlm__"):]
         if "__" not in rest:
@@ -141,6 +157,21 @@ def _resolve_entry(parser_key: str, entries: list[RegistryEntry]) -> RegistryEnt
     return None
 
 
+def _row_label(pk: str, entry: RegistryEntry | None) -> str:
+    return entry.id if entry is not None else f"{pk} (unregistered)"
+
+
+def _stamp_columns(entry: RegistryEntry | None) -> str:
+    """precision/licence/ToS/contaminated in one string. M2: a row whose parser key never
+    resolved to a registry entry renders "unknown (unregistered)" across all four — never blank,
+    never silently omitted."""
+    if entry is None:
+        return ("precision: unknown (unregistered) · licence: unknown (unregistered) "
+                "· ToS: unknown (unregistered) · contaminated: unknown (unregistered)")
+    return (f"precision: {_precision_label(entry)} · licence: {entry.weights_licence} "
+           f"· {_tos_stamp(entry)} · contaminated: {'yes' if entry.contaminated else 'no'}")
+
+
 @dataclass
 class _Group:
     parser_key: str
@@ -150,17 +181,24 @@ class _Group:
 
 def _categorize(by_parser: dict[str, dict[str, dict]],
                  entries: list[RegistryEntry]) -> tuple[dict[str, _Group], dict[str, _Group], dict[str, _Group]]:
-    """Splits every parser key into: direct (vlm-chat, real image), no_image (vlm-chat, the
-    no-image control condition — rendered in the Baselines block, not as a ranked Section A
-    row), and section_b (every transcriber/upstream-parser/unregistered key). A parser key's
-    condition is baked into the key itself (that's WHY the no-image variant gets a different
-    key), so checking one row's condition is representative of the whole group."""
+    """Splits every parser key into: direct (vlm__ prefix, real image), no_image (vlm__ prefix,
+    the no-image control condition — rendered in the Baselines block, not as a ranked Section A
+    row), and section_b (every non-vlm__ key: transcriber/upstream-parser/unregistered-non-vlm).
+
+    I1 ruling: routing is keyed on the `vlm__` PREFIX itself, not on whether `_resolve_entry`
+    found a registry match. An unresolved `vlm__` key is still structurally a direct-QA row (it
+    carries `image_sha`/`resolved_provider` the same as any registered one) and must get the same
+    D3/D4 guards and render in Section A marked `(unregistered)` — routing it into Section B would
+    both skip those guards (fail-open) and mislabel it as a two-stage row it never was.
+
+    A parser key's condition is baked into the key itself (that's WHY the no-image variant gets a
+    different key), so checking one row's condition is representative of the whole group."""
     direct: dict[str, _Group] = {}
     no_image: dict[str, _Group] = {}
     section_b: dict[str, _Group] = {}
     for pk, rows_by_qid in by_parser.items():
         entry = _resolve_entry(pk, entries)
-        if entry is not None and entry.shape == "vlm-chat":
+        if pk.startswith("vlm__"):
             sample = next(iter(rows_by_qid.values()))
             is_no_image = bool((sample.get("condition") or {}).get("no_image"))
             (no_image if is_no_image else direct)[pk] = _Group(pk, entry, rows_by_qid)
@@ -267,8 +305,8 @@ class RowMetrics:
 
 def _compute_row_metrics(rows_by_qid: dict[str, dict], items: list[dict], all_fields: list[tuple],
                          checkbox_fields: list[tuple], null_fields_all: list[tuple],
-                         majority_outcomes: list[FieldOutcome], *, iters: int, seed: int,
-                         alpha: float) -> RowMetrics:
+                         majority_outcomes: list[FieldOutcome], bank_qids: set[str], *,
+                         iters: int, seed: int, alpha: float) -> RowMetrics:
     checkbox_outcomes = field_outcomes(rows_by_qid, checkbox_fields)
     null_outcomes = field_outcomes(rows_by_qid, null_fields_all)
     cb = checkbox_metrics(checkbox_outcomes)
@@ -279,8 +317,14 @@ def _compute_row_metrics(rows_by_qid: dict[str, dict], items: list[dict], all_fi
     null_docs = _n_docs(null_outcomes)
     null_ci = cluster_bootstrap_ci(null_outcomes, iters=iters, seed=seed, alpha=alpha) if null_docs else None
     beats = _beats_majority(checkbox_outcomes, majority_outcomes, iters=iters, seed=seed, alpha=alpha)
+    # I3: n_seen is rows-that-match-a-CURRENT-bank-qid, never the raw row count. A parser dir can
+    # accumulate "orphan" rows (a qid from a previous bank revision, a stale/renamed question)
+    # that inflate len(rows_by_qid) without representing real current-bank coverage — counting
+    # them would silently suppress the INCOMPLETE marker for a parser that is, in fact, missing
+    # real bank items.
+    n_seen = len(set(rows_by_qid) & bank_qids)
     return RowMetrics(
-        n_expected=len(items), n_seen=len(rows_by_qid),
+        n_expected=len(items), n_seen=n_seen,
         checkbox_outcomes=checkbox_outcomes, null_outcomes=null_outcomes,
         checkbox=cb, null=nm, checkbox_ci=cb_ci, checkbox_docs=cb_docs,
         null_ci=null_ci, null_docs=null_docs,
@@ -292,7 +336,10 @@ def _compute_row_metrics(rows_by_qid: dict[str, dict], items: list[dict], all_fi
 # ── D3 STALE-RENDER + D4 serving-identity guards (vlm__ rows only) ─────────────────────────
 
 def _check_serving_identity(parser_key: str, rows: list[dict]) -> None:
-    providers = {r.get("resolved_provider") for r in rows if r.get("resolved_provider")}
+    """M7: a falsy/missing `resolved_provider` is NOT dropped from the comparison — it counts as
+    its own distinct value `"(empty)"`, so a mix of "resolved to ProviderA" and "nothing
+    recorded" is still flagged as a serving-identity inconsistency, not silently ignored."""
+    providers = {(r.get("resolved_provider") or "(empty)") for r in rows}
     if len(providers) > 1:
         raise ServingIdentityError(
             f"D4 serving-identity violation: parser key {parser_key!r} has rows resolved to "
@@ -301,16 +348,27 @@ def _check_serving_identity(parser_key: str, rows: list[dict]) -> None:
             f"re-pin provider_pin before reporting.")
 
 
-def _check_stale_renders(layout: RunLayout, rows: list[dict],
-                         render_cache: dict[tuple, str | None]) -> list[str]:
+def _check_stale_renders(layout: RunLayout, rows: list[dict], render_cache: dict[tuple, str],
+                         render_dir: Path) -> dict[str, str]:
     """Recomputes the CURRENT render hash per referenced doc (once per (stem, condition) pair,
     memoized in `render_cache` across the whole report) and compares it against each row's own
-    stored `image_sha`. Rows with no image (no_image control, or a render-failed row that never
-    got one) carry `image_sha: None` and are silently skipped — there is nothing to compare."""
+    stored `image_sha`.
+
+    C1: `render_dir` MUST be a fresh, empty directory scoped to one `build_markdown_report` call
+    — NEVER the run's own `docs_png` cache. `direct._render_page` is cache-first (it returns an
+    existing PNG under that path without re-reading the PDF at all), so pointing this check at the
+    warm production cache would just read back the very PNG that produced `image_sha` in the first
+    place: the check would ALWAYS "pass" regardless of what the PDF on disk currently contains. An
+    empty `render_dir` forces a genuine re-render from the current PDF bytes every time.
+
+    C2: a doc that CANNOT be re-rendered (missing/corrupt PDF, page count changed, ...) while a
+    row still references its `image_sha` is itself a failure — recorded as RENDER-UNAVAILABLE and
+    returned in the same failing dict as a hash mismatch (STALE-RENDER), never silently treated as
+    "presumably fine". Rows with no image at all (the no-image control) carry `image_sha: None`
+    and are skipped — there is nothing to compare."""
     from ocr_eval_ext.direct import _render_page, condition_hash
 
-    png_cache = layout.root / "docs_png"
-    stale: list[str] = []
+    stale: dict[str, str] = {}
     for r in rows:
         sha = r.get("image_sha")
         if not sha:
@@ -320,13 +378,15 @@ def _check_stale_renders(layout: RunLayout, rows: list[dict],
         key = (stem, condition_hash(condition))
         if key not in render_cache:
             try:
-                png = _render_page(layout, stem, condition, png_cache)
+                png = _render_page(layout, stem, condition, render_dir)
                 render_cache[key] = hashlib.sha256(png).hexdigest()
             except Exception:
-                render_cache[key] = None
+                render_cache[key] = _RENDER_FAILED
         current = render_cache[key]
-        if current is not None and current != sha:
-            stale.append(stem)
+        if current == _RENDER_FAILED:
+            stale[stem] = "RENDER-UNAVAILABLE"
+        elif current != sha:
+            stale[stem] = "STALE-RENDER"
     return stale
 
 
@@ -360,7 +420,14 @@ def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
     (only `qid`/`parser`/`source_file`/`domain`/`answer`/`field_matches`/`match`/`error`) — the
     transcription leg's own cost/latency lives in `parses/<parser>/<stem>.json` (written by
     `run_parse`'s `_parse_one`), which is why these columns are scoped to "the transcription leg
-    only" in the Section B header. `local: true` still renders "n/a" for both, unconditionally."""
+    only" in the Section B header. `local: true` still renders "n/a" for both, unconditionally.
+
+    M1: `_parse_one` writes `"cost_usd": result.cost_estimate_usd or 0.0` — an UNPRICED parser (no
+    catalog rate for its pricing_key) coerces a genuine "unknown" (None) into a literal `0.0` that
+    is indistinguishable on disk from "confirmed free". Heuristically detected here: every sidecar
+    read back is exactly `0.0` AND the registry entry (if resolved) carries no `pricing` — render
+    "n/a (unpriced)", never a fabricated "$0.0000" that would misrepresent an unknown cost as a
+    confirmed one."""
     if entry is not None and entry.local:
         return "n/a", "n/a"
     parser_dir = layout.parser_dir(parser_key)
@@ -382,7 +449,12 @@ def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
         if isinstance(meta.get("cost_usd"), int | float):
             costs.append(meta["cost_usd"])
     lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
-    cost = f"${sum(costs):.4f}" if costs else "n/a"
+    if not costs:
+        cost = "n/a"
+    elif sum(costs) == 0.0 and (entry is None or not entry.pricing):
+        cost = "n/a (unpriced)"
+    else:
+        cost = f"${sum(costs):.4f}"
     return lat, cost
 
 
@@ -394,12 +466,18 @@ def _field_tokens(key: str) -> list[str]:
 
 def _transcript_recall(layout: RunLayout, parser_key: str, checkbox_items: list[dict]) -> float | None:
     """Fraction of checkbox-bucket docs whose `parses/<parser>/<stem>.md` contains BOTH a
-    checkbox glyph AND a token of one of that doc's boolean gold field keys — glyph-only would
-    only prove "emitted checkboxes somewhere," not "emitted this field" (mandatory distinction
-    from the task brief). Requires the parse dir to exist at all; a transcriber that was never
-    parsed under this run renders "n/a" (None), not a misleading 0.0."""
+    checkbox glyph AND a WORD-BOUNDARY-MATCHED token of one of that doc's boolean gold field keys.
+
+    I2: matching must respect word boundaries — a bare substring check would let field key
+    "checked" match inside "unchecked", counting a transcript that emitted the OPPOSITE state as
+    if it had recalled the field.
+
+    M8: requires the parse dir to contain at least one `.md` file — a dir that exists but holds
+    zero transcripts (e.g. only a `condition.json` sidecar, or a parser that was registered but
+    never actually run) has no data to compute a fraction FROM, and must render "n/a" (None), not
+    a misleadingly-confident `0.0`."""
     parser_dir = layout.parser_dir(parser_key)
-    if not parser_dir.exists():
+    if not parser_dir.exists() or not any(parser_dir.glob("*.md")):
         return None
     doc_tokens: dict[str, set[str]] = defaultdict(set)
     for it in checkbox_items:
@@ -418,7 +496,7 @@ def _transcript_recall(layout: RunLayout, parser_key: str, checkbox_items: list[
         if not _CHECKBOX_GLYPH_RE.search(text):
             continue
         text_lower = text.lower()
-        if any(tok.lower() in text_lower for tok in tokens):
+        if any(re.search(rf"\b{re.escape(tok.lower())}\b", text_lower) for tok in tokens):
             recalled += 1
     return recalled / len(doc_tokens)
 
@@ -464,6 +542,13 @@ def _mixed_precision_note(known_precisions: set[str]) -> str | None:
     return None
 
 
+def _section_mixed_precision_note(entries: list[RegistryEntry | None]) -> str | None:
+    """I4: the SAME mixed-precision caveat Section A gets, extracted so Section B carries it too
+    — a transcriber section mixing e.g. bf16 and fp8-vllm rows deserves the identical warning."""
+    known = {e.precision for e in entries if e is not None and e.precision != "provider-default"}
+    return _mixed_precision_note(known)
+
+
 def _error_classes_str(counts: dict[str, int]) -> str:
     return ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
 
@@ -499,7 +584,16 @@ METRIC_DEFINITIONS = (
     "- **strict per-question**: fraction of ALL bank items fully correct (row `match is True`).\n"
     "- **beats majority**: paired-bootstrap delta vs the majority-class predictor on checkbox "
     "acc-over-all — \"not separable\" (or \"insufficient clusters\" below n_docs=20) never "
-    "counts as \"yes\"."
+    "counts as \"yes\".\n"
+    "- **CI-below-floor caveat**: a cluster-bootstrap CI is rendered whenever n_docs≥1, but "
+    "MIN_CLUSTER_DOCS=20 only gates PAIRED comparisons (beats-majority, the separability "
+    "appendix) — a single-row CI shown beside a small n_docs is not equally trustworthy just "
+    "because it renders; read n_docs before trusting the interval.\n"
+    "- **Section B staleness is not assessed**: the D3 STALE-RENDER check only applies to "
+    "vlm__ rows (the only rows carrying `image_sha`) — a swapped/stale PDF behind a transcriber "
+    "or upstream-parser row is NOT detected by this report.\n"
+    "- the blank/null column's n is BANK-WIDE (every null-gold field in the whole corpus, not "
+    "just the blank-field-tagged bucket) — e.g. n=188 on the full RealDoc-Bench corpus."
 )
 
 
@@ -520,6 +614,7 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
     meta_path = layout.root / "run_meta.json"
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
 
+    bank_qids = {it["question_id"] for it in items}
     checkbox_items = items_with_tags(items, CHECKBOX_TAGS)
     blank_items = items_with_tags(items, BLANK_TAGS)
     checkbox_fields = boolean_fields(checkbox_items)
@@ -536,41 +631,45 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
     direct_groups, no_image_groups, section_b_groups = _categorize(by_parser, entries)
 
     # ── vlm__ pass: D4 guard, D3 staleness, row metrics — shared by direct + no-image groups.
-    render_cache: dict[tuple, str | None] = {}
-    stale_report: dict[str, list[str]] = {}
+    # C1: render_dir is a FRESH temp dir for this call only — never the run's own docs_png cache
+    # (see _check_stale_renders' docstring for why that would make the check tautological).
+    render_cache: dict[tuple, str] = {}
+    stale_report: dict[str, dict[str, str]] = {}
     staleness_warnings: list[str] = []
     vlm_data: dict[str, dict] = {}
-    for pk, g in {**direct_groups, **no_image_groups}.items():
-        rows = list(g.rows_by_qid.values())
-        _check_serving_identity(pk, rows)                    # D4 — raises immediately, no escape
-        stale = _check_stale_renders(layout, rows, render_cache)
-        if stale:
-            stale_report[pk] = stale
-        metrics = _compute_row_metrics(g.rows_by_qid, items, all_fields, checkbox_fields,
-                                       null_fields_all, majority_outcomes,
-                                       iters=iters, seed=seed, alpha=alpha)
-        lat, cost = _direct_cost_latency(g.entry, rows)
-        providers = sorted({r["resolved_provider"] for r in rows if r.get("resolved_provider")})
-        retrieved_ats = [r["retrieved_at"] for r in rows if r.get("retrieved_at")]
-        span = None
-        if len(retrieved_ats) >= 2:
-            try:
-                parsed = [dt.datetime.fromisoformat(ts) for ts in retrieved_ats]
-                span = max(parsed) - min(parsed)
-            except ValueError:
-                span = None
-        if span is not None and span > STALENESS_SPAN:
-            staleness_warnings.append(
-                f"- **{pk}**: retrieved_at spans {span.days} day(s) "
-                f"({min(parsed).date()} .. {max(parsed).date()}) — exceeds the 7-day freshness "
-                f"window.")
-        vlm_data[pk] = {"latency": lat, "cost": cost, "providers": providers, "metrics": metrics}
+    with tempfile.TemporaryDirectory(prefix="ocr_eval_report_render_") as _render_dir_str:
+        render_dir = Path(_render_dir_str)
+        for pk, g in {**direct_groups, **no_image_groups}.items():
+            rows = list(g.rows_by_qid.values())
+            _check_serving_identity(pk, rows)                # D4 — raises immediately, no escape
+            stale = _check_stale_renders(layout, rows, render_cache, render_dir)
+            if stale:
+                stale_report[pk] = stale
+            metrics = _compute_row_metrics(g.rows_by_qid, items, all_fields, checkbox_fields,
+                                           null_fields_all, majority_outcomes, bank_qids,
+                                           iters=iters, seed=seed, alpha=alpha)
+            lat, cost = _direct_cost_latency(g.entry, rows)
+            providers = sorted({r["resolved_provider"] for r in rows if r.get("resolved_provider")})
+            retrieved_ats = [r["retrieved_at"] for r in rows if r.get("retrieved_at")]
+            span = None
+            if len(retrieved_ats) >= 2:
+                try:
+                    parsed = [dt.datetime.fromisoformat(ts) for ts in retrieved_ats]
+                    span = max(parsed) - min(parsed)
+                except ValueError:
+                    span = None
+            if span is not None and span > STALENESS_SPAN:
+                staleness_warnings.append(
+                    f"- **{pk}**: retrieved_at spans {span.days} day(s) "
+                    f"({min(parsed).date()} .. {max(parsed).date()}) — exceeds the 7-day "
+                    f"freshness window.")
+            vlm_data[pk] = {"latency": lat, "cost": cost, "providers": providers, "metrics": metrics}
 
     # ── Section B pass ──────────────────────────────────────────────────────────────────────
     section_b_data: dict[str, dict] = {}
     for pk, g in section_b_groups.items():
         metrics = _compute_row_metrics(g.rows_by_qid, items, all_fields, checkbox_fields,
-                                       null_fields_all, majority_outcomes,
+                                       null_fields_all, majority_outcomes, bank_qids,
                                        iters=iters, seed=seed, alpha=alpha)
         lat, cost = _transcription_cost_latency(layout, g.entry, pk)
         recall = _transcript_recall(layout, pk, checkbox_items)
@@ -603,9 +702,9 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
     if stale_report and not allow_stale_render:
         affected = sorted(stale_report)
         raise StaleRenderError(
-            f"STALE-RENDER: {len(stale_report)} parser key(s) have rows whose stored image_sha "
-            f"no longer matches the current render — {affected}. Re-render/re-score, or pass "
-            f"--allow-stale-render to proceed anyway.", report_md=md)
+            f"STALE-RENDER: {len(stale_report)} parser key(s) have rows that are stale or whose "
+            f"current render could not be confirmed (RENDER-UNAVAILABLE) — {affected}. "
+            f"Re-render/re-score, or pass --allow-stale-render to proceed anyway.", report_md=md)
     return md
 
 
@@ -647,24 +746,23 @@ def _build_header(meta: dict, items: list[dict]) -> list[str]:
 
 
 def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict],
-                     stale_report: dict[str, list[str]]) -> list[str]:
+                     stale_report: dict[str, dict[str, str]]) -> list[str]:
     lines = ["## Section A — Direct QA (vlm-chat)", ""]
     if not direct_groups:
         return [*lines, "_no vlm-chat rows in this run_", ""]
-    known_precisions = {g.entry.precision for g in direct_groups.values()
-                        if g.entry.precision != "provider-default"}
-    note = _mixed_precision_note(known_precisions)
+    note = _section_mixed_precision_note([g.entry for g in direct_groups.values()])
     if note:
         lines += [note, ""]
     lines += ["| model | checkbox acc-over-all | polarity checked/unchecked | blank/null "
              "acc-over-all | hallucination_rate | general/field | strict/question | beats "
              "majority |",
              "|---|---|---|---|---|---|---|---|"]
-    for pk in sorted(direct_groups, key=lambda k: direct_groups[k].entry.id):
+    ordered = sorted(direct_groups, key=lambda k: _row_label(k, direct_groups[k].entry))
+    for pk in ordered:
         g = direct_groups[pk]
-        e = g.entry
         m: RowMetrics = vlm_data[pk]["metrics"]
-        head = _incomplete_head(e.id, m.n_seen, m.n_expected)
+        label = _row_label(pk, g.entry)
+        head = _incomplete_head(label, m.n_seen, m.n_expected)
         pol = m.checkbox["polarity"]
         polarity = f"checked {_pct(pol['checked'].acc_over_all)} / unchecked {_pct(pol['unchecked'].acc_over_all)}"
         if pk in stale_report:
@@ -677,13 +775,12 @@ def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict]
             f"| {_pct(m.general_field_acc)} | {_pct(m.strict_question_acc)} "
             f"| {m.beats_majority} |")
     lines.append("")
-    for pk in sorted(direct_groups, key=lambda k: direct_groups[k].entry.id):
+    for pk in ordered:
         g = direct_groups[pk]
-        e = g.entry
         m = vlm_data[pk]["metrics"]
+        label = _row_label(pk, g.entry)
         lines.append(
-            f"- **{e.id}** — precision: {_precision_label(e)} · licence: {e.weights_licence} "
-            f"· {_tos_stamp(e)} · contaminated: {'yes' if e.contaminated else 'no'} "
+            f"- **{label}** — {_stamp_columns(g.entry)} "
             f"· providers seen: {', '.join(vlm_data[pk]['providers']) or '(none recorded)'} "
             f"· median latency: {vlm_data[pk]['latency']} "
             f"· realized cost: {vlm_data[pk]['cost']} "
@@ -705,8 +802,9 @@ def _build_baselines(baselines: dict, checkbox_fields: list[tuple],
     ]
     for pk, g in no_image_groups.items():
         m: RowMetrics = vlm_data[pk]["metrics"]
+        label = _row_label(pk, g.entry)
         lines.append(
-            f"- no-image control — **{g.entry.id}**: checkbox acc-over-all "
+            f"- no-image control — **{label}**: checkbox acc-over-all "
             f"{_fmt_ci_metric(m.checkbox['overall'].acc_over_all, m.checkbox_ci, m.checkbox_docs)} "
             f"(question text only, language-prior guessing)")
     lines.append("")
@@ -717,8 +815,9 @@ def _find_calibration_pairs(direct_groups: dict[str, _Group],
                             section_b_groups: dict[str, _Group]) -> list[tuple[RegistryEntry, RegistryEntry]]:
     """The registered direct-vs-two-stage calibration cell: one model registered under BOTH
     shapes (matched by the underlying `model` string — the same weights served the same way,
-    just prompted differently)."""
-    vlm_entries = [g.entry for g in direct_groups.values()]
+    just prompted differently). Unregistered vlm__ groups (entry=None) have no `.model` to match
+    against and are correctly excluded."""
+    vlm_entries = [g.entry for g in direct_groups.values() if g.entry is not None]
     transcriber_entries = [g.entry for g in section_b_groups.values()
                            if g.entry is not None and g.entry.transport == "openai-compat"]
     return [(v, t) for v in vlm_entries for t in transcriber_entries
@@ -756,19 +855,21 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
              f"(`{extractor_id}`) call is a separate, shared cost not attributed per-row._", ""]
     if not section_b_groups:
         return [*lines, "_no transcriber rows in this run_", ""]
+    note = _section_mixed_precision_note([g.entry for g in section_b_groups.values()])
+    if note:
+        lines += [note, ""]
     any_pdf_direct = any(section_b_data[pk]["input"] == "pdf-direct" for pk in section_b_groups)
     lines += ["| row | checkbox acc-over-all | blank/null acc-over-all | hallucination_rate | "
              "general/field | strict/question | transcript-recall | input | beats majority |",
              "|---|---|---|---|---|---|---|---|---|"]
-    ordered = sorted(section_b_groups, key=lambda pk: (section_b_groups[pk].entry is None,
-                                                       section_b_groups[pk].entry.id
-                                                       if section_b_groups[pk].entry else pk))
+    ordered = sorted(section_b_groups,
+                     key=lambda pk: (section_b_groups[pk].entry is None,
+                                     _row_label(pk, section_b_groups[pk].entry)))
     for pk in ordered:
         g = section_b_groups[pk]
         d = section_b_data[pk]
         m: RowMetrics = d["metrics"]
-        name = g.entry.id if g.entry is not None else f"{pk} (unregistered)"
-        label = f"{name} + extractor {extractor_id}"
+        label = f"{_row_label(pk, g.entry)} + extractor {extractor_id}"
         head = _incomplete_head(label, m.n_seen, m.n_expected)
         if d["same_family"]:
             head += " (same-family scoring)"
@@ -785,17 +886,15 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
         g = section_b_groups[pk]
         d = section_b_data[pk]
         m = d["metrics"]
-        name = g.entry.id if g.entry is not None else f"{pk} (unregistered)"
-        detail = [f"- **{name}**"]
-        if g.entry is not None:
-            e = g.entry
-            detail.append(f"precision: {_precision_label(e)} · licence: {e.weights_licence} "
-                         f"· {_tos_stamp(e)} · contaminated: {'yes' if e.contaminated else 'no'}")
-        detail.append("provider: n/a (not persisted)")     # D4/Task-8 note: upstream never
-                                                             # persists ParseResult.raw
-        detail.append(f"median latency: {d['latency']} · realized cost: {d['cost']}")
-        detail.append(f"n: {m.n_seen}/{m.n_expected} · error classes: "
-                      f"{_error_classes_str(m.error_classes)}")
+        label = _row_label(pk, g.entry)
+        detail = [
+            f"- **{label}**",
+            _stamp_columns(g.entry),
+            "provider: n/a (not persisted)",     # D4/Task-8 note: upstream never persists
+                                                  # ParseResult.raw
+            f"median latency: {d['latency']} · realized cost: {d['cost']}",
+            f"n: {m.n_seen}/{m.n_expected} · error classes: {_error_classes_str(m.error_classes)}",
+        ]
         lines.append(" · ".join(detail))
     lines.append("")
     if any_pdf_direct:
@@ -806,20 +905,34 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
     return lines
 
 
+def _appendix_label(pk: str, entry: RegistryEntry | None, m: RowMetrics) -> str:
+    """I5: any row group whose n_seen falls short of n_expected carries the SAME `[INCOMPLETE
+    k/N]` marker in the separability appendix that its leaderboard row carries — a paired delta
+    against a partial matrix must be visibly partial too, not just quietly discounted."""
+    base = _row_label(pk, entry)
+    if m.n_seen < m.n_expected:
+        return f"{base} [INCOMPLETE {m.n_seen}/{m.n_expected}]"
+    return base
+
+
 def _build_separability_appendix(direct_groups: dict[str, _Group], section_b_groups: dict[str, _Group],
                                  vlm_data: dict[str, dict], section_b_data: dict[str, dict],
                                  *, iters: int, seed: int, alpha: float) -> list[str]:
     lines = ["## Separability appendix", "",
              "Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section "
              "only (Section A vs Section B pipelines are not directly comparable — see the "
-             "cross-shape note above).", ""]
-    section_a_items = [(direct_groups[pk].entry.id, vlm_data[pk]["metrics"].checkbox_outcomes)
-                       for pk in direct_groups]
+             "cross-shape note above). Sign convention: Δ = first label minus second label (a "
+             "positive Δ favors the FIRST name listed in each comparison).", ""]
+    section_a_items = [
+        (_appendix_label(pk, direct_groups[pk].entry, vlm_data[pk]["metrics"]),
+         vlm_data[pk]["metrics"].checkbox_outcomes)
+        for pk in direct_groups
+    ]
     lines.append("### Section A")
     lines += _pairwise_separability(section_a_items, iters=iters, seed=seed, alpha=alpha) or ["_fewer than 2 rows_"]
     lines.append("")
     section_b_items = [
-        (section_b_groups[pk].entry.id if section_b_groups[pk].entry else pk,
+        (_appendix_label(pk, section_b_groups[pk].entry, section_b_data[pk]["metrics"]),
          section_b_data[pk]["metrics"].checkbox_outcomes)
         for pk in section_b_groups
     ]
@@ -835,15 +948,17 @@ def _build_staleness_section(warnings: list[str]) -> list[str]:
     return ["## Staleness warnings (retrieved_at span > 7 days)", "", *warnings, ""]
 
 
-def _build_stale_render_section(stale_report: dict[str, list[str]]) -> list[str]:
+def _build_stale_render_section(stale_report: dict[str, dict[str, str]]) -> list[str]:
     if not stale_report:
         return []
     lines = ["## STALE-RENDER", "",
-             "The following parser keys have rows whose stored `image_sha` no longer matches a "
-             "freshly recomputed render of the same document under the row's own `condition` — "
-             "the render pipeline or the source PDF changed since these rows were scored.", ""]
+             "The following parser keys have rows that are STALE-RENDER (stored `image_sha` no "
+             "longer matches a freshly recomputed render) or RENDER-UNAVAILABLE (the referenced "
+             "document could not be re-rendered at all — treated as a failure, not a pass, since "
+             "the row's basis can no longer be confirmed).", ""]
     for pk, docs in sorted(stale_report.items()):
-        shown = sorted(docs)[:10]
+        entries_str = [f"{stem} ({reason})" for stem, reason in sorted(docs.items())]
+        shown = entries_str[:10]
         suffix = f" (+{len(docs) - 10} more)" if len(docs) > 10 else ""
         lines.append(f"- **{pk}**: {len(docs)} doc(s) — {shown}{suffix}")
     lines.append("")
