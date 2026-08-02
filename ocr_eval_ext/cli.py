@@ -75,6 +75,24 @@ def _stamp_base_meta(layout: RunLayout, pins: dict) -> None:
     meta_p.write_text(json.dumps(meta, indent=2))
 
 
+def _check_corpus_completeness(layout: RunLayout, items: list[dict]) -> None:
+    """C1 (flagged in Task 7 review, carried here): docs/ must be a superset of every
+    source_file the bank references. Lives inside `_preflight` itself — rather than duplicated
+    per-command (verify used to run this check standalone, after its own `_preflight` call) — so
+    EVERY command that calls `_preflight` (verify, direct, rescore, parse, score) is protected for
+    free. Cheap (path existence only, no rendering). Without this, an empty (or `evaluate
+    download --limit`-narrowed) docs/ against a full, real-shaped bank would sweep/parse/score
+    zero PDFs and look like a clean pass — a false pass reachable in normal operation, not just a
+    contrived test."""
+    docs_stems = {p.stem for p in layout.docs_dir.glob("*.pdf")}
+    bank_stems = {i["source_file"] for i in items}
+    missing = sorted(bank_stems - docs_stems)
+    if missing:
+        console.print(f"[red]preflight FAILED — corpus incomplete: {len(missing)} bank "
+                      f"source_file(s) have no PDF under docs/ (first 10): {missing[:10]}[/red]")
+        raise typer.Exit(1)
+
+
 def _preflight(layout: RunLayout) -> None:
     """The gate every spending/reporting command calls first. Fail-closed."""
     if st.run_offline():
@@ -113,6 +131,7 @@ def _preflight(layout: RunLayout) -> None:
     except (FileNotFoundError, KeyError, PreconditionError) as e:
         console.print(f"[red]preflight FAILED: {e}[/red]")
         raise typer.Exit(1) from e
+    _check_corpus_completeness(layout, items)
     _stamp_base_meta(layout, pins)
 
 
@@ -153,20 +172,10 @@ def verify(
                       "changes — the harness-commit pin proves ancestry, not working-tree "
                       "purity[/yellow]")
 
-    # C1: docs/ must be a superset of every source_file the bank references. Cheap (path
-    # existence only, no rendering) so it runs in BOTH the fast and full paths. Without this, an
-    # empty (or `evaluate download --limit`-narrowed) docs/ against a full, real-shaped bank
-    # would sweep zero PDFs, find no blanks/multi-page docs among them, and print "all green" —
-    # a false pass reachable in normal operation, not just a contrived test.
+    # C1 (Task 8): the bank-stems-subset-of-docs-stems check now lives in `_check_corpus_
+    # completeness`, called from `_preflight` above — so it protects every command that calls
+    # `_preflight`, not just `verify`. `pdfs` is still needed here for the render sweep below.
     pdfs = sorted(layout.docs_dir.glob("*.pdf"))
-    items = json.loads(layout.bank_path.read_text())["items"]
-    bank_stems = {i["source_file"] for i in items}
-    docs_stems = {p.stem for p in pdfs}
-    missing = sorted(bank_stems - docs_stems)
-    if missing:
-        console.print(f"[red]verify FAILED — corpus incomplete: {len(missing)} bank "
-                      f"source_file(s) have no PDF under docs/ (first 10): {missing[:10]}[/red]")
-        raise typer.Exit(1)
 
     if skip_renders:
         console.print("[yellow]--skip-renders: pins + cardinality checked, "
@@ -297,14 +306,8 @@ def direct(
         raise typer.Exit(2)   # fail-visible: errors occurred, report will mark them
 
 
-# Forward references: `parse`/`score`/`preflight` land in Task 8; `report` lands in Task 9. All
-# of them call _preflight(layout) first. `ocr-eval score` (Task 8) additionally runs the
-# BLOCKING extractor-validation gate via `require_extractor_gate(layout)` above — 5 Gemini calls
-# per (extractor, fixture-set), cached per run dir via a `.extractor_ok_<model>_<fixturehash>`
-# stamp file, never skippable when the stamp is absent.
-# `ocr-eval score` (Task 8) also records DEFAULT_MODEL into run_meta.json as extractor id; if a
-# later invocation sees a different extractor id there, it refuses to mix generations unless
-# --new-extractor-generation is passed, which archives eval/cache/ to eval/cache@<old-id>/ first.
+# Forward reference: `report` lands in Task 9; it also calls _preflight(layout) first.
+# `preflight`/`parse`/`score` (Task 8) are implemented below, after `rescore`.
 
 
 @app.command()
@@ -342,3 +345,143 @@ def rescore(run_dir: Path = typer.Option(..., "--run-dir")) -> None:
             changed += 1
     console.print(f"rescore: examined={examined}, skipped_not_in_bank={skipped_not_in_bank}, "
                  f"changed={changed}")
+
+
+@app.command()
+def preflight(
+    entry_id: str = typer.Argument(..., help="Registry id, e.g. glm-ocr@local-vllm"),
+    registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
+) -> None:
+    """GET {base_url}/models and confirm the entry's `model` is actually being served. Run this
+    before any local vLLM spend (`direct`/`parse`/`score` against a `local: true` entry) — a
+    served-model mismatch (wrong checkpoint resident, server not restarted after a config change)
+    is caught here rather than silently transcribing pages against the wrong weights. Only
+    applies to openai-compat entries — upstream-parser entries (Gemini, Mistral) have no local
+    server to preflight."""
+    from ocr_eval_ext.config import get_entry
+    from ocr_eval_ext.parsers_openai import preflight as _served_model
+
+    entries = load_registry(registry)
+    entry = get_entry(entries, entry_id)
+    if entry.transport != "openai-compat":
+        console.print(f"[red]{entry_id}: transport={entry.transport!r} — preflight only applies "
+                      f"to openai-compat entries[/red]")
+        raise typer.Exit(1)
+    try:
+        served = _served_model(entry)
+    except Exception as e:
+        console.print(f"[red]preflight FAILED for {entry_id}: {e}[/red]")
+        raise typer.Exit(1) from e
+    console.print(f"[green]preflight PASS[/green] — {entry.base_url} serves {served}")
+
+
+@app.command()
+def parse(
+    run_dir: Path = typer.Option(..., "--run-dir"),
+    registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
+    parser: list[str] = typer.Option(..., "--parser", "-p"),
+    workers: int = typer.Option(8, "--workers"),
+    force: bool = typer.Option(False, "--force"),
+    limit: int | None = typer.Option(None, "--limit"),
+) -> None:
+    """Register this run's dynamically-built openai-compat transcriber parsers — upstream's own
+    `realdoc-bench` CLI never imports `ocr_eval_ext`, so these parsers don't exist in that
+    process; this wrapper makes them reachable in-process — then delegate to upstream
+    `run_parse`. Also writes `parses/<parser>/condition.json` (the TRANSCRIBER_CONDITION dict,
+    verbatim) as a sidecar per parser we registered, so transcriber rows are self-describing;
+    Stage 2's deskew registers under a different condition hash (a different parser NAME)
+    instead of overwriting these."""
+    from ocr_eval_ext.direct import _atomic_write_json
+    from ocr_eval_ext.parsers_openai import TRANSCRIBER_CONDITION, register_openai_parsers
+    from realdoc_bench.evaluate.parse import run_parse
+    from realdoc_bench.evaluate.parsers.base import registry as parser_registry
+
+    layout = RunLayout.at(run_dir)
+    _preflight(layout)
+    registered = register_openai_parsers(registry)
+    unknown = [p for p in parser if p not in parser_registry]
+    if unknown:
+        console.print(f"[red]unknown parser name(s): {unknown}. registered this run: "
+                      f"{registered}. available: {parser_registry.names()}[/red]")
+        raise typer.Exit(1)
+    records = run_parse(layout, parser, force=force, workers=workers, limit=limit)
+    for p in parser:
+        if p in registered:      # only our openai-compat transcribers carry a condition —
+                                  # upstream-parser names (gemini_3_5_flash, mistral_ocr_4) never
+                                  # vary conditions and have none to write
+            _atomic_write_json(layout.parser_dir(p) / "condition.json", TRANSCRIBER_CONDITION)
+    n_ok = sum(1 for r in records if r.ok)
+    n_fail = len(records) - n_ok
+    console.print(f"parse: {n_ok} ok, {n_fail} fail")
+    if n_fail:
+        raise typer.Exit(2)
+
+
+def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: bool) -> None:
+    """`ocr-eval score` records the Gemini extractor id (`score.DEFAULT_MODEL`) into
+    `run_meta.json` the first time it scores a run dir. A LATER invocation whose current
+    `DEFAULT_MODEL` differs from what's recorded there refuses to mix generations under the same
+    `eval/cache/` — verdicts from two different extractor judges are not directly comparable —
+    unless `--new-extractor-generation` is passed, which archives the OLD `eval/cache/` to
+    `eval/cache@<old-id>/` first (never silently overwritten, never silently mixed). Called after
+    `_preflight` (so run_meta.json is guaranteed to exist) and before `require_extractor_gate`
+    (so a refusal here never burns the 5 Gemini fixture-validation calls)."""
+    from realdoc_bench.evaluate.score import DEFAULT_MODEL
+
+    meta_p = _run_meta_path(layout)
+    meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
+    prev = meta.get("extractor_id")
+    if prev is not None and prev != DEFAULT_MODEL:
+        if not new_extractor_generation:
+            console.print(f"[red]run dir was scored with extractor {prev!r}; current extractor "
+                          f"is {DEFAULT_MODEL!r} — pass --new-extractor-generation to start a "
+                          f"new generation (archives eval/cache/ to eval/cache@{prev}/ "
+                          f"first)[/red]")
+            raise typer.Exit(1)
+        archive = layout.root / "eval" / f"cache@{prev}"
+        if archive.exists():
+            console.print(f"[red]archive target {archive} already exists — refusing to "
+                          f"overwrite; move or remove it before retrying[/red]")
+            raise typer.Exit(1)
+        if layout.cache_dir.exists():
+            layout.cache_dir.rename(archive)
+    meta["extractor_id"] = DEFAULT_MODEL
+    meta_p.write_text(json.dumps(meta, indent=2))
+
+
+@app.command()
+def score(
+    run_dir: Path = typer.Option(..., "--run-dir"),
+    registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
+    parser: list[str] = typer.Option([], "--parser", "-p"),
+    force: bool = typer.Option(False, "--force"),
+    workers: int = typer.Option(16, "--workers"),
+    limit: int | None = typer.Option(None, "--limit"),
+    new_extractor_generation: bool = typer.Option(
+        False, "--new-extractor-generation",
+        help="Confirm switching Gemini extractor generations for this run dir — archives the "
+             "OLD eval/cache/ to eval/cache@<old-id>/ first so scores from two different judges "
+             "are never silently mixed."),
+) -> None:
+    """Register this run's openai-compat transcriber parsers, then delegate to upstream
+    `run_score` + `aggregate_results`. Requires GEMINI_API_KEY/GOOGLE_API_KEY (`require_api_key`
+    fails fast, before any Gemini spend) and passes the BLOCKING extractor-validation gate
+    (`require_extractor_gate` — 5 Gemini calls against known-answer fixtures, cached per
+    (run dir, extractor, fixture-set))."""
+    from ocr_eval_ext.parsers_openai import register_openai_parsers
+    from realdoc_bench.evaluate.score import aggregate_results, require_api_key, run_score
+
+    layout = RunLayout.at(run_dir)
+    _preflight(layout)
+    register_openai_parsers(registry)
+    require_api_key()                              # fail fast, before any Gemini spend
+    _enforce_extractor_generation(layout, new_extractor_generation)
+    require_extractor_gate(layout)                  # BLOCKING — 5 Gemini calls, cached
+    records = run_score(layout, parser or None, force=force, workers=workers, limit=limit)
+    agg = aggregate_results(layout)
+    n_ok = sum(1 for r in records if r.ok)
+    n_match = sum(1 for r in records if r.match)
+    console.print(f"score: {len(records)} cells, {n_ok} answered, {n_match} fully correct — "
+                 f"results written to {agg['path']}")
+    if len(records) - n_ok:
+        raise typer.Exit(2)

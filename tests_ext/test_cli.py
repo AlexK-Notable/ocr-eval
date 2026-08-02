@@ -12,7 +12,9 @@ from typer.testing import CliRunner
 import ocr_eval_ext.cli as cli_mod
 import ocr_eval_ext.direct as direct_mod
 from ocr_eval_ext.cli import PINS_PATH, REPO_ROOT, app, require_extractor_gate
+from ocr_eval_ext.parsers_openai import TRANSCRIBER_CONDITION
 from realdoc_bench.evaluate.runs import RunLayout
+from tests_ext.mock_openai import MockOpenAI
 
 runner = CliRunner()
 
@@ -467,3 +469,214 @@ def test_direct_registry_default_is_package_relative():
     sig = inspect.signature(cli_mod.direct)
     default = sig.parameters["registry"].default.default   # OptionInfo.default holds the value
     assert default == REPO_ROOT / "configs" / "registry.yaml"
+
+
+# ── preflight ────────────────────────────────────────────────────────────────────────────────
+
+def _write_openai_compat_transcriber_registry(path: Path, base_url: str, model: str) -> None:
+    _write_registry(path, [{
+        "id": "t1@local", "shape": "transcriber", "transport": "openai-compat",
+        "base_url": base_url, "model": model, "api_key_env": None,
+        "precision": "bf16", "weights_licence": "mit", "provider_tos_commercial": "ok",
+        "provenance": "Test", "release_date": "2025-01-01", "local": True,
+    }])
+
+
+def test_preflight_cli_pass(tmp_path):
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(models=["org/t1"]) as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1")
+        result = runner.invoke(app, ["preflight", "t1@local", "--registry", str(registry_yaml)])
+        assert result.exit_code == 0, result.output
+        assert "preflight PASS" in result.output
+
+
+def test_preflight_cli_fails_on_model_mismatch(tmp_path):
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(models=["org/other"]) as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1")
+        result = runner.invoke(app, ["preflight", "t1@local", "--registry", str(registry_yaml)])
+        assert result.exit_code == 1
+        assert "preflight FAILED" in result.output
+
+
+def test_preflight_cli_rejects_non_openai_compat_transport(tmp_path):
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [{
+        "id": "g@google", "shape": "transcriber", "transport": "upstream-parser",
+        "upstream_parser": "gemini_3_5_flash", "api_key_env": "GEMINI_API_KEY",
+        "precision": "provider-default", "weights_licence": "closed",
+        "provider_tos_commercial": "ok", "provenance": "Google", "release_date": "2025-01-01",
+    }])
+    result = runner.invoke(app, ["preflight", "g@google", "--registry", str(registry_yaml)])
+    assert result.exit_code == 1
+    assert "openai-compat" in result.output
+
+
+# ── parse / score wrappers ───────────────────────────────────────────────────────────────────
+
+def _make_transcriber_run_dir(tmp_path: Path) -> RunLayout:
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 72), "irrelevant — the mock server ignores page content")
+    doc.save(layout.docs_dir / "doc_1.pdf")
+    bank = {"items": [{
+        "question_id": "q1", "source_file": "doc_1", "domain": "test",
+        "question": "What is the value?", "capabilities": [],
+        "gold_dict": {"a": "42"},
+        "response_format": "Return exactly: a=<string>",
+        "gold_answer": "a=42",
+    }]}
+    layout.bank_path.write_text(json.dumps(bank))
+    return layout
+
+
+def test_parse_cli_produces_markdown_via_mock_server(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(reply_text="hello world") as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1")
+        parser_name = f"t1_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+        result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                     "--registry", str(registry_yaml), "-p", parser_name])
+    assert result.exit_code == 0, result.output
+    md = (layout.parser_dir(parser_name) / "doc_1.md").read_text()
+    assert "hello world" in md
+    cond = json.loads((layout.parser_dir(parser_name) / "condition.json").read_text())
+    assert cond == TRANSCRIBER_CONDITION
+
+
+def test_parse_cli_rejects_unknown_parser_name(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1")
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", "totally-unknown"])
+    assert result.exit_code == 1
+    assert "unknown parser name" in _plain(result.output)
+
+
+def test_parse_wrapper_enforces_corpus_completeness(tmp_path, monkeypatch):
+    """Carried finding from Task 7 review: the corpus-completeness check must also protect the
+    parse/score wrappers, not just `verify`."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    layout.bank_path.write_text(json.dumps(
+        {"items": [{"question_id": "q1", "source_file": "missing_doc", "gold_dict": {"a": 1}}]}))
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", "whatever"])
+    assert result.exit_code == 1
+    assert "corpus incomplete" in _plain(result.output)
+
+
+def test_score_wrapper_enforces_corpus_completeness(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    layout.bank_path.write_text(json.dumps(
+        {"items": [{"question_id": "q1", "source_file": "missing_doc", "gold_dict": {"a": 1}}]}))
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+    result = runner.invoke(app, ["score", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", "whatever"])
+    assert result.exit_code == 1
+    assert "corpus incomplete" in _plain(result.output)
+
+
+def _run_score_cli(layout: RunLayout, registry_yaml: Path, parser_name: str,
+                   extra: list[str] | None = None):
+    return runner.invoke(app, ["score", "--run-dir", str(layout.root),
+                               "--registry", str(registry_yaml), "-p", parser_name,
+                               *(extra or [])])
+
+
+def test_score_cli_writes_results_and_records_extractor_id(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    import realdoc_bench.evaluate.score as score_mod
+    monkeypatch.setattr(score_mod, "gemini_extract", lambda *a, **k: {"a": "42"})
+
+    result = _run_score_cli(layout, registry_yaml, parser_name)
+    assert result.exit_code == 0, result.output
+    results = json.loads(layout.results_path.read_text())
+    assert len(results) == 1
+    assert results[0]["match"] is True
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta["extractor_id"] == score_mod.DEFAULT_MODEL
+
+
+def test_score_cli_refuses_to_mix_extractor_generations(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    import realdoc_bench.evaluate.score as score_mod
+    monkeypatch.setattr(score_mod, "gemini_extract", lambda *a, **k: {"a": "42"})
+
+    first = _run_score_cli(layout, registry_yaml, parser_name)
+    assert first.exit_code == 0, first.output
+    meta_p = layout.root / "run_meta.json"
+    meta = json.loads(meta_p.read_text())
+    meta["extractor_id"] = "old-extractor-id"
+    meta_p.write_text(json.dumps(meta))
+
+    second = _run_score_cli(layout, registry_yaml, parser_name)
+    assert second.exit_code == 1
+    assert "old-extractor-id" in second.output
+    assert "--new-extractor-generation" in second.output
+    # refused BEFORE spending the extractor-validation Gemini calls again — no new stamp beyond
+    # the one written by the first (successful) run above.
+    assert len(list(layout.root.glob(".extractor_ok_*"))) == 1
+
+
+def test_score_cli_new_extractor_generation_archives_old_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    import realdoc_bench.evaluate.score as score_mod
+    monkeypatch.setattr(score_mod, "gemini_extract", lambda *a, **k: {"a": "42"})
+
+    first = _run_score_cli(layout, registry_yaml, parser_name)
+    assert first.exit_code == 0, first.output
+    meta_p = layout.root / "run_meta.json"
+    meta = json.loads(meta_p.read_text())
+    meta["extractor_id"] = "old-extractor-id"
+    meta_p.write_text(json.dumps(meta))
+
+    second = _run_score_cli(layout, registry_yaml, parser_name, ["--new-extractor-generation"])
+    assert second.exit_code == 0, second.output
+    assert (layout.root / "eval" / "cache@old-extractor-id").exists()
+    meta2 = json.loads(meta_p.read_text())
+    assert meta2["extractor_id"] == score_mod.DEFAULT_MODEL

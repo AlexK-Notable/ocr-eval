@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 class MockOpenAI:
-    def __init__(self, reply_text='{"a": true}', responses=None):
+    def __init__(self, reply_text='{"a": true}', responses=None, models=None):
         """
         responses: optional list of per-request response specs, consumed in order across
         successive POSTs — the LAST entry repeats once the list is exhausted, so a test only
@@ -23,9 +23,14 @@ class MockOpenAI:
           - "message": for status != 200 with no explicit "body" — the mock error message text.
         `responses=None` (the default) preserves the original single-reply behavior: every
         request gets a 200 with `reply_text` as the assistant content.
+
+        models: served model ids for GET .../models (used by `ocr_eval_ext.parsers_openai.
+        preflight`) — `{"data": [{"id": m} for m in models]}`. Defaults to `[]` (an empty served
+        list) so existing chat-completion-only tests, which never hit GET, are unaffected.
         """
         self.reply_text = reply_text
         self.responses = responses
+        self.models = models or []
         self.requests: list[dict] = []
         handler_self = self
 
@@ -56,6 +61,19 @@ class MockOpenAI:
                 self.send_header("Content-Length", str(len(data)))
                 for k, v in headers.items():
                     self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_GET(self):
+                if self.path.endswith("/models"):
+                    data = json.dumps({"data": [{"id": m} for m in handler_self.models]}).encode()
+                    status = 200
+                else:
+                    data = json.dumps({"error": {"message": "not found"}}).encode()
+                    status = 404
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
 
