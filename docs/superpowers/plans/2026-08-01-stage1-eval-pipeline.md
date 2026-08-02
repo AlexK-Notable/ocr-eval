@@ -206,7 +206,7 @@ class RegistryEntry(BaseModel):
     provider_tos_commercial: Literal["ok", "blocked", "conditional"]
     tos_note: str = ""
     provenance: str
-    release_date: str                     # YYYY-MM-DD; contamination flag if > 2026-06-03
+    release_date: str                     # YYYY-MM-DD; contamination flag if > 2026-05-24 (HF createdAt)
     provider_pin: dict | None = None      # OpenRouter: {"order": [...], "allow_fallbacks": False}
     local: bool = False                   # True → serialize cells, preflight required, cost renders "n/a"
     promptable: bool = True               # False for endpoints that accept no prompt (mistral_ocr_4)
@@ -216,7 +216,7 @@ class RegistryEntry(BaseModel):
 
 def load_registry(path: Path) -> list[RegistryEntry]      # validates; raises on duplicate ids
 def get_entry(entries: list[RegistryEntry], id: str) -> RegistryEntry
-CONTAMINATION_CUTOFF = "2026-06-03"
+CONTAMINATION_CUTOFF = "2026-05-24"  # HF createdAt of Extend-AI/RealDoc-Bench (rev-2.1 note: spec cited lastModified 06-03)
 ```
 
 - [ ] **Step 1: Write failing tests**
@@ -295,7 +295,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, model_validator
 
-CONTAMINATION_CUTOFF = "2026-06-03"  # RealDoc-Bench HF publication date
+CONTAMINATION_CUTOFF = "2026-05-24"  # HF createdAt of Extend-AI/RealDoc-Bench (rev-2.1 note: spec cited lastModified 06-03)  # RealDoc-Bench HF publication date
 
 
 class RegistryEntry(BaseModel):
