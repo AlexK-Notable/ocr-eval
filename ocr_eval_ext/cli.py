@@ -51,16 +51,20 @@ def _observed_dataset_revision(layout: RunLayout) -> str | None:
     return None
 
 
-def _stamp_base_meta(layout: RunLayout, pins: dict) -> None:
-    """Called at the end of ANY successful `_preflight` — verify, direct, rescore, and the
-    future score — not just a full `verify`. Fills in `dataset_revision`/`harness_commit` once,
-    the first time a run dir passes preflight; never overwrites them afterwards (a run dir's
-    identity is fixed at first success, not re-derived on every command). Prefers the OBSERVED
-    on-disk HF revision over the pins value when available (the observed-vs-pins comparison in
-    `_preflight`, just above the call site, has already confirmed it matches the pin, so this is
-    never a silent divergence), recording which source was used so a run stamped before
-    `evaluate download` ever ran is distinguishable from one whose revision was actually
-    cross-checked against disk."""
+def _stamp_base_meta(layout: RunLayout, pins: dict, *, partial_corpus: bool = False) -> None:
+    """Called at the end of ANY successful `_preflight` — verify, direct, rescore, parse, and
+    score. Fills in `dataset_revision`/`harness_commit` once, the first time a run dir passes
+    preflight; never overwrites them afterwards (a run dir's identity is fixed at first success,
+    not re-derived on every command). Prefers the OBSERVED on-disk HF revision over the pins
+    value when available (the observed-vs-pins comparison in `_preflight`, just above the call
+    site, has already confirmed it matches the pin, so this is never a silent divergence),
+    recording which source was used so a run stamped before `evaluate download` ever ran is
+    distinguishable from one whose revision was actually cross-checked against disk.
+
+    `partial_corpus` (I6), by contrast, is OVERWRITTEN on every call — it reflects the mode of
+    the MOST RECENT preflight, not a fixed identity: a run dir preflighted with
+    `--allow-partial-corpus` is marked `true`; the next preflight that passes the full
+    completeness check (no flag) clears it back to `false`."""
     meta_p = _run_meta_path(layout)
     meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
     if "dataset_revision" not in meta:
@@ -72,6 +76,7 @@ def _stamp_base_meta(layout: RunLayout, pins: dict) -> None:
             meta["dataset_revision"] = pins["dataset_revision"]
             meta["revision_source"] = "pins"
     meta.setdefault("harness_commit", pins["harness_commit"])
+    meta["partial_corpus"] = partial_corpus
     meta_p.write_text(json.dumps(meta, indent=2))
 
 
@@ -80,12 +85,21 @@ def _check_corpus_completeness(layout: RunLayout, items: list[dict]) -> None:
     source_file the bank references. Lives inside `_preflight` itself — rather than duplicated
     per-command (verify used to run this check standalone, after its own `_preflight` call) — so
     EVERY command that calls `_preflight` (verify, direct, rescore, parse, score) is protected for
-    free. Cheap (path existence only, no rendering). Without this, an empty (or `evaluate
-    download --limit`-narrowed) docs/ against a full, real-shaped bank would sweep/parse/score
-    zero PDFs and look like a clean pass — a false pass reachable in normal operation, not just a
-    contrived test."""
+    free, unless the caller explicitly opted out via `--allow-partial-corpus` (I6; `verify` never
+    exposes that flag). Cheap (path existence only, no rendering). Without this, an empty (or
+    `evaluate download --limit`-narrowed) docs/ against a full, real-shaped bank would
+    sweep/parse/score zero PDFs and look like a clean pass — a false pass reachable in normal
+    operation, not just a contrived test.
+
+    M3: a bank item missing the `source_file` key raises a plain `KeyError` from the set
+    comprehension below — converted to `PreconditionError` so `_preflight`'s existing except
+    clause (which already catches `PreconditionError`) reports it as a clean red message, never a
+    raw traceback."""
     docs_stems = {p.stem for p in layout.docs_dir.glob("*.pdf")}
-    bank_stems = {i["source_file"] for i in items}
+    try:
+        bank_stems = {i["source_file"] for i in items}
+    except KeyError as e:
+        raise PreconditionError(f"bank item missing required key {e} — malformed bank") from e
     missing = sorted(bank_stems - docs_stems)
     if missing:
         console.print(f"[red]preflight FAILED — corpus incomplete: {len(missing)} bank "
@@ -93,8 +107,13 @@ def _check_corpus_completeness(layout: RunLayout, items: list[dict]) -> None:
         raise typer.Exit(1)
 
 
-def _preflight(layout: RunLayout) -> None:
-    """The gate every spending/reporting command calls first. Fail-closed."""
+def _preflight(layout: RunLayout, *, allow_partial_corpus: bool = False) -> None:
+    """The gate every spending/reporting command calls first. Fail-closed.
+
+    `allow_partial_corpus` (I6): when true, skips `_check_corpus_completeness` with a yellow
+    warning instead of failing closed, and records `partial_corpus: true` in `run_meta.json` so
+    the bypass is visible on disk, not just in a log line. Default is `False` everywhere;
+    `verify` never passes `True` — it has no `--allow-partial-corpus` flag at all."""
     if st.run_offline():
         console.print("[red]scorer self-test failed — refusing to proceed[/red]")
         raise typer.Exit(1)
@@ -128,11 +147,15 @@ def _preflight(layout: RunLayout) -> None:
     try:
         items = json.loads(layout.bank_path.read_text())["items"]
         check_bank(items)
+        if allow_partial_corpus:
+            console.print("[yellow]--allow-partial-corpus: corpus-completeness check "
+                          "skipped[/yellow]")
+        else:
+            _check_corpus_completeness(layout, items)
     except (FileNotFoundError, KeyError, PreconditionError) as e:
         console.print(f"[red]preflight FAILED: {e}[/red]")
         raise typer.Exit(1) from e
-    _check_corpus_completeness(layout, items)
-    _stamp_base_meta(layout, pins)
+    _stamp_base_meta(layout, pins, partial_corpus=allow_partial_corpus)
 
 
 def _png_cache_path(png_cache: Path, stem: str, condition: dict) -> Path:
@@ -287,12 +310,17 @@ def direct(
     no_image: bool = typer.Option(False, "--no-image"),
     workers: int = typer.Option(8, "--workers"),
     force: bool = typer.Option(False, "--force"),
+    allow_partial_corpus: bool = typer.Option(
+        False, "--allow-partial-corpus",
+        help="Skip the corpus-completeness check (docs/ ⊇ bank source_files) with a warning, "
+             "and record partial_corpus: true in run_meta.json. Default stays fail-closed."),
 ) -> None:
     from ocr_eval_ext.config import get_entry
     from ocr_eval_ext.direct import run_direct
 
     layout = RunLayout.at(run_dir)
-    _preflight(layout)                     # cardinalities + pins + scorer self-test, fail-closed
+    _preflight(layout, allow_partial_corpus=allow_partial_corpus)   # cardinalities + pins +
+                                                                      # scorer self-test, fail-closed
     entries = load_registry(registry)
     chosen = [get_entry(entries, m) for m in model]
     bad_shape = [e.id for e in chosen if e.shape != "vlm-chat" or e.transport != "openai-compat"]
@@ -375,14 +403,47 @@ def preflight(
     console.print(f"[green]preflight PASS[/green] — {entry.base_url} serves {served}")
 
 
+def _default_parse_workers(registry_path: Path, requested: list[str]) -> int:
+    """I5: `page_concurrency=1` on `OpenAICompatVisionParser` only serializes requests WITHIN one
+    document's `parse()` call — it does nothing to stop upstream `run_parse`'s own cross-document
+    `ThreadPoolExecutor(max_workers=workers)` from firing `workers` PDFs at the same local vLLM
+    server concurrently, each from a different document's worker thread. So the local-GPU
+    serialization invariant only actually holds if `--workers` is ALSO 1 whenever a requested
+    parser is `local: true`. Re-derives each requested name's registry entry the same way
+    `register_openai_parsers` does (`safe_name(id) + "__" + condition_hash(...)`) rather than
+    threading extra state through that function, since its return contract (`list[str]`) is
+    established by Task 8's brief and callers besides this one rely on it staying that way."""
+    from ocr_eval_ext.config import load_registry
+    from ocr_eval_ext.direct import condition_hash
+    from ocr_eval_ext.parsers_openai import TRANSCRIBER_CONDITION, safe_name
+
+    suffix = condition_hash(TRANSCRIBER_CONDITION)
+    requested_set = set(requested)
+    for e in load_registry(registry_path):
+        if (e.shape == "transcriber" and e.transport == "openai-compat" and e.local
+                and f"{safe_name(e.id)}__{suffix}" in requested_set):
+            return 1
+    return 8
+
+
 @app.command()
 def parse(
     run_dir: Path = typer.Option(..., "--run-dir"),
     registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
     parser: list[str] = typer.Option(..., "--parser", "-p"),
-    workers: int = typer.Option(8, "--workers"),
+    workers: int | None = typer.Option(
+        None, "--workers",
+        help="Default: 1 if any requested parser is a local:true registry entry (serializes "
+             "cross-document calls against the single resident vLLM server), else 8. An "
+             "explicit value here always wins over that default. See also RDB_PAGE_CONCURRENCY "
+             "(docs/local-serving.md), which controls PAGE concurrency within one document, a "
+             "separate knob from this cross-DOCUMENT concurrency."),
     force: bool = typer.Option(False, "--force"),
     limit: int | None = typer.Option(None, "--limit"),
+    allow_partial_corpus: bool = typer.Option(
+        False, "--allow-partial-corpus",
+        help="Skip the corpus-completeness check (docs/ ⊇ bank source_files) with a warning, "
+             "and record partial_corpus: true in run_meta.json. Default stays fail-closed."),
 ) -> None:
     """Register this run's dynamically-built openai-compat transcriber parsers — upstream's own
     `realdoc-bench` CLI never imports `ocr_eval_ext`, so these parsers don't exist in that
@@ -397,13 +458,21 @@ def parse(
     from realdoc_bench.evaluate.parsers.base import registry as parser_registry
 
     layout = RunLayout.at(run_dir)
-    _preflight(layout)
-    registered = register_openai_parsers(registry)
+    _preflight(layout, allow_partial_corpus=allow_partial_corpus)
+    try:
+        registered = register_openai_parsers(registry)
+    except ValueError as e:      # I3: stale binding under an already-registered parser name
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
     unknown = [p for p in parser if p not in parser_registry]
     if unknown:
         console.print(f"[red]unknown parser name(s): {unknown}. registered this run: "
                       f"{registered}. available: {parser_registry.names()}[/red]")
         raise typer.Exit(1)
+    if workers is None:
+        workers = _default_parse_workers(registry, parser)
+        console.print(f"[cyan]--workers not given — defaulting to {workers} "
+                      f"({'a local:true parser was requested' if workers == 1 else 'no local:true parser requested'})[/cyan]")
     records = run_parse(layout, parser, force=force, workers=workers, limit=limit)
     for p in parser:
         if p in registered:      # only our openai-compat transcribers carry a condition —
@@ -422,10 +491,21 @@ def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: b
     `run_meta.json` the first time it scores a run dir. A LATER invocation whose current
     `DEFAULT_MODEL` differs from what's recorded there refuses to mix generations under the same
     `eval/cache/` — verdicts from two different extractor judges are not directly comparable —
-    unless `--new-extractor-generation` is passed, which archives the OLD `eval/cache/` to
-    `eval/cache@<old-id>/` first (never silently overwritten, never silently mixed). Called after
-    `_preflight` (so run_meta.json is guaranteed to exist) and before `require_extractor_gate`
-    (so a refusal here never burns the 5 Gemini fixture-validation calls)."""
+    unless `--new-extractor-generation` is passed.
+
+    I4 ruling: archiving is SELECTIVE, not whole-directory. Only extractor-dependent rows (parser
+    key does NOT start with `vlm__`) move to `eval/cache@<old-id>/`; `vlm__*` rows (direct
+    vlm-chat answers) stay live in `eval/cache/` — they carry no Gemini-extractor dependency at
+    all, so re-archiving them would force needless re-spend on the NEXT direct/score run for no
+    correctness benefit. The parser is read from each cache row's own `"parser"` field (not
+    parsed out of the filename) since that's the single source of truth `_worker`/`run_direct`
+    both write.
+
+    M5: called BEFORE `require_extractor_gate` in `score` — never stamp/archive on the strength
+    of an extractor generation that hasn't yet proven it can pass its own fixtures; a failed gate
+    must leave `run_meta.json`/`eval/cache/` exactly as they were. Writes `run_meta.json`
+    atomically (`_atomic_write_json`) so a killed run can never leave a torn file."""
+    from ocr_eval_ext.direct import _atomic_write_json
     from realdoc_bench.evaluate.score import DEFAULT_MODEL
 
     meta_p = _run_meta_path(layout)
@@ -435,18 +515,31 @@ def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: b
         if not new_extractor_generation:
             console.print(f"[red]run dir was scored with extractor {prev!r}; current extractor "
                           f"is {DEFAULT_MODEL!r} — pass --new-extractor-generation to start a "
-                          f"new generation (archives eval/cache/ to eval/cache@{prev}/ "
-                          f"first)[/red]")
+                          f"new generation (archives extractor-dependent rows in eval/cache/ to "
+                          f"eval/cache@{prev}/ first)[/red]")
             raise typer.Exit(1)
         archive = layout.root / "eval" / f"cache@{prev}"
-        if archive.exists():
-            console.print(f"[red]archive target {archive} already exists — refusing to "
-                          f"overwrite; move or remove it before retrying[/red]")
-            raise typer.Exit(1)
+        moved = 0
         if layout.cache_dir.exists():
-            layout.cache_dir.rename(archive)
+            for f in sorted(layout.cache_dir.glob("*.json")):
+                try:
+                    rec = json.loads(f.read_text())
+                except Exception:
+                    rec = {}
+                if str(rec.get("parser", "")).startswith("vlm__"):
+                    continue          # direct rows: no extractor dependency, left live
+                archive.mkdir(parents=True, exist_ok=True)
+                target = archive / f.name
+                if target.exists():
+                    console.print(f"[red]archive target {target} already exists — refusing to "
+                                  f"overwrite; move or remove it before retrying[/red]")
+                    raise typer.Exit(1)
+                f.rename(target)
+                moved += 1
+        console.print(f"[yellow]--new-extractor-generation: archived {moved} extractor-dependent "
+                      f"row(s) to {archive}; vlm__* direct rows left live[/yellow]")
     meta["extractor_id"] = DEFAULT_MODEL
-    meta_p.write_text(json.dumps(meta, indent=2))
+    _atomic_write_json(meta_p, meta)
 
 
 @app.command()
@@ -459,24 +552,53 @@ def score(
     limit: int | None = typer.Option(None, "--limit"),
     new_extractor_generation: bool = typer.Option(
         False, "--new-extractor-generation",
-        help="Confirm switching Gemini extractor generations for this run dir — archives the "
-             "OLD eval/cache/ to eval/cache@<old-id>/ first so scores from two different judges "
-             "are never silently mixed."),
+        help="Confirm switching Gemini extractor generations for this run dir — archives "
+             "extractor-dependent rows in eval/cache/ to eval/cache@<old-id>/ first (vlm__* "
+             "direct rows stay live) so scores from two different judges are never silently "
+             "mixed."),
+    allow_partial_corpus: bool = typer.Option(
+        False, "--allow-partial-corpus",
+        help="Skip the corpus-completeness check (docs/ ⊇ bank source_files) with a warning, "
+             "and record partial_corpus: true in run_meta.json. Default stays fail-closed."),
 ) -> None:
     """Register this run's openai-compat transcriber parsers, then delegate to upstream
     `run_score` + `aggregate_results`. Requires GEMINI_API_KEY/GOOGLE_API_KEY (`require_api_key`
     fails fast, before any Gemini spend) and passes the BLOCKING extractor-validation gate
     (`require_extractor_gate` — 5 Gemini calls against known-answer fixtures, cached per
-    (run dir, extractor, fixture-set))."""
+    (run dir, extractor, fixture-set)) BEFORE any generation bookkeeping (M5/M6) — a broken
+    extractor must never get to stamp itself in or archive anything."""
     from ocr_eval_ext.parsers_openai import register_openai_parsers
+    from realdoc_bench.evaluate.parsers.base import registry as parser_registry
     from realdoc_bench.evaluate.score import aggregate_results, require_api_key, run_score
 
     layout = RunLayout.at(run_dir)
-    _preflight(layout)
-    register_openai_parsers(registry)
+    _preflight(layout, allow_partial_corpus=allow_partial_corpus)
+    try:
+        register_openai_parsers(registry)
+    except ValueError as e:      # I3: stale binding under an already-registered parser name
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
     require_api_key()                              # fail fast, before any Gemini spend
+
+    # M1: a typo'd -p name that matches neither a registered parser class nor an on-disk parsed
+    # dir would otherwise sail into `run_score`, which treats it as a legitimate-but-unparsed
+    # parser and writes "markdown missing" for every single bank item (1356 sticky rows for the
+    # real corpus) — refuse before any of that gets written.
+    if parser:
+        known = set(parser_registry.names()) | set(layout.parsed_parsers())
+        unknown = [p for p in parser if p not in known]
+        if unknown:
+            console.print(f"[red]unknown parser name(s) for score: {unknown}. registered: "
+                          f"{sorted(parser_registry.names())}. parsed on disk: "
+                          f"{sorted(layout.parsed_parsers())}[/red]")
+            raise typer.Exit(1)
+
+    try:
+        require_extractor_gate(layout)              # BLOCKING — 5 Gemini calls, cached
+    except PreconditionError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
     _enforce_extractor_generation(layout, new_extractor_generation)
-    require_extractor_gate(layout)                  # BLOCKING — 5 Gemini calls, cached
     records = run_score(layout, parser or None, force=force, workers=workers, limit=limit)
     agg = aggregate_results(layout)
     n_ok = sum(1 for r in records if r.ok)

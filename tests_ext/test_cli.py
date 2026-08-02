@@ -471,14 +471,31 @@ def test_direct_registry_default_is_package_relative():
     assert default == REPO_ROOT / "configs" / "registry.yaml"
 
 
+# ── I6: direct also carries --allow-partial-corpus (structural — behavioral coverage lives on
+# the parse/score tests below, which exercise the shared `_preflight` code path) ────────────────
+
+def test_direct_has_allow_partial_corpus_flag():
+    import inspect
+
+    assert "allow_partial_corpus" in inspect.signature(cli_mod.direct).parameters
+
+
 # ── preflight ────────────────────────────────────────────────────────────────────────────────
 
-def _write_openai_compat_transcriber_registry(path: Path, base_url: str, model: str) -> None:
+def _write_openai_compat_transcriber_registry(path: Path, base_url: str, model: str, *,
+                                              entry_id: str = "t1@local",
+                                              local: bool = True) -> None:
+    """`entry_id` is parametrized (not hardcoded) because `register_openai_parsers` shares a
+    single process-wide `parser_registry` across the whole pytest session — two tests that both
+    register a transcriber with the same id but a DIFFERENT `base_url` now raise `ValueError`
+    (I3's stale-binding guard) instead of one silently winning depending on run order. Every test
+    below that actually calls `register_openai_parsers` (directly or via the `parse`/`score` CLI)
+    uses its own unique id for exactly this reason."""
     _write_registry(path, [{
-        "id": "t1@local", "shape": "transcriber", "transport": "openai-compat",
+        "id": entry_id, "shape": "transcriber", "transport": "openai-compat",
         "base_url": base_url, "model": model, "api_key_env": None,
         "precision": "bf16", "weights_licence": "mit", "provider_tos_commercial": "ok",
-        "provenance": "Test", "release_date": "2025-01-01", "local": True,
+        "provenance": "Test", "release_date": "2025-01-01", "local": local,
     }])
 
 
@@ -498,6 +515,18 @@ def test_preflight_cli_fails_on_model_mismatch(tmp_path):
         result = runner.invoke(app, ["preflight", "t1@local", "--registry", str(registry_yaml)])
         assert result.exit_code == 1
         assert "preflight FAILED" in result.output
+
+
+def test_preflight_cli_url_build_tolerates_trailing_slash(tmp_path):
+    """M9: a base_url with a trailing slash must not double-slash the /models URL."""
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(models=["org/t1"]) as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url + "/", "org/t1",
+                                                  entry_id="trailingslash@local")
+        result = runner.invoke(app, ["preflight", "trailingslash@local",
+                                     "--registry", str(registry_yaml)])
+        assert result.exit_code == 0, result.output
+        assert "preflight PASS" in result.output
 
 
 def test_preflight_cli_rejects_non_openai_compat_transport(tmp_path):
@@ -538,8 +567,9 @@ def test_parse_cli_produces_markdown_via_mock_server(tmp_path, monkeypatch):
     layout = _make_transcriber_run_dir(tmp_path)
     registry_yaml = tmp_path / "registry.yaml"
     with MockOpenAI(reply_text="hello world") as mock:
-        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1")
-        parser_name = f"t1_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1",
+                                                  entry_id="parsecli@local")
+        parser_name = f"parsecli_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
         result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
                                      "--registry", str(registry_yaml), "-p", parser_name])
     assert result.exit_code == 0, result.output
@@ -553,11 +583,115 @@ def test_parse_cli_rejects_unknown_parser_name(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
     layout = _make_transcriber_run_dir(tmp_path)
     registry_yaml = tmp_path / "registry.yaml"
-    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1")
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="parsecli-reject@local")
     result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
                                  "--registry", str(registry_yaml), "-p", "totally-unknown"])
     assert result.exit_code == 1
     assert "unknown parser name" in _plain(result.output)
+
+
+# ── I5: parse workers default (1 for local:true, 8 otherwise; explicit --workers always wins) ──
+
+def test_parse_defaults_workers_to_one_for_local_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="workerslocal@local", local=True)
+    parser_name = f"workerslocal_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+    captured = {}
+
+    def fake_run_parse(layout_arg, parsers, **kwargs):
+        captured["workers"] = kwargs.get("workers")
+        return []
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    monkeypatch.setattr(parse_mod, "run_parse", fake_run_parse)
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", parser_name])
+    assert result.exit_code == 0, result.output
+    assert captured["workers"] == 1
+    assert "defaulting to 1" in _plain(result.output)
+
+
+def test_parse_defaults_workers_to_eight_for_hosted_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="workershosted@openrouter", local=False)
+    parser_name = f"workershosted_openrouter__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+    captured = {}
+
+    def fake_run_parse(layout_arg, parsers, **kwargs):
+        captured["workers"] = kwargs.get("workers")
+        return []
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    monkeypatch.setattr(parse_mod, "run_parse", fake_run_parse)
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", parser_name])
+    assert result.exit_code == 0, result.output
+    assert captured["workers"] == 8
+    assert "defaulting to 8" in _plain(result.output)
+
+
+def test_parse_explicit_workers_overrides_local_default(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_openai_compat_transcriber_registry(registry_yaml, "http://localhost:9/v1", "org/t1",
+                                              entry_id="workersoverride@local", local=True)
+    parser_name = f"workersoverride_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+    captured = {}
+
+    def fake_run_parse(layout_arg, parsers, **kwargs):
+        captured["workers"] = kwargs.get("workers")
+        return []
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    monkeypatch.setattr(parse_mod, "run_parse", fake_run_parse)
+    result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", parser_name,
+                                 "--workers", "4"])
+    assert result.exit_code == 0, result.output
+    assert captured["workers"] == 4    # explicit value wins over the local:true default of 1
+
+
+# ── I6: --allow-partial-corpus on parse/score/direct, never on verify ───────────────────────────
+
+def test_verify_has_no_allow_partial_corpus_flag(tmp_path):
+    result = runner.invoke(app, ["verify", "--run-dir", str(tmp_path), "--allow-partial-corpus"])
+    assert result.exit_code != 0
+    assert "no such option" in result.output.lower()
+
+
+def test_parse_allow_partial_corpus_bypasses_corpus_check(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    doc = fitz.open()
+    doc.new_page(width=612, height=792).insert_text((72, 72), "present")
+    doc.save(layout.docs_dir / "present.pdf")
+    layout.bank_path.write_text(json.dumps({"items": [
+        {"question_id": "q1", "source_file": "present", "gold_dict": {"a": 1}},
+        {"question_id": "q2", "source_file": "missing_doc", "gold_dict": {"a": 1}},
+    ]}))
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(reply_text="hello") as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1",
+                                                  entry_id="partialcorpus@local")
+        parser_name = f"partialcorpus_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+        result = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                     "--registry", str(registry_yaml), "-p", parser_name,
+                                     "--allow-partial-corpus"])
+    assert result.exit_code == 0, result.output
+    out = _plain(result.output).lower()
+    assert "allow-partial-corpus" in out and "skipped" in out
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta["partial_corpus"] is True
+    assert (layout.parser_dir(parser_name) / "present.md").exists()
 
 
 def test_parse_wrapper_enforces_corpus_completeness(tmp_path, monkeypatch):
@@ -653,7 +787,12 @@ def test_score_cli_refuses_to_mix_extractor_generations(tmp_path, monkeypatch):
     assert len(list(layout.root.glob(".extractor_ok_*"))) == 1
 
 
-def test_score_cli_new_extractor_generation_archives_old_cache(tmp_path, monkeypatch):
+def test_score_cli_new_extractor_generation_end_to_end(tmp_path, monkeypatch):
+    """Smoke test: the full `score` command with --new-extractor-generation still completes
+    (gate -> archive -> re-run_score all cooperate under the M5/M6-reordered pipeline). Exact
+    row-level selectivity (I4: vlm__* stays live, everything else archives) is pinned precisely,
+    without `run_score`'s own re-population muddying the assertions, by
+    `test_enforce_extractor_generation_archives_only_non_vlm_rows` below."""
     monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
     monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
     monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
@@ -680,3 +819,128 @@ def test_score_cli_new_extractor_generation_archives_old_cache(tmp_path, monkeyp
     assert (layout.root / "eval" / "cache@old-extractor-id").exists()
     meta2 = json.loads(meta_p.read_text())
     assert meta2["extractor_id"] == score_mod.DEFAULT_MODEL
+
+
+# ── I4: --new-extractor-generation archives ONLY extractor-dependent (non-vlm__) rows ───────────
+
+def test_enforce_extractor_generation_archives_only_non_vlm_rows(tmp_path):
+    """Unit-level (not through the full `score` command, which would immediately re-populate an
+    archived row via `run_score` in the very same invocation — see the end-to-end smoke test
+    above): calls `_enforce_extractor_generation` directly against a pre-seeded eval/cache/ to
+    pin the exact selectivity rule without that confound."""
+    import realdoc_bench.evaluate.score as score_mod
+
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+
+    vlm_row = layout.cache_path("q1", "vlm__m1@mock__deadbeef0000")
+    vlm_content = {"qid": "q1", "parser": "vlm__m1@mock__deadbeef0000",
+                   "answer": {"a": True}, "field_matches": {"a": True}, "match": True}
+    vlm_row.parent.mkdir(parents=True, exist_ok=True)
+    vlm_row.write_text(json.dumps(vlm_content))
+
+    scored_row = layout.cache_path("q2", "t1_local__abc123")
+    scored_content = {"qid": "q2", "parser": "t1_local__abc123",
+                      "answer": {"a": "42"}, "field_matches": {"a": True}, "match": True}
+    scored_row.write_text(json.dumps(scored_content))
+
+    (layout.root / "run_meta.json").write_text(json.dumps({"extractor_id": "old-id"}))
+
+    cli_mod._enforce_extractor_generation(layout, True)
+
+    archive = layout.root / "eval" / "cache@old-id"
+    assert vlm_row.exists()                              # direct row: left live, untouched
+    assert json.loads(vlm_row.read_text()) == vlm_content
+    assert not (archive / vlm_row.name).exists()
+
+    assert not scored_row.exists()                        # extractor-dependent row: moved out...
+    assert json.loads((archive / scored_row.name).read_text()) == scored_content   # ...intact
+
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta["extractor_id"] == score_mod.DEFAULT_MODEL
+
+
+def test_enforce_extractor_generation_treats_corrupt_row_as_extractor_dependent(tmp_path):
+    """An unreadable/corrupt cache row can't be confirmed as a vlm__ direct row, so the safe
+    default is to archive it rather than silently leave a row of unknown provenance mixed into
+    the new generation's live eval/cache/."""
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    corrupt = layout.cache_dir / "q_bad__unknown.json"
+    layout.cache_dir.mkdir(parents=True, exist_ok=True)
+    corrupt.write_text("{not valid json")
+    (layout.root / "run_meta.json").write_text(json.dumps({"extractor_id": "old-id"}))
+
+    cli_mod._enforce_extractor_generation(layout, True)
+
+    assert not corrupt.exists()
+    assert (layout.root / "eval" / "cache@old-id" / corrupt.name).exists()
+
+
+# ── M1: score refuses an unknown -p name BEFORE writing sticky "markdown missing" rows ──────────
+
+def test_score_cli_rejects_unknown_parser_name_before_run_score(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    result = runner.invoke(app, ["score", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-p", "totally-bogus-typo"])
+    assert result.exit_code == 1
+    assert "unknown parser name" in _plain(result.output).lower()
+    assert list(layout.cache_dir.glob("*.json")) == []   # no sticky "markdown missing" rows
+
+
+# ── M5/M6: extractor gate runs BEFORE any stamping/archiving; its failure is a clean exit ──────
+
+def test_score_cli_extractor_gate_failure_is_clean_exit_no_traceback(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor",
+                        lambda: ["extractor missed: 'q' -> None"])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    result = _run_score_cli(layout, registry_yaml, parser_name)
+    assert result.exit_code == 1
+    assert "Traceback" not in result.output
+    assert "extractor validation FAILED" in _plain(result.output)
+    # never stamped on a failed gate — no extractor_id recorded, nothing archived
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert "extractor_id" not in meta
+    assert not any((layout.root / "eval").glob("cache@*"))
+
+
+# ── I3 (CLI level): a stale binding surfaces as a clean red message, not a traceback ────────────
+
+def test_parse_cli_stale_binding_mismatch_is_clean_exit(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_transcriber_run_dir(tmp_path)
+    registry_a = tmp_path / "a.yaml"
+    registry_b = tmp_path / "b.yaml"
+    _write_openai_compat_transcriber_registry(registry_a, "http://localhost:9/v1", "org/t1",
+                                              entry_id="staleclitest@local")
+    _write_openai_compat_transcriber_registry(registry_b, "http://localhost:10/v1", "org/t1",
+                                              entry_id="staleclitest@local")
+    parser_name = f"staleclitest_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+
+    import realdoc_bench.evaluate.parse as parse_mod
+    monkeypatch.setattr(parse_mod, "run_parse", lambda *a, **k: [])   # never actually connects
+
+    first = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                "--registry", str(registry_a), "-p", parser_name])
+    assert first.exit_code == 0, first.output
+
+    second = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_b), "-p", parser_name])
+    assert second.exit_code == 1
+    assert "Traceback" not in second.output
+    assert "already registered" in _plain(second.output)

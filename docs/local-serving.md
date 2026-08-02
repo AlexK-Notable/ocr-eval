@@ -12,12 +12,29 @@ One model resident at a time (16 GB VRAM). Start, preflight, run, stop:
    checkpoint resident, or a server that wasn't restarted after a config change, produces
    transcripts that look plausible but are silently off-model.
 3. `uv run ocr-eval parse --run-dir <run-dir> -p <parser-name>` (and `ocr-eval score` after) —
-   these are the two dynamically-registered openai-compat transcribers in `configs/registry.yaml`
-   (`glm-ocr@local-vllm`, `dots-ocr@local-vllm`); the registered parser name is
+   `configs/registry.yaml` has THREE dynamically-registered openai-compat transcribers in total:
+   two run locally on this box (`glm-ocr@local-vllm`, `dots-ocr@local-vllm` — this runbook covers
+   these two) and one is hosted (`qwen3-vl-8b@openrouter-transcriber`, served over OpenRouter —
+   no local `vllm serve` needed for that one). The registered parser name is
    `safe_name(entry.id) + "__" + condition_hash(TRANSCRIBER_CONDITION)` (see
    `ocr_eval_ext/parsers_openai.py`) — read it off the wrapper's own output rather than guessing.
 4. Stop the server (`Ctrl-C` / kill the `vllm serve` process) before switching models — the next
    model's launch line assumes 16 GB is fully free.
+
+### Concurrency knobs — two separate ones, don't confuse them
+
+- **`ocr-eval parse --workers N`** controls how many *documents* are parsed concurrently
+  (upstream `run_parse`'s own `ThreadPoolExecutor`). Against a `local: true` entry this defaults
+  to **1** automatically (no flag needed) — the local vLLM server is single-resident, and
+  `page_concurrency=1` on `OpenAICompatVisionParser` only serializes requests *within* one
+  document's `parse()` call, not *across* documents, so `--workers` must also be 1 to actually
+  keep only one request in flight against the server at a time. Pass `--workers` explicitly to
+  override (e.g. running two independently-served local models on separate GPUs); the CLI prints
+  which default it picked and why.
+- **`RDB_PAGE_CONCURRENCY`** (env var, read by upstream `VisionParserBase.parse`) controls how
+  many *pages of the same document* are requested concurrently — irrelevant for Stage 1's
+  single-page bank, relevant once Stage 2 processes multi-page documents. Leave unset (defaults
+  to `page_concurrency=1` on this parser) for local serving regardless of `--workers`.
 
 ## GLM-OCR (0.9B, BF16)
 
@@ -27,6 +44,17 @@ Registry entry: `glm-ocr@local-vllm` (`configs/registry.yaml`), model id `zai-or
 vllm serve zai-org/GLM-OCR --port 8000 --dtype bfloat16 \
   --gpu-memory-utilization 0.85 --max-model-len 8192
 ```
+
+**Context budget:** `--max-model-len 8192` must cover prompt + image + completion tokens
+combined. A rendered page at 150dpi costs roughly 1.3-1.9k image tokens; the markdown-extraction
+prompt text is a few hundred more. `OpenAICompatVisionParser.max_tokens` is pinned to **4096**
+(via `TRANSCRIBER_CONDITION["sampling"]["max_tokens"]`, not upstream's inherited 12000-token
+default) specifically so `~2k` prompt/image tokens `+ 4096` completion tokens fits inside 8192
+with headroom — the original 12000-token default blew straight through the window, and the
+server's resulting 400 was (correctly) treated as a *permanent* failure by `_is_retryable`, so
+every local page failed on its first attempt with no retry. Raise `--max-model-len` (and
+`max_tokens` in `TRANSCRIBER_CONDITION`, which changes the registered parser's condition hash —
+a deliberate, tracked change, not a silent one) if a model routinely needs longer completions.
 
 Verify the exact HF id + any `--trust-remote-code` / processor flags against the model card at
 first use, and update this block with whatever flags actually worked.
