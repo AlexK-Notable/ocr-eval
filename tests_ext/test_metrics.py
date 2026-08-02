@@ -111,6 +111,21 @@ def test_null_metrics_all_invented_hallucination_rate_one():
     assert m["overall"].acc_over_all == 0.0
 
 
+def test_null_metrics_mixed_collapse_and_invention():
+    nulls = [("q1","z",None,"d1"),("q2","y",None,"d1"),("q3","x",None,"d1"),("q4","w",None,"d1")]
+    records = {
+        "q1": {"answer": {"z": None},        "field_matches": {}, "match": True},   # correct null
+        "q2": {"answer": {"y": "invented"},  "field_matches": {}, "match": False},  # hallucination
+        "q3": {"answer": None, "field_matches": {}, "match": False},                # collapse
+        "q4": {"answer": None, "field_matches": {}, "match": False},                # collapse
+    }
+    m = null_metrics(field_outcomes(records, nulls))
+    assert m["overall"].n == 4
+    assert m["overall"].n_answered == 2
+    assert m["overall"].acc_over_all == 0.25
+    assert m["hallucination_rate"] == 0.5      # 1 invented / 2 answered — pins BOTH terms
+
+
 # --- I3: non-dict answers are errors; empty dict stays answered -------------------------
 
 def test_field_outcomes_non_dict_answer_is_error():
