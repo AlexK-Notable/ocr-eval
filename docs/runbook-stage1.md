@@ -25,8 +25,10 @@ file's gate rule before step 4 or step 6 below. Registry entries referenced by i
   assumed wrapped this way; it's omitted from the individual command lines for readability.
 - `uv sync` completed. Working tree at or descended from `configs/pins.yaml`'s `harness_commit`
   (`fb26a6876481de76dc293f722ab4efa71279904d`) — `_preflight`'s `git merge-base` ancestry check
-  (every wrapper command below) fails closed on this automatically; no manual check needed beyond
-  making sure you haven't checked out something unrelated.
+  (every run-dir-scoped command below: `verify`/`direct`/`rescore`/`parse`/`score`/`report` — NOT
+  `selftest` or `preflight`, neither of which touches a run dir or calls `_preflight` at all)
+  fails closed on this automatically; no manual check needed beyond making sure you haven't
+  checked out something unrelated.
 
 ## The numbered sequence
 
@@ -66,8 +68,12 @@ uv run ocr-eval parse --run-dir runs/stage1 -p gemini_3_5_flash
 uv run ocr-eval score --run-dir runs/stage1 -p gemini_3_5_flash
 ```
 Use these `ocr-eval` wrappers, **not** upstream `realdoc-bench evaluate run` — see Warnings below.
-After step 9 builds `report.md`, compare its `gemini_3_5_flash` row's `general/field` /
-`strict/question` columns against
+The `-p` argument above is the raw upstream parser name, but `report.md` labels the resulting
+Section B row by the RESOLVED REGISTRY id instead (`report_md.py`'s `_row_label` renders
+`entry.id`, never the parser key) — after step 9 builds `report.md`, look for the
+**`gemini-3.5-flash@google`** row (`configs/registry.yaml`'s entry with
+`upstream_parser: gemini_3_5_flash`), not a literal `gemini_3_5_flash` string, and compare its
+`general/field` / `strict/question` columns against
 [`table3-snapshot.md`](superpowers/specs/table3-snapshot.md)'s README row (89.3% / 82.2%) —
 investigate before spending on any hosted candidate below if either is outside ±2.5pp.
 
@@ -151,45 +157,106 @@ uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@openrouter -m qwen3.
 ```
 Expect the printed summary's `cached` count to equal every `(model × bank item)` cell and `ok`/
 `error` both `0` — e.g. `{'ok': 0, 'error': 0, 'cached': 5424}` for 4 models × 1,356 items. Zero
-HTTP calls made: `run_direct`'s cache-hit gate (`do()`'s `cpath.exists()` check, ahead of
-`--force`) skips the request entirely rather than replaying and discarding it.
+HTTP calls made: `run_direct`'s cell-building loop (`if force or not cpath.exists():
+cells.append(...)`) excludes a cell from the dispatch list entirely whenever its cache file
+already exists — `--force` overrides that and includes it unconditionally regardless of cache
+state, so a plain rerun with no `--force` never reaches `do()`/the HTTP client for a cached cell
+at all.
 
 ## Local-validation path (no keys needed)
 
 Before spending on any hosted API, the whole `run_direct` → `build_markdown_report` seam — the
 same seam `tests_ext/test_e2e_smoke.py` exercises at the unit level — can be smoke-tested
 end-to-end against a fully local OpenAI-compatible endpoint (Ollama or vLLM serving any small
-vision model), with **zero** API keys anywhere in the environment:
+vision model), with **zero** API keys anywhere in the environment. Registry entries for this live
+in **[`configs/registry-local-validation.yaml`](../configs/registry-local-validation.yaml)**
+(committed, orchestrator-authored) rather than hand-written per run:
 
-1. Start a local server, e.g. `ollama serve` with a pulled vision model, or
-   `vllm serve <model> --port 8000` (see [`docs/local-serving.md`](local-serving.md)).
-2. Add a `vlm-chat` registry entry pointing at it, `api_key_env: null` — shaped like the existing
-   local transcriber entries in `configs/registry.yaml` but with `shape: vlm-chat` instead of
-   `transcriber`, e.g.:
-   ```yaml
-   - id: local-smoke@ollama
-     shape: vlm-chat
-     transport: openai-compat
-     base_url: http://localhost:11434/v1
-     model: <served-model-tag>
-     api_key_env: null
-     precision: bf16
-     weights_licence: mit
-     provider_tos_commercial: ok
-     tos_note: "self-hosted: no provider ToS"
-     provenance: <org>
-     release_date: "<yyyy-mm-dd>"
-     local: true
-   ```
-3. `uv run ocr-eval preflight local-smoke@ollama`
-4. `uv run ocr-eval direct --run-dir runs/stage1-smoke -m local-smoke@ollama --limit 5`
-5. `uv run ocr-eval report --run-dir runs/stage1-smoke`
+```yaml
+- id: qwen3-vl-8b@ollama-validation             # shape: vlm-chat — direct leg
+- id: qwen3-vl-8b@ollama-transcriber-validation # shape: transcriber — parse leg (score needs GEMINI_API_KEY)
+```
+
+Both point at `http://localhost:11434/v1` (Ollama) with `api_key_env: null`. **Read the file's own
+header comment before using it**: `qwen3-vl:8b` served via Ollama is Q4_K_M-quantized (verified
+`ollama show`), below the spec's precision-policy floor for a headline comparison ("if only Q4
+fits, run hosted instead") — `precision: provider-default` here is a deliberate declaration of
+"not asserted" (renders as such in `report.md`), and the `tos_note` flags this registry as
+**harness-validation only, never a comparative-table candidate**. Never point Stage 1's real
+`configs/registry.yaml` `--registry` invocations at this file, and never merge these two entries
+into it.
+
+### Corpus prerequisite
+
+Every command below still goes through `_preflight`, which enforces `docs/` ⊇ every bank
+`source_file` (`_check_corpus_completeness`) unless told otherwise. **The path below assumes the
+same fully-downloaded, fully-verified run dir from steps 2–3** (`runs/stage1`) — `--limit` on
+`direct` only bounds how many *new cells* get spent, it does not shrink the underlying corpus, so
+the completeness check passes trivially and no extra flag is needed. This also means it's safe to
+run against `runs/stage1` directly (validation-entry cache rows land under their own
+`vlm__qwen3-vl-8b@ollama-validation__<cond>` key, never colliding with any real candidate's rows).
+
+If you instead want a *narrower* smoke dir to avoid the full 581-doc download (e.g.
+`realdoc-bench evaluate download --run-dir runs/stage1-smoke ... --limit 5`), `direct`/`parse`/
+`score` all expose `--allow-partial-corpus` to skip the completeness check (with a warning, and a
+sticky `partial_corpus: true` stamp in `run_meta.json`) — but note `verify` never exposes that
+flag at all (by design — see `_preflight`'s docstring), so skip straight to `direct
+--allow-partial-corpus` on a narrowed dir rather than trying `verify` first. **`report` has no
+`--allow-partial-corpus` flag either** (`cli.py`'s `report()` calls `_preflight(layout)` with no
+override, so it re-runs the full completeness check unconditionally, `partial_corpus: true` in
+`run_meta.json` notwithstanding) — this is a known, previously-flagged gap (progress ledger, Task
+9 minor: "report CLI --allow-partial-corpus symmetry gap"), not a documentation oversight. A
+narrowed run dir can validate `direct`/`parse`/`score` end-to-end but **cannot** currently produce
+a `report.md` — use the full-corpus path above if you need to see an actual rendered report.
+
+### Steps (against `runs/stage1`, full corpus)
+
+1. Start Ollama with the model pulled (`ollama serve`; see
+   [`docs/local-serving.md`](local-serving.md) for the vLLM equivalent).
+2. `uv run ocr-eval preflight qwen3-vl-8b@ollama-validation --registry configs/registry-local-validation.yaml`
+3. `uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@ollama-validation --registry configs/registry-local-validation.yaml --limit 5`
+4. `uv run ocr-eval report --run-dir runs/stage1 --registry configs/registry-local-validation.yaml`
 
 Neither `direct` (vlm-chat direct-answer — no separate extractor call) nor `report`
 (`build_markdown_report` is a pure disk-reading function; `_preflight` itself needs no API key —
 only `st.run_offline()`, the pins/ancestry check, and corpus completeness) touches
 `GEMINI_API_KEY` or `OPENROUTER_API_KEY`. This validates render/cache/report plumbing before any
-hosted spend and is a good first check after any harness code change.
+hosted spend and is a good first check after any harness code change. (Step 4's `--registry`
+points at the local-validation file so `report_md.py` can resolve the entry and render its stamp
+columns; a plain `ocr-eval report --run-dir runs/stage1` against the default registry would still
+succeed and show the row as `(unregistered)` instead.)
+
+### Real-world note: thinking models exhaust `max_tokens` and return empty content
+
+Observed live against `qwen3-vl:8b` via Ollama: `STAGE1_CONDITION`'s `sampling.max_tokens: 1024`
+is consumed entirely by the model's own reasoning/thinking tokens, leaving nothing for the actual
+answer — the response comes back with empty `message.content` and `finish_reason: "length"`. The
+harness handles this exactly as designed: `direct.py`'s `_one` sees an empty `text` and writes an
+`error_class: "empty"` row (never a crash, never a silently-wrong answer) — this is a normal,
+expected outcome for a thinking-enabled local model at Stage 1's default budget, not a bug to
+chase.
+
+To get real (non-empty) answers for a full validation pass, widen the completion budget. The
+`ocr-eval direct` CLI has **no flag for this** — `run_direct`'s `condition` parameter (which
+`STAGE1_CONDITION` fills by default) isn't exposed by `cli.py`'s `direct()` command at all — so
+this needs a short direct call into `ocr_eval_ext.direct.run_direct`, e.g.:
+```python
+from ocr_eval_ext.config import get_entry, load_registry
+from ocr_eval_ext.direct import STAGE1_CONDITION, run_direct
+from realdoc_bench.evaluate.runs import RunLayout
+
+layout = RunLayout.at("runs/stage1")
+entries = load_registry("configs/registry-local-validation.yaml")
+entry = get_entry(entries, "qwen3-vl-8b@ollama-validation")
+cond = {**STAGE1_CONDITION, "sampling": {**STAGE1_CONDITION["sampling"], "max_tokens": 8192}}
+run_direct(layout, [entry], condition=cond, limit=5)
+```
+This lands under a **distinct cache key by design** (`condition_hash` folds the whole condition
+dict, so a different `max_tokens` is a different, trackable `vlm__...__<cond>` key, never a silent
+overwrite of the `error_class: "empty"` rows from the default-budget attempt). Also note: Ollama's
+OpenAI-compat shim ignores a `think: false` request field — there is currently no way to suppress
+thinking through that route, so raising `max_tokens` is the only available workaround, not a
+side-channel toggle.
 
 ## Warnings
 
@@ -220,7 +287,10 @@ Every DoD item from the plan's Task 11, with its verifying command. Run these ag
 **1. Preconditions, scorer self-test, and extractor validation all green — fail-closed observed at
 least once (deliberately corrupt a fixture, then restore).**
 ```
-uv run ocr-eval verify --run-dir runs/stage1      # cardinality + fail-closed pins/preconditions
+uv run ocr-eval verify --run-dir runs/stage1 --skip-renders   # cardinality + fail-closed
+                                                                # pins/preconditions; renders were
+                                                                # already verified in step 3, no
+                                                                # need to re-sweep 581 PDFs here
 uv run ocr-eval selftest --extractor              # green pass
 ```
 Fail-closed demonstration: temporarily flip one `expect_match` (or `gold`) value in
@@ -228,13 +298,19 @@ Fail-closed demonstration: temporarily flip one `expect_match` (or `gold`) value
 --extractor` and confirm a red `FAIL` + non-zero exit, then `git checkout --
 ocr_eval_ext/selftest.py` and re-run to confirm green again.
 
-**2. Reproduction: `gemini_3_5_flash` within tolerance of snapshot; `dots.ocr` local vs. paper CI
-with caveats documented.**
+**2. Reproduction: `gemini-3.5-flash@google` within tolerance of snapshot; `dots.ocr` local vs.
+paper CI with caveats documented.**
 ```
 uv run ocr-eval report --run-dir runs/stage1
-grep -A2 "gemini_3_5_flash" runs/stage1/report.md
+grep -A2 "gemini-3.5-flash@google" runs/stage1/report.md
 grep -A2 "dots-ocr@local-vllm" runs/stage1/report.md
 ```
+NB: `report.md` labels rows by registry id, not by the `-p`/upstream parser name used to score them
+— `gemini_3_5_flash` (the CLI arg from step 4) never appears verbatim in the report; look for
+`gemini-3.5-flash@google` instead (see step 4's note). This also matches the frontier-anchor
+entry `gemini-3.5-flash@google-vlmchat` (Section A) since it shares that prefix — harmless, both
+are relevant Gemini reproduction points; the Section B row is the one to compare against §2 below.
+
 Compare against
 [`docs/superpowers/specs/table3-snapshot.md`](superpowers/specs/table3-snapshot.md) (§2 for
 Gemini, ±2.5pp; §1 for dots.ocr, CI-overlap-with-documented-caveats — see that file's gate rule).
@@ -242,7 +318,12 @@ Gemini, ±2.5pp; §1 for dots.ocr, CI-overlap-with-documented-caveats — see th
 **3. ≥3 hosted VLM rows, ≥1 local specialist (BF16), ≥1 hosted OCR endpoint, frontier anchor,
 calibration pair.**
 ```
-grep -E "qwen3-vl-8b@openrouter|qwen3\.5-9b@openrouter|qwen3-vl-32b@openrouter" runs/stage1/report.md   # 3 hosted VLM
+grep -E "qwen3-vl-8b@openrouter \||qwen3\.5-9b@openrouter \||qwen3-vl-32b@openrouter \|" \
+  runs/stage1/report.md   # 3 hosted VLM — anchored on the " |" table-cell delimiter so this
+                           # excludes the qwen3-vl-8b@openrouter-transcriber calibration row
+                           # (Section B) and the "calibration pair detected" prose line, both of
+                           # which contain "qwen3-vl-8b@openrouter" as a substring but never
+                           # followed directly by " |"
 grep "glm-ocr@local-vllm\|dots-ocr@local-vllm" runs/stage1/report.md                                    # local specialist (BF16)
 grep "mistral-ocr@mistral" runs/stage1/report.md                                                        # hosted OCR endpoint
 grep "gemini-3.5-flash@google-vlmchat" runs/stage1/report.md                                            # frontier ceiling anchor

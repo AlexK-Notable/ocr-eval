@@ -9,10 +9,12 @@ mechanics (that's `tests_ext/test_direct.py`).
 
 Synthetic corpus: 2 single-page PDFs + a 2-item checkbox-bucket bank (asymmetric class balance —
 one true, one false gold — so "the mock model got everything right" is a real assertion, not an
-artifact of a same-answer-always bank). `MockOpenAI` answers every request `{"checked": true}` OR
-`{"checked": false}` matching each item's own gold via `responses=[...]` scripted per request
-index — see `_scripted_replies_in_bank_order` below for why that's safe under `run_direct`'s
-default 8-worker concurrent dispatch.
+artifact of a same-answer-always bank). `MockOpenAI` is scripted with one response per bank item
+(`{"checked": true}` then `{"checked": false}`, via `responses=[...]`), and `run_direct` is called
+with `workers=1` so request-arrival order is pinned to bank order — see
+`_scripted_replies_in_bank_order` below for why that pinning is required (at the default
+`workers=8`, the two cells would dispatch concurrently and the scripted-reply pairing would not be
+safe).
 
 `iters=200` (never the CLI's default 2000, per Task 9's precedent for correctness-not-precision
 tests). No `max_spend_usd` is set on `run_direct` — the registry entry below carries no `pricing`,
@@ -79,20 +81,13 @@ def _mock_entry(base_url: str) -> RegistryEntry:
 def _scripted_replies_in_bank_order() -> list[dict]:
     """One scripted 200 response per bank item, each answering that item's OWN gold correctly.
 
-    Correctness note: `run_direct`'s default `workers=8` dispatches both of this test's cells
-    concurrently (see `_dispatch_bounded`), so the two HTTP requests can arrive at `MockOpenAI` in
-    either order — the two cells are for different documents/questions with no ordering
-    dependency between them, and `MockOpenAI._spec_for` just returns `responses[min(index,
-    len-1)]` by REQUEST ARRIVAL ORDER, not by which bank item the request was for. To keep the
-    test correct regardless of arrival order, every scripted item answers `{"checked": true}` —
-    i.e. this only works because BOTH items are constructed with gold `checked=True`... which
-    contradicts the module docstring's "asymmetric class balance" claim above.
-
-    Resolved below: `workers=1` is passed to `run_direct` (single in-flight request), which makes
-    `cells` dispatch strictly in the order `run_direct` built them (bank item order) — see the
-    call site in `test_direct_to_report_seam_with_asymmetric_gold`. That makes request arrival
-    order == bank order == this list's order, so item 0 (gold `True`) gets `responses[0]` and
-    item 1 (gold `False`) gets `responses[1]`, both scored correct."""
+    `MockOpenAI._spec_for` returns `responses[min(index, len-1)]` by REQUEST ARRIVAL ORDER, not by
+    which bank item the request was for — so this pairing is only correct if request-arrival order
+    is pinned to bank order. `test_direct_to_report_seam_with_asymmetric_gold` does that by
+    calling `run_direct(..., workers=1)`: a single in-flight request makes `cells` dispatch
+    strictly in the order `run_direct` built them (bank item order), so item 0 (gold `True`) gets
+    `responses[0]` and item 1 (gold `False`) gets `responses[1]`, both scored correct. At the
+    default `workers=8` the two cells would race and this pairing would not be safe."""
     return [
         {"body": {"id": "cmpl-0", "model": "org/e2e-smoke", "provider": "MockProvider",
                   "choices": [{"message": {"role": "assistant", "content": '{"checked": true}'}}],
@@ -135,7 +130,12 @@ def test_direct_to_report_seam_with_asymmetric_gold(tmp_path):
     # ── the mock model's row, at 100% checkbox accuracy ─────────────────────────────────────
     section_a = md.split("## Section A")[1].split("## Baseline rows")[0]
     assert entry.id in section_a
-    assert "100.0%" in section_a          # checkbox acc-over-all: 2/2 correct
+    # Pinned to the actual table cell, not a bare "100.0%" substring search: with n_docs=2 the
+    # cluster-bootstrap CI's UPPER bound can itself read "100.0%" even when the true point
+    # accuracy is only 50% (empirically confirmed — a bare `"100.0%" in section_a` assertion
+    # stays green under a one-of-two-correct mutant). Anchoring on "| <label> | 100.0% [" matches
+    # only the point-estimate cell itself, immediately after the row's leading "| model |" column.
+    assert "| mock-vlm@e2e-smoke | 100.0% [" in section_a
     assert "n: 2/2" in section_a          # both bank items answered, none missing
 
     # ── the baseline rows ────────────────────────────────────────────────────────────────────

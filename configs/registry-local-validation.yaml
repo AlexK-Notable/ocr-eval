@@ -1,0 +1,33 @@
+# HARNESS-VALIDATION registry — NOT for model comparison.
+# qwen3-vl:8b via Ollama is Q4_K_M (verified `ollama show` 2026-08-02): below the precision
+# policy's floor for headline comparisons (spec: "if only Q4 fits, run hosted instead").
+# precision is declared provider-default so the report renders "unknown (not asserted)".
+# Purpose: exercise the direct + transcriber legs and the report end-to-end with zero API keys.
+
+- id: qwen3-vl-8b@ollama-validation
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok    # self-hosted
+  tos_note: "self-hosted validation entry; Q4_K_M — excluded from any comparative table by policy"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true
+
+- id: qwen3-vl-8b@ollama-transcriber-validation
+  shape: transcriber
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  tos_note: "self-hosted validation entry; parse leg only (scoring needs the Gemini extractor key)"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true
