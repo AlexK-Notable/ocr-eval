@@ -13,9 +13,19 @@
 - Spec: `docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md` (rev 2). On conflict, the spec wins; flag the conflict.
 - Pins: `harness_commit: fb26a6876481de76dc293f722ab4efa71279904d` · `dataset_revision: 906170ab201d7b8238a32a9115fc66b4b72e0710` (HF `Extend-AI/RealDoc-Bench`).
 - API keys via environment only (`bws run` injection). Never in configs, code, JSONL, or git. Upstream `.env` loading must be disabled (Task 1).
-- Rendering: pymupdf @ 150 DPI (upstream `DEFAULT_DPI`), PNG, raster-only to every model. Never hand a PDF to a transcriber.
-- Stage 1 sampling: `temperature 0.0, top_p 1.0, max_tokens 1024, sample_index 0` for all direct cells.
+- Rendering: pymupdf @ 150 DPI (upstream `DEFAULT_DPI`), PNG, raster-only to every model we control. **Exception (ratified divergence D5):** upstream adapters that upload the PDF (`mistral_ocr_4`) run as-is and are labelled `input: pdf-direct` in the report.
+- Stage 1 sampling: `temperature 0.0, top_p 1.0, max_tokens 1024, sample_index 0` for all **vlm-chat** cells. Transcription cells use upstream's `VisionParserBase.max_tokens = 12000` (a full page of markdown does not fit in 1024 — divergence D2).
 - Stage 1 output contract: the bank's typed template via `build_template` in the prompt; **no** provider-native structured-output params (mechanism = `schema_prompted`, uniform across providers; `schema_native` is Stage 2).
+
+**Divergence ledger (each ratified against the spec — mirrored in the spec's rev 2.1 appendix):**
+- **D1** Per-cell JSON records (upstream's cache shape), not JSONL; upstream `aggregate_results` flattens to `results.json`.
+- **D2** `max_tokens 1024` applies to vlm-chat cells only.
+- **D3** Rendered-image hash lives in the row (`image_sha`), not the cache key; `report` marks rows `STALE-RENDER` when the current render hash differs and fails without `--allow-stale-render`.
+- **D4** Resolved serving identity is not in the cache key; instead the report **hard-fails** if one parser key's rows span more than one `resolved_provider`.
+- **D5** Raster-only is enforced for all parsers we implement; upstream pdf-uploading adapters are labelled `pdf-direct` with the text-layer caveat (measured: 2/16 sampled docs carry a text layer).
+- **D6** Cost preview: `--dry-run` prices the direct leg as an **estimate** (cells × per-entry token estimate × registry `pricing` rates); the transcriber scoring leg has no automated preview (upstream has no hook) and is budgeted in the runbook. In-run control is `--max-spend` (realized cost; overshoot bounded by ≤ `workers` in-flight calls).
+- **D7** Null-gold scoring is **stricter than upstream**: upstream's `score_typed` treats a missing/None answer as matching a null gold (`deep_equal(None, None) → True`). Our `field_outcomes` overrides this at the metrics layer — see Task 4. Published-number comparability is unaffected (upstream rows are compared on upstream's own per-question `match`, which we do not alter).
+- **D8** The local-extractor sensitivity check from the ratified extractor decision is deferred to Stage 3 (roadmap item 4); Stage 1's mitigation is the blocking extractor-validation fixture.
 - Cardinality preconditions (fail-closed, before any spend): bank == 1,356 items / 3,742 fields / 188 nulls; checkbox bucket (tags `checkbox_state, handdrawn_check, form_checkbox_grid`) == 429 q / 263 docs / 1,117 fields / 258 boolean (165 True / 93 False); `blank_field` == 122 q / 34 nulls; bucket overlap == 40.
 - Accuracy-over-all (errors incorrect) is the ranking key; every reported number carries its n.
 - Upstream tests must keep passing after every task (`uv run pytest`).
@@ -97,17 +107,24 @@ dataset_revision: 906170ab201d7b8238a32a9115fc66b4b72e0710
 dataset_repo: Extend-AI/RealDoc-Bench
 ```
 
-- [ ] **Step 3: Extend pyproject for our package**
+- [ ] **Step 3: Create the package skeletons BEFORE touching pyproject** (hatchling errors on a declared-but-missing package dir)
+
+```bash
+mkdir -p ocr_eval_ext tests_ext
+touch ocr_eval_ext/__init__.py tests_ext/__init__.py
+```
+
+- [ ] **Step 4: Extend pyproject for our package**
 
 In `pyproject.toml`: add to `[project.scripts]` → `ocr-eval = "ocr_eval_ext.cli:app"`; change `[tool.hatch.build.targets.wheel]` → `packages = ["realdoc_bench", "ocr_eval_ext"]`; add `"tests_ext"` to `[tool.pytest.ini_options] testpaths`. No new runtime deps (openai, numpy, pymupdf, httpx already declared).
 
-- [ ] **Step 4: Environment + baseline test run**
+- [ ] **Step 4b: Environment + baseline test run**
 
 ```bash
 uv sync --extra dev
-uv run pytest 2>&1 | tail -5      # capture exit status UNPIPED first if scripting: rc=$?
+uv run pytest; echo "rc=$?"       # UNPIPED exit status
 ```
-Expected: upstream tests pass (8 test files). Record the pass count — it is the regression baseline.
+Expected: **85 passed** across 8 test files, no keys, no network (verified at the pinned commit during plan review). This is the regression baseline.
 
 - [ ] **Step 5: Write the failing test for dotenv disablement**
 
@@ -153,7 +170,7 @@ def _env() -> None:
     load_dotenv(Path.cwd() / ".env.local")
     load_dotenv(Path.cwd() / ".env")
 ```
-(`import os` is already present in cli.py; verify, add if not.)
+`import os` is **not** currently imported in upstream cli.py — add it to the import block.
 
 - [ ] **Step 8: Run tests — both new tests and full suite pass**
 
@@ -191,7 +208,11 @@ class RegistryEntry(BaseModel):
     provenance: str
     release_date: str                     # YYYY-MM-DD; contamination flag if > 2026-06-03
     provider_pin: dict | None = None      # OpenRouter: {"order": [...], "allow_fallbacks": False}
-    local: bool = False                   # True → serialize cells, preflight required
+    local: bool = False                   # True → serialize cells, preflight required, cost renders "n/a"
+    promptable: bool = True               # False for endpoints that accept no prompt (mistral_ocr_4)
+    pricing: dict | None = None           # {"input_per_mtok": X, "output_per_mtok": Y} — used by
+                                          # --dry-run estimates and as realized-cost fallback when the
+                                          # provider returns no usage.cost (vLLM). None → cost "n/a"
 
 def load_registry(path: Path) -> list[RegistryEntry]      # validates; raises on duplicate ids
 def get_entry(entries: list[RegistryEntry], id: str) -> RegistryEntry
@@ -366,10 +387,51 @@ def get_entry(entries: list[RegistryEntry], id: str) -> RegistryEntry:
   provenance: Google
   release_date: "2026-03-01"
 
+- id: qwen3-vl-32b@openrouter            # 3rd hosted VLM (input-cheaper than the 8B — survey anomaly)
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-32b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}
+  pricing: {input_per_mtok: 0.104, output_per_mtok: 0.416}
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-01"
+
+- id: qwen3-vl-8b@openrouter-transcriber  # the direct-vs-two-stage CALIBRATION PAIR (DoD #3)
+  shape: transcriber
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-8b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}
+  pricing: {input_per_mtok: 0.117, output_per_mtok: 0.455}
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-01"
+
+- id: gemini-3.5-flash@google-vlmchat     # frontier CEILING ANCHOR for Section A (vlm-chat)
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  model: gemini-3.5-flash
+  api_key_env: GEMINI_API_KEY
+  precision: provider-default
+  weights_licence: closed                 # non-candidate, flagged in report
+  provider_tos_commercial: ok
+  provenance: Google
+  release_date: "2026-03-01"
+
 - id: mistral-ocr@mistral
   shape: transcriber
   transport: upstream-parser
-  upstream_parser: mistral_ocr
+  upstream_parser: mistral_ocr_4          # upstream registers mistral_ocr_4, NOT mistral_ocr
+  promptable: false                       # PDF-upload endpoint, no prompt — pdf-direct label in report
   api_key_env: MISTRAL_API_KEY
   precision: provider-default
   weights_licence: closed
@@ -405,7 +467,7 @@ def get_entry(entries: list[RegistryEntry], id: str) -> RegistryEntry:
 ```
 Release dates above are placeholders to the month — **Step 6 verifies each against the HF model card** and corrects; that verification is part of this task, not deferred.
 
-- [ ] **Step 6: Verify registry facts** — for each entry: exact HF model id, release date (HF `createdAt`), licence tag. Correct the YAML. Add a test asserting `load_registry(Path("configs/registry.yaml"))` parses and ids are unique.
+- [ ] **Step 6: Verify registry facts** — for each entry: exact HF model id, release date (HF `createdAt`), licence tag; for every `upstream_parser` value, confirm it appears in `uv run realdoc-bench evaluate list` (name mismatches exit with BadParameter at parse time). Correct the YAML. Add a test asserting `load_registry(Path("configs/registry.yaml"))` parses, ids are unique, and DoD categories are satisfiable: ≥3 hosted `vlm-chat`, ≥1 `local: true` transcriber, ≥1 `upstream-parser` transcriber, ≥1 closed-weights anchor per shape, and at least one (model) present under both shapes (calibration pair).
 
 - [ ] **Step 7: Run full suite** — `uv run pytest` → PASS.
 
@@ -427,8 +489,9 @@ EXPECTED = {...}   # the constants below
 class PreconditionError(RuntimeError): ...
 def check_bank(items: list[dict]) -> dict          # returns measured counts; raises PreconditionError
 def items_with_tags(items, tags) -> list[dict]
-def boolean_fields(items) -> list[tuple[str, str, bool, str]]   # (qid, key, gold, source_file)
-def null_fields(items) -> list[tuple[str, str, str]]            # (qid, key, source_file)
+def boolean_fields(items) -> list[tuple[str, str, bool, str]]        # (qid, key, gold, source_file)
+def null_fields(items) -> list[tuple[str, str, None, str]]           # (qid, key, None, source_file)
+    # SAME 4-tuple shape as boolean_fields — both feed metrics.field_outcomes directly
 def assert_single_page(pdf_path: Path) -> int       # raises unless page_count == 1
 def ink_coverage(png_bytes: bytes) -> float         # fraction of non-white pixels
 ```
@@ -454,9 +517,9 @@ def test_boolean_fields_extracts_only_bools():
     assert boolean_fields(items) == [("q1", "a", True, "doc_1")]
 
 
-def test_null_fields_extracts_only_nulls():
+def test_null_fields_extracts_only_nulls_same_shape_as_boolean_fields():
     items = [item("q1", ["blank_field"], {"a": True, "c": None})]
-    assert null_fields(items) == [("q1", "c", "doc_1")]
+    assert null_fields(items) == [("q1", "c", None, "doc_1")]
 
 
 def test_items_with_tags_matches_any():
@@ -465,7 +528,7 @@ def test_items_with_tags_matches_any():
 
 
 def test_check_bank_fails_closed_on_wrong_counts():
-    with pytest.raises(PreconditionError, match="bank items"):
+    with pytest.raises(PreconditionError, match="cardinality mismatch"):
         check_bank([item("q1", [], {"a": 1})])       # 1 item ≠ 1356
 
 
@@ -527,12 +590,12 @@ def boolean_fields(items: list[dict]) -> list[tuple[str, str, bool, str]]:
     return out
 
 
-def null_fields(items: list[dict]) -> list[tuple[str, str, str]]:
+def null_fields(items: list[dict]) -> list[tuple[str, str, None, str]]:
     out = []
     for i in items:
         for k, v in (i.get("gold_dict") or {}).items():
             if v is None:
-                out.append((i["question_id"], k, i["source_file"]))
+                out.append((i["question_id"], k, None, i["source_file"]))
     return out
 
 
@@ -559,6 +622,10 @@ def check_bank(items: list[dict]) -> dict:
         detail = ", ".join(f"{k}: measured {m} != expected {e}" for k, (m, e) in mismatches.items())
         raise PreconditionError(f"bank cardinality mismatch — {detail}")
     return measured
+
+# GUARD: a mismatch here is STOP-AND-INVESTIGATE, never "fix the constant". Any change to
+# EXPECTED must be re-derived from the pinned dataset revision, with the derivation command
+# recorded in the commit message — otherwise this gate degrades into decoration.
 
 
 def assert_single_page(pdf_path: Path) -> int:
@@ -598,7 +665,12 @@ class FieldOutcome:
     status: Literal["correct", "incorrect", "error"]   # error = no scorable answer for the question
 
 def field_outcomes(records: dict[str, dict], fields: list[tuple]) -> list[FieldOutcome]
-    # records keyed by qid → cache record; a qid absent or bearing "error" → status "error"
+    # records keyed by qid → cache record. Status rules (STRICTER than upstream scoring — D7):
+    #   qid absent, record bears "error", or record's answer is None → "error"
+    #   null gold: "correct" ONLY if the key is PRESENT in answer with explicit None —
+    #     key-absent is "incorrect" (upstream's deep_equal(None, None) would call it correct;
+    #     that rewards extractor collapse with a perfect no-hallucination score)
+    #   non-null gold: field_matches[key] truthy → "correct", else "incorrect"
 
 @dataclass
 class MetricBlock:
@@ -653,18 +725,37 @@ def test_polarity_split():
 
 
 def test_baselines():
+    import pytest as _pytest
     b = baseline_rows(BOOL_FIELDS)
-    assert b["always_true"] == 2 / 3
-    assert b["always_false"] == 1 / 3
-    assert b["majority"] == 2 / 3
+    assert b["always_true"] == _pytest.approx(2 / 3)
+    assert b["always_false"] == _pytest.approx(1 / 3)
+    assert b["majority"] == _pytest.approx(2 / 3)
     assert b["class_balance"] == {"true": 2, "false": 1}
 
 
 def test_null_hallucination():
-    nulls = [("q9", "z", "d3")]
+    from ocr_eval_ext.preconditions import null_fields
+    items = [{"question_id": "q9", "source_file": "d3", "capabilities": ["blank_field"],
+              "gold_dict": {"z": None}}]
+    nulls = null_fields(items)                       # exercise the REAL seam, not a hand-built tuple
     records = {"q9": {"answer": {"z": "invented value"}, "field_matches": {"z": False}, "match": False}}
-    m = null_metrics(field_outcomes(records, [("q9", "z", None, "d3")]))
+    m = null_metrics(field_outcomes(records, nulls))
     assert m["hallucination_rate"] == 1.0
+
+
+def test_null_gold_answer_none_is_error_not_correct():
+    # D7: a collapsed extractor (answer=None) must NOT score as "did not hallucinate"
+    nulls = [("q9", "z", None, "d3")]
+    records = {"q9": {"answer": None, "field_matches": {"z": True}, "match": True}}
+    out = field_outcomes(records, nulls)
+    assert out[0].status == "error"
+
+
+def test_null_gold_key_absent_is_incorrect_not_correct():
+    nulls = [("q9", "z", None, "d3")]
+    records = {"q9": {"answer": {"other": 1}, "field_matches": {"z": True}, "match": True}}
+    out = field_outcomes(records, nulls)
+    assert out[0].status == "incorrect"
 ```
 
 - [ ] **Step 2: Run to verify failure.** — FAIL (module missing).
@@ -715,8 +806,15 @@ def field_outcomes(records: dict[str, dict], fields: list[tuple]) -> list[FieldO
     out = []
     for qid, key, gold, doc in fields:
         rec = records.get(qid)
-        if not rec or "answer" not in rec:
-            status = "error"
+        if not rec or "answer" not in rec or rec.get("answer") is None:
+            status = "error"                       # no scorable answer at all (D7)
+        elif gold is None:
+            # Null gold: correct ONLY on key-present explicit None. Upstream's
+            # deep_equal(None, None) would score key-absent/None-answer as correct,
+            # which rewards extractor collapse on the hallucination metric (D7).
+            ans = rec["answer"]
+            status = "correct" if (isinstance(ans, dict) and key in ans and ans[key] is None) \
+                else "incorrect"
         else:
             status = "correct" if rec.get("field_matches", {}).get(key) else "incorrect"
         out.append(FieldOutcome(qid, key, doc, gold, status))
@@ -748,9 +846,11 @@ def baseline_rows(fields: list[tuple]) -> dict:
     golds = [g for _, _, g, _ in fields]
     t = sum(1 for g in golds if g is True)
     f = len(golds) - t
-    always_true = t / len(golds) if golds else 0.0
-    return {"always_true": always_true, "always_false": 1 - always_true if golds else 0.0,
-            "majority": max(always_true, 1 - always_true) if golds else 0.0,
+    n = len(golds)
+    always_true = t / n if n else 0.0
+    always_false = f / n if n else 0.0        # computed from counts, not 1-x (float exactness)
+    return {"always_true": always_true, "always_false": always_false,
+            "majority": max(always_true, always_false),
             "class_balance": {"true": t, "false": f}}
 ```
 
@@ -1071,14 +1171,21 @@ STAGE1_CONDITION = {
     "preprocess": "raw",
     "output_contract": "schema_prompted",
     "render": {"engine": "pymupdf", "dpi": 150},
-    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 1024},
+    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 1024, "seed": None},
     "sample_index": 0,
+    "no_image": False,     # in the dict from commit one — flipping a VALUE, never adding a key
 }
 
 SYSTEM = ("You answer questions about a scanned document page. "
           "Return JSON with exactly the keys and value types of the template. "
           "Booleans must be true/false. If a field is empty or not filled in, return null for it. "
           "Do not guess values that are not visible on the page.")
+
+REFUSAL_MARKERS = ("i cannot", "i can't", "i'm unable", "i am unable", "cannot assist",
+                   "can't help", "against my", "i won't")
+
+MAX_RETRIES = 4
+BACKOFF_BASE_SEC = 2.0
 
 
 def condition_hash(condition: dict) -> str:
@@ -1107,47 +1214,68 @@ def _extract_json(text: str):
     return None
 
 
-def _render_page(layout: RunLayout, stem: str, dpi: int, png_cache: Path) -> bytes:
+def _render_page(layout: RunLayout, stem: str, condition: dict, png_cache: Path) -> bytes:
+    """Atomic write (os.replace) — write_bytes truncates first, and a concurrent reader seeing a
+    half-written file kills the run (reproduced under 8-thread stress during plan review)."""
+    import os
+    import uuid
+
+    dpi = condition["render"]["dpi"]
+    pre = condition["preprocess"]
     png_cache.mkdir(parents=True, exist_ok=True)
-    p = png_cache / f"{stem}@{dpi}.png"
-    if p.exists():
-        return p.read_bytes()
+    p = png_cache / f"{stem}@{dpi}@{pre}.png"     # preprocess in the name — Stage 2 deskew must not
+    if p.exists():                                 # silently reuse raw renders
+        data = p.read_bytes()
+        if data:
+            return data
     pdf = layout.docs_dir / f"{stem}.pdf"
     assert_single_page(pdf)
     pages = _render_pdf_pages(pdf, dpi)
-    p.write_bytes(pages[0])
+    tmp = p.with_name(p.name + f".tmp.{uuid.uuid4().hex}")
+    tmp.write_bytes(pages[0])
+    os.replace(tmp, p)
     return pages[0]
 
 
 def _one(client: OpenAI, entry: RegistryEntry, item: dict, png: bytes,
-         condition: dict, no_image: bool) -> dict:
+         condition: dict, png_dims: tuple[int, int]) -> dict:
+    prompt = direct_prompt(item["question"], item["template"])
     base = {"qid": item["question_id"], "parser": parser_key(entry.id, condition),
             "source_file": item["source_file"], "domain": item.get("domain", ""),
             "condition": condition, "image_sha": hashlib.sha256(png).hexdigest(),
+            "image_px": list(png_dims), "image_bytes": len(png),
+            "prompt_sha": hashlib.sha256((SYSTEM + "\x00" + prompt).encode()).hexdigest()[:12],
             "retrieved_at": dt.datetime.now(dt.timezone.utc).isoformat()}
-    content: list[dict] = [{"type": "text", "text": direct_prompt(item["question"], item["template"])}]
-    if not no_image:
+    content: list[dict] = [{"type": "text", "text": prompt}]
+    if not condition.get("no_image"):
         b64 = base64.b64encode(png).decode()
         content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
     extra_body = {}
     if entry.provider_pin:
         extra_body["provider"] = entry.provider_pin
     t0 = time.perf_counter()
-    try:
-        resp = client.chat.completions.create(
-            model=entry.model,
-            messages=[{"role": "system", "content": SYSTEM},
-                      {"role": "user", "content": content}],
-            temperature=condition["sampling"]["temperature"],
-            top_p=condition["sampling"]["top_p"],
-            max_tokens=condition["sampling"]["max_tokens"],
-            extra_body=extra_body or None,
-        )
-    except Exception as e:  # noqa: BLE001 — per-cell isolation
-        return {**base, "error": str(e)[:300], "error_class": "api_error"}
+    resp = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = client.chat.completions.create(
+                model=entry.model,
+                messages=[{"role": "system", "content": SYSTEM},
+                          {"role": "user", "content": content}],
+                temperature=condition["sampling"]["temperature"],
+                top_p=condition["sampling"]["top_p"],
+                max_tokens=condition["sampling"]["max_tokens"],
+                extra_body=extra_body or None,
+            )
+            break
+        except Exception as e:  # noqa: BLE001 — bounded retry, then per-cell isolation
+            retry_after = getattr(getattr(e, "response", None), "headers", {}) or {}
+            wait = float(retry_after.get("retry-after") or BACKOFF_BASE_SEC * (2 ** attempt))
+            if attempt == MAX_RETRIES - 1:
+                return {**base, "error": str(e)[:300], "error_class": "api_error"}
+            time.sleep(wait)
     raw = resp.model_dump()
     text = (resp.choices[0].message.content or "").strip()
-    usage = raw.get("usage") or {}
+    usage = raw.get("usage") or {}    # OpenRouter now always includes usage details (incl. cost)
     common = {**base, "raw_response": text, "usage": usage,
               "resolved_provider": raw.get("provider") or "",
               "latency_sec": time.perf_counter() - t0}
@@ -1155,7 +1283,8 @@ def _one(client: OpenAI, entry: RegistryEntry, item: dict, png: bytes,
         return {**common, "error": "empty response", "error_class": "empty"}
     ans = _extract_json(text)
     if ans is None:
-        return {**common, "error": "unparseable response", "error_class": "parse_error"}
+        cls = "refusal" if any(m in text.lower() for m in REFUSAL_MARKERS) else "parse_error"
+        return {**common, "error": f"unparseable response ({cls})", "error_class": cls}
     fm, allc = score_typed(ans, item["gold_dict"], item["str_keys"])
     return {**common, "answer": ans, "field_matches": fm, "match": allc, "error_class": "none"}
 
@@ -1188,7 +1317,14 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
             if force or not cpath.exists():
                 cells.append((e, it, cpath))
     if dry_run:
-        return {"cells": len(cells), "entries": len(entries), "items": len(items)}
+        # ESTIMATE (labelled so in output): ~1,600 image tokens/page + prompt ~400 in, ~120 out.
+        est = 0.0
+        for e, _it, _c in cells:
+            if e.pricing:
+                est += (2000 / 1e6) * e.pricing["input_per_mtok"] \
+                     + (120 / 1e6) * e.pricing["output_per_mtok"]
+        return {"cells": len(cells), "entries": len(entries), "items": len(items),
+                "estimated_usd": round(est, 2), "estimate_note": "±2x — token counts are guesses"}
 
     png_cache = layout.root / "docs_png"
     summary = {"ok": 0, "error": 0, "cached": len(entries) * len(items) - len(cells)}
@@ -1205,22 +1341,40 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
 
     def do(cell):
         e, it, cpath = cell
-        png = _render_page(layout, it["source_file"], cond["render"]["dpi"], png_cache)
-        if ink_coverage(png) < 0.001:
+        try:
+            png = _render_page(layout, it["source_file"], cond, png_cache)
+            if ink_coverage(png) < 0.001:
+                rec = {"qid": it["question_id"], "parser": parser_key(e.id, cond),
+                       "source_file": it["source_file"], "domain": it.get("domain", ""),
+                       "error": "blank render", "error_class": "render_error"}
+            else:
+                import io as _io
+
+                from PIL import Image as _Img
+                dims = _Img.open(_io.BytesIO(png)).size
+                rec = _one(clients[e.id], e, it, png, cond, dims)
+        except Exception as exc:  # noqa: BLE001 — one bad doc costs one cell, never the run
             rec = {"qid": it["question_id"], "parser": parser_key(e.id, cond),
                    "source_file": it["source_file"], "domain": it.get("domain", ""),
-                   "error": "blank render", "error_class": "render_error"}
-        else:
-            rec = _one(clients[e.id], e, it, png, cond, no_image)
+                   "error": str(exc)[:300], "error_class": "render_error"}
         cpath.parent.mkdir(parents=True, exist_ok=True)
         cpath.write_text(json.dumps(rec, ensure_ascii=False))
         return rec
 
     def track(rec):
+        # Runs single-threaded in the consumer loop — no lock needed. Raising here cancels
+        # pending futures via the pool's generator cleanup; overshoot is bounded by ≤ workers
+        # in-flight calls (measured 12/50 cells at workers=8 during plan review).
         nonlocal spend
         summary["ok" if rec.get("error_class") == "none" else "error"] += 1
         u = rec.get("usage") or {}
-        spend += u.get("cost", 0.0) or 0.0    # OpenRouter returns cost in usage when enabled
+        cost = u.get("cost")
+        if cost is None:                       # vLLM/local: no cost field — token×rate fallback
+            e = next((x for x in entries if rec["parser"].startswith(f"vlm__{x.id}__")), None)
+            if e and e.pricing:
+                cost = (u.get("prompt_tokens", 0) / 1e6) * e.pricing["input_per_mtok"] \
+                     + (u.get("completion_tokens", 0) / 1e6) * e.pricing["output_per_mtok"]
+        spend += cost or 0.0
         if max_spend_usd is not None and spend > max_spend_usd:
             raise RuntimeError(f"--max-spend {max_spend_usd} exceeded (realized {spend:.2f})")
 
@@ -1248,7 +1402,7 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
   - `ocr-eval verify --run-dir D` → preconditions vs the real bank (+ pins check vs `configs/pins.yaml` + git); exit 1 on any mismatch.
   - `ocr-eval direct --run-dir D --registry configs/registry.yaml -m ID [-m ID...] [--dry-run] [--max-spend X] [--limit N] [--no-image] [--workers N] [--force]` → runs selftest first (fail-closed), then `run_direct`; exits nonzero if any cell errored.
   - `ocr-eval selftest [--extractor]` → offline scorer fixtures; `--extractor` also validates `gemini_extract` against 5 known-answer transcripts (requires GEMINI_API_KEY).
-  - `ocr-eval rescore --run-dir D` → re-runs `score_typed` with current templates over EVERY cache file (both shapes — upstream `evaluate score` cannot touch `vlm__*` keys because it validates parser names against its plugin registry); rewrites `field_matches`/`match` in place, prints a changed-row count. Test: corrupt one cached `field_matches` by hand in the test, run rescore, assert it is healed and the count is 1.
+  - `ocr-eval rescore --run-dir D` → re-runs `score_typed` with current templates over EVERY cache file that has an `"answer"` (both shapes); rewrites `field_matches`/`match` in place, prints a changed-row count. Implemented by iterating `layout.cache_dir.glob("*.json")` directly + `_ensure_template` per bank item — NOT by delegating to upstream `run_score`. (Corrected rationale: upstream `evaluate score` does **not** validate parser names — passing `-p vlm__…` actually works on the cache-hit path. We still need our own command because upstream's `run_score` demands `GEMINI_API_KEY` up front and `parsed_parsers()` never discovers `vlm__*` rows; and **upstream `evaluate score --force` pointed at a `vlm__*` key DESTROYS the row** — it skips the cache, finds no `parses/vlm__…/` markdown, and overwrites the record with `error: markdown missing`, losing the paid-for answer. Guard: `ocr-eval` prints a warning about this in `rescore --help`, and the runbook forbids upstream `--force` on `vlm__*` keys.) Test: corrupt one cached `field_matches` by hand, run rescore, assert it is healed and the count is 1.
 - `selftest.py` produces: `run_offline() -> list[str]` (empty = pass; strings = failures), `run_extractor() -> list[str]`, `FIXTURES: list[dict]`.
 
 - [ ] **Step 1: Write failing selftest tests**
@@ -1326,8 +1480,11 @@ EXTRACTOR_FIXTURES = [
     {"question": "Is the smoke detector box checked?",
      "rf": "Return exactly: smoke_detector=<boolean>", "gold": {"smoke_detector": False},
      "markdown": "Safety checklist:\n☐ Smoke detector\n☒ Fire extinguisher"},
-    {"question": "What is the claimant's last name?",
-     "rf": "Return exactly: last_name=<text>", "gold": {"last_name": "Rivera"},
+    # Gold must be the full verbatim span: the extractor prompt says "copy the page text
+    # verbatim", and rapidfuzz fallback needs ≥5 words — "Rivera" vs "Maria Rivera" would
+    # false-fail this fail-closed gate on a CORRECT extraction.
+    {"question": "What name is on the claimant line?",
+     "rf": "Return exactly: claimant_name=<text>", "gold": {"claimant_name": "Maria Rivera"},
      "markdown": "**Claimant:** Maria Rivera\n**Date:** 01/02/2026"},
     {"question": "Is renewal requested?",
      "rf": "Return exactly: renewal=<boolean>", "gold": {"renewal": True},
@@ -1400,29 +1557,77 @@ from ocr_eval_ext.preconditions import PreconditionError, check_bank
 from realdoc_bench.evaluate.runs import RunLayout
 
 app = typer.Typer(no_args_is_help=True)
-console = Console()
+console = Console(width=200)          # fixed width — CI COLUMNS must not split assertion tokens
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PINS_PATH = REPO_ROOT / "configs" / "pins.yaml"
+
+
+def _run_meta_path(layout: RunLayout) -> Path:
+    return layout.root / "run_meta.json"
+
+
+def _preflight(layout: RunLayout) -> None:
+    """The gate every spending/reporting command calls first. Fail-closed."""
+    if st.run_offline():
+        console.print("[red]scorer self-test failed — refusing to proceed[/red]")
+        raise typer.Exit(1)
+    pins = yaml.safe_load(PINS_PATH.read_text())
+    head = subprocess.run(["git", "merge-base", "HEAD", pins["harness_commit"]],
+                          capture_output=True, text=True, cwd=REPO_ROOT)
+    if head.returncode != 0 or pins["harness_commit"] not in head.stdout:
+        console.print(f"[red]harness pin {pins['harness_commit'][:10]} is not an ancestor of HEAD[/red]")
+        raise typer.Exit(1)
+    meta_p = _run_meta_path(layout)
+    if meta_p.exists():
+        meta = json.loads(meta_p.read_text())
+        if meta.get("dataset_revision") != pins["dataset_revision"]:
+            console.print(f"[red]run dir was downloaded at revision "
+                          f"{meta.get('dataset_revision')!r}, pins say "
+                          f"{pins['dataset_revision']!r}[/red]")
+            raise typer.Exit(1)
+    try:
+        items = json.loads(layout.bank_path.read_text())["items"]
+        check_bank(items)
+    except (FileNotFoundError, KeyError, PreconditionError) as e:
+        console.print(f"[red]preflight FAILED: {e}[/red]")
+        raise typer.Exit(1) from e
 
 
 @app.command()
 def verify(run_dir: Path = typer.Option(..., "--run-dir")) -> None:
-    """Fail-closed gates: pins + bank cardinalities. Run before any spend."""
-    pins = yaml.safe_load(Path("configs/pins.yaml").read_text())
-    head = subprocess.run(["git", "merge-base", "HEAD", pins["harness_commit"]],
-                          capture_output=True, text=True)
-    if head.returncode != 0 or pins["harness_commit"] not in head.stdout:
-        console.print(f"[yellow]warning: harness pin {pins['harness_commit'][:10]} "
-                      "is not an ancestor of HEAD[/yellow]")
+    """Full fail-closed sweep: pins, cardinalities, every PDF single-page + non-blank render.
+    Warms the PNG cache as a side effect. Run once after download, before any spend."""
+    from ocr_eval_ext.direct import STAGE1_CONDITION, _render_page
+    from ocr_eval_ext.preconditions import assert_single_page, ink_coverage
+
     layout = RunLayout.at(run_dir)
-    try:
-        items = json.loads(layout.bank_path.read_text())["items"]
-        measured = check_bank(items)
-    except (FileNotFoundError, KeyError) as e:
-        console.print(f"[red]verify FAILED: bank unreadable: {e}[/red]")
-        raise typer.Exit(1) from e
-    except PreconditionError as e:
-        console.print(f"[red]verify FAILED: {e}[/red]")
-        raise typer.Exit(1) from e
-    console.print(f"[green]verify PASS[/green] — {measured}")
+    _preflight(layout)
+    png_cache = layout.root / "docs_png"
+    blank, multi = [], []
+    for pdf in sorted(layout.docs_dir.glob("*.pdf")):
+        try:
+            png = _render_page(layout, pdf.stem, STAGE1_CONDITION, png_cache)
+        except PreconditionError:
+            multi.append(pdf.stem)
+            continue
+        if ink_coverage(png) < 0.001:
+            blank.append(pdf.stem)
+    if blank or multi:
+        console.print(f"[red]verify FAILED — multi-page: {multi} blank-render: {blank}[/red]")
+        raise typer.Exit(1)
+    meta_p = _run_meta_path(layout)
+    if not meta_p.exists():                # stamp pins + renderer version on first successful verify
+        from importlib.metadata import version as _v
+        pins = yaml.safe_load(PINS_PATH.read_text())
+        meta_p.write_text(json.dumps({
+            "dataset_revision": pins["dataset_revision"],
+            "harness_commit": pins["harness_commit"],
+            "pymupdf_version": _v("pymupdf"),
+            # vLLM runs in its own serving env, not this one — its version is recorded per model
+            # in docs/local-serving.md, which is the operative record for local rows.
+        }, indent=2))
+    console.print("[green]verify PASS[/green] — pins, cardinalities, pages, renders all green")
 
 
 @app.command()
@@ -1459,21 +1664,55 @@ def direct(
     from ocr_eval_ext.config import get_entry
     from ocr_eval_ext.direct import run_direct
 
-    if st.run_offline():
-        console.print("[red]scorer self-test failed — refusing to run[/red]")
-        raise typer.Exit(1)
+    layout = RunLayout.at(run_dir)
+    _preflight(layout)                     # cardinalities + pins + scorer self-test, fail-closed
     entries = load_registry(registry)
     chosen = [get_entry(entries, m) for m in model]
     bad_shape = [e.id for e in chosen if e.shape != "vlm-chat" or e.transport != "openai-compat"]
     if bad_shape:
-        console.print(f"[red]not vlm-chat/openai-compat: {bad_shape} — use upstream parse for those[/red]")
+        console.print(f"[red]not vlm-chat/openai-compat: {bad_shape} — use ocr-eval parse for those[/red]")
         raise typer.Exit(1)
-    layout = RunLayout.at(run_dir)
     summary = run_direct(layout, chosen, dry_run=dry_run, max_spend_usd=max_spend,
                          limit=limit, no_image=no_image, workers=workers, force=force)
     console.print(summary)
     if not dry_run and summary.get("error"):
         raise typer.Exit(2)   # fail-visible: errors occurred, report will mark them
+
+
+# Additional commands added in Tasks 8-9 (parse/score/preflight/report) all call _preflight(layout)
+# first. `ocr-eval score` additionally runs the BLOCKING extractor-validation gate:
+#   fixture_hash = sha256(json.dumps(st.EXTRACTOR_FIXTURES, sort_keys=True))
+#   stamp = layout.root / f".extractor_ok_{DEFAULT_MODEL}_{fixture_hash[:8]}"
+#   if not stamp.exists(): run st.run_extractor(); [] required; then stamp.touch()
+# — 5 Gemini calls per (extractor, fixture-set), cached per run dir, never skippable.
+# `ocr-eval score` also records DEFAULT_MODEL into run_meta.json as extractor id; if a later
+# invocation sees a different extractor id there, it refuses to mix generations unless
+# --new-extractor-generation is passed, which archives eval/cache/ to eval/cache@<old-id>/ first.
+
+
+@app.command()
+def rescore(run_dir: Path = typer.Option(..., "--run-dir")) -> None:
+    """Recompute field_matches/match from stored answers with CURRENT templates — both shapes,
+    zero API calls. (Never point upstream `evaluate score --force` at vlm__* keys: it would
+    overwrite them with 'markdown missing' and destroy the paid-for answers.)"""
+    from realdoc_bench.evaluate.score import _ensure_template, score_typed
+
+    layout = RunLayout.at(run_dir)
+    _preflight(layout)
+    items = {i["question_id"]: i for i in json.loads(layout.bank_path.read_text())["items"]}
+    changed = 0
+    for f in sorted(layout.cache_dir.glob("*.json")):
+        rec = json.loads(f.read_text())
+        item = items.get(rec.get("qid"))
+        if item is None or "answer" not in rec or rec["answer"] is None:
+            continue
+        _ensure_template(item)
+        fm, allc = score_typed(rec["answer"], item["gold_dict"], item["str_keys"])
+        if fm != rec.get("field_matches") or allc != rec.get("match"):
+            rec["field_matches"], rec["match"] = fm, allc
+            f.write_text(json.dumps(rec, ensure_ascii=False))
+            changed += 1
+    console.print(f"rescore: {changed} row(s) changed")
 ```
 
 - [ ] **Step 6: Run CLI tests** — PASS. **Step 7: Full suite.** **Step 8: Commit** — `git commit -m "feat: ocr-eval CLI with verify/selftest/direct, fail-closed gating"`
@@ -1544,16 +1783,21 @@ def test_register_from_registry(tmp_path):
   local: true
 """)
     names = register_openai_parsers(tmp_path / "r.yaml")
-    assert names == ["t1_local"]
+    assert len(names) == 1
+    assert names[0].startswith("t1_local__")            # safe_name + "__" + condition hash
     from realdoc_bench.evaluate.parsers.base import build
-    assert build("t1_local").version == "org/t1"
+    assert build(names[0]).version == "org/t1"
 ```
 
 - [ ] **Step 2: Verify failure, then implement.** Key implementation points (complete file expected ~90 lines):
 
 ```python
+from pathlib import Path
+
+from ocr_eval_ext.config import RegistryEntry
 from realdoc_bench.evaluate.parsers._vision_base import VisionParserBase
 from realdoc_bench.evaluate.parsers.base import register_parser
+from realdoc_bench.evaluate.parsers.base import registry as parser_registry
 from realdoc_bench.evaluate.parsers.cloud_vlm import _MARKDOWN_PROMPT
 
 
@@ -1619,6 +1863,8 @@ def preflight(entry: RegistryEntry) -> str:
 ```
 Note `safe_name` maps `.` → `-` (dots.ocr → `dots-ocr…`): parser names become directory names under `parses/` and cache-key suffixes; the test in Step 1 pins the exact mapping.
 
+**Transcriber condition seam (Stage 2 protection — decided now because it is unwindable later without discarding cache):** the registered parser name is `safe_name(entry.id) + "__" + condition_hash(TRANSCRIBER_CONDITION)`, where `TRANSCRIBER_CONDITION = {"preprocess": "raw", "render": {"engine": "pymupdf", "dpi": 150}, "sampling": {"temperature": 0.0}, "sample_index": 0}` (import `condition_hash` from `direct.py`). Stage 2's deskew therefore creates `…__<newhash>` parser dirs and cache keys instead of silently overwriting raw transcripts. The `ocr-eval parse` wrapper also writes `parses/<parser>/condition.json` (the dict, verbatim) so transcriber rows are self-describing. Upstream-parser entries (gemini_3_5_flash, mistral_ocr_4) keep their upstream names — they are the published-comparability rows and never vary conditions.
+
 **Also add to `ocr_eval_ext/cli.py` in this task** — upstream's `realdoc-bench` CLI never imports `ocr_eval_ext`, so our dynamically registered parsers do not exist there. Wrapper commands make them reachable:
 - `ocr-eval parse --run-dir D -p NAME [--workers N] [--force] [--limit N]` → `register_openai_parsers(...)` then delegate to upstream `run_parse`.
 - `ocr-eval score --run-dir D -p NAME [--force]` → register, then upstream `run_score` + `aggregate_results` (requires GEMINI_API_KEY; call `require_api_key()` first, fail fast).
@@ -1680,7 +1926,16 @@ assert "⚠ ToS: blocked" in md            # for the entry with provider_tos_com
 assert "transcript-recall" in md.lower()
 ```
 
-- [ ] **Step 2: Verify failure, implement.** Implementation notes: load all cache files once (`layout.cache_dir.glob("*.json")`), group by parser key; map parser keys → registry entries (`vlm__<id>__…` by prefix; transcriber safe-names via Task 8's `safe_name`); unknown parser keys render in Section B with a `(unregistered)` marker rather than crashing. Metrics/CI calls per row; keep pure-function core (`records → dict rows → markdown`) so tests don't need API.
+- [ ] **Step 2: Verify failure, implement.** Implementation notes: load all cache files once (`layout.cache_dir.glob("*.json")`), group by parser key; map parser keys → registry entries — `vlm__<id>__…` by prefix; openai-compat transcribers by `safe_name(e.id) + "__"` prefix; **upstream-parser entries by `e.upstream_parser` exactly** (`gemini_3_5_flash`, `mistral_ocr_4` — `safe_name(e.id)` produces the WRONG string for these and would strip the anchor's licence/ToS stamps); unknown parser keys render in Section B with a `(unregistered)` marker rather than crashing. Metrics/CI calls per row; keep pure-function core (`records → dict rows → markdown`) so tests don't need API. Additional mandatory behaviors:
+  - **beats-majority column:** `paired_delta_ci(model_outcomes, majority_baseline_outcomes)` (the majority predictor is deterministic per field, so outcomes are well-defined) → `yes / no / not separable`. A model is never labelled above-baseline when not separable from majority.
+  - **Bucket overlap line:** "40 questions appear in both the checkbox and blank-field buckets" printed with the metric definitions.
+  - **Transcript-recall = glyph AND label:** a checkbox-question transcript counts as recalling the field only if it contains a checkbox glyph and a token of the gold field key/label — glyph-only counts "emitted checkboxes somewhere," not "emitted this field."
+  - **STALE-RENDER check (D3):** recompute the current render hash per referenced doc once; any row whose `image_sha` differs is marked and the report exits nonzero without `--allow-stale-render`.
+  - **Serving-identity guard (D4):** if one parser key's rows span >1 `resolved_provider`, the report hard-fails (not warns).
+  - **Precision discipline:** `provider-default` renders as `unknown (not asserted)`; if models being compared in one section ran at differing known precisions, the section header carries the mixed-precision caveat (spec §Precision policy).
+  - **Cost/latency columns:** `n/a` for `local: true` rows (never a fake $0.00) and, in Section B, scoped in the header to the transcription leg only (upstream extraction records carry no token/latency fields).
+  - **Same-family flag:** any transcriber row whose `provenance` matches the extractor's family (Google + gemini extractor) is marked `same-family scoring`.
+  - **Extractor id** read from `run_meta.json`, never hardcoded in the template.
 
 - [ ] **Step 3: Add `report` CLI command** (runs preconditions on the bank first — a report over a wrong bank must not render).
 
@@ -1706,29 +1961,44 @@ assert "transcript-recall" in md.lower()
 Prereqs: OPENROUTER_API_KEY and GEMINI_API_KEY **rotated** (prior exposure) and present in bws.
 All commands via: bws run --project-id 18f14ed9-8ba5-4cc6-bbd4-b45b01534270 -- <cmd>
 
-1.  uv run ocr-eval selftest --extractor            # fail-closed gates
+1.  uv run ocr-eval selftest --extractor            # fail-closed gates (5 Gemini calls)
 2.  uv run realdoc-bench evaluate download --run-dir runs/stage1 \
-      --repo-id Extend-AI/RealDoc-Bench --revision 906170ab201d7b8238a32a9115fc66b4b72e0710
-3.  uv run ocr-eval verify --run-dir runs/stage1     # cardinalities — abort on mismatch
-4.  # Environment reproduction anchor (validates render/keys/scoring end-to-end):
-    uv run realdoc-bench evaluate run --run-dir runs/stage1 -p gemini_3_5_flash
+      --dataset Extend-AI/RealDoc-Bench --revision 906170ab201d7b8238a32a9115fc66b4b72e0710
+    # NB: the CLI flag is --dataset (the function kwarg repo_id is not the flag name).
+    # ocr-eval verify writes run_meta.json with dataset_revision on first pass.
+3.  uv run ocr-eval verify --run-dir runs/stage1     # pins + cardinalities + pages + renders;
+                                                     # warms the PNG cache. Abort on any red.
+4.  # Environment reproduction anchor (validates render/keys/scoring end-to-end).
+    # Use ocr-eval wrappers, NOT `evaluate run` — upstream run's report phase writes
+    # dashboard.html, which globs ALL cache records and cross-ranks both shapes:
+    uv run ocr-eval parse --run-dir runs/stage1 -p gemini_3_5_flash
+    uv run ocr-eval score --run-dir runs/stage1 -p gemini_3_5_flash
     #   → compare to table3-snapshot.md (89.3/82.2); investigate before proceeding if outside ±2.5
-5.  # Hosted OCR endpoint (upstream parser, upstream CLI):
-    uv run realdoc-bench evaluate run --run-dir runs/stage1 -p mistral_ocr
+5.  # Hosted OCR endpoint (upstream parser name is mistral_ocr_4 — NOT mistral_ocr):
+    uv run ocr-eval parse --run-dir runs/stage1 -p mistral_ocr_4
+    uv run ocr-eval score --run-dir runs/stage1 -p mistral_ocr_4
 6.  # Local specialist (see docs/local-serving.md; one model at a time). NB: our registered
-    # parsers exist only under the ocr-eval CLI (upstream never imports ocr_eval_ext):
+    # parsers exist only under the ocr-eval CLI (upstream never imports ocr_eval_ext), and
+    # their names carry the transcriber-condition hash — `ocr-eval parse` prints them:
     vllm serve ... ; uv run ocr-eval preflight glm-ocr@local-vllm
-    uv run ocr-eval parse --run-dir runs/stage1 -p glm-ocr_local-vllm
-    uv run ocr-eval score --run-dir runs/stage1 -p glm-ocr_local-vllm
+    uv run ocr-eval parse --run-dir runs/stage1 -p glm-ocr_local-vllm__<cond>
+    uv run ocr-eval score --run-dir runs/stage1 -p glm-ocr_local-vllm__<cond>
     # Scoring-leg cost note: each scored question = one gemini-3-flash call per transcriber
-    # (~1,356 calls ≈ low single-digit $ per transcriber). There is no automated dry-run for
-    # this leg (upstream has no hook; adding one would mean patching upstream parse/score —
-    # declined for fork hygiene). Budget it here, smoke with --limit 20 first.
+    # (~1,356 calls ≈ low single-digit $ per transcriber). No automated dry-run for this leg
+    # (upstream has no hook — divergence D6). Budget it here, smoke with --limit 20 first.
+    # NEVER run upstream `evaluate score --force` against vlm__* keys — it overwrites the
+    # cached answers with 'markdown missing' (verified during plan review). dashboard.html,
+    # if ever generated, is upstream's shape-mixed view: report.md is the only authoritative
+    # output; `ocr-eval report` renames any dashboard.html to dashboard-upstream-UNSEGREGATED.html.
     # dots.ocr likewise → open-weight reproduction check vs 70.6±3.6 (setup caveats: our
     # serving stack, not the paper's; document any residual gap in the report)
-7.  # Direct QA candidates (+ calibration cell: qwen3-vl-8b also as transcriber via its parser name):
+7.  # Direct QA candidates + Section A ceiling anchor:
     uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@openrouter -m qwen3.5-9b@openrouter \
-      --dry-run                                    # inspect cells + then re-run with --max-spend 40
+      -m qwen3-vl-32b@openrouter -m gemini-3.5-flash@google-vlmchat \
+      --dry-run                                    # inspect cells + estimate, then re-run with --max-spend 40
+    # Calibration pair (same weights, transcriber shape — registry id qwen3-vl-8b@openrouter-transcriber):
+    uv run ocr-eval parse --run-dir runs/stage1 -p qwen3-vl-8b_openrouter-transcriber__<cond>
+    uv run ocr-eval score --run-dir runs/stage1 -p qwen3-vl-8b_openrouter-transcriber__<cond>
 8.  # No-image control (one model):
     uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@openrouter --no-image --max-spend 10
 9.  uv run ocr-eval report --run-dir runs/stage1    # → runs/stage1/report.md

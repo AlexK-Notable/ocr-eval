@@ -194,3 +194,18 @@ ocr-eval/                        (fork; upstream history preserved; upstream rem
 ## Effort estimate
 
 Rev 1's 600–800 lines was roughly 2× optimistic even before forking. Fork strategy shifts effort from plumbing to integration: expect 3–5 focused sessions for Stage 1 (fork bring-up + vlm-chat provider + local vLLM serving + metrics/CIs/baselines + preconditions + reproduction gate), of which local vLLM bring-up for the first specialist is a session on its own. Hosted spend for the full Stage 1 matrix: low tens of dollars; local passes free after setup.
+
+---
+
+## Rev 2.1 amendments (2026-08-01, from plan review)
+
+Ratified divergences discovered during implementation planning (two independent plan reviews, one of which executed the plan's code against upstream). The plan's Global Constraints carry the same ledger as D1–D8; this appendix is the spec-side record. Where they conflict with the body text above, **this appendix wins**:
+
+1. **`output_contract` values are `schema_prompted` / `schema_native` / `lenient`** (not `schema`): Stage 1 = `schema_prompted` uniformly; `schema_native` and `lenient` are Stage 2 values. The mechanism split lives in the condition value itself, hence in every cache key.
+2. **`max_tokens: 1024` scopes to vlm-chat cells only** — transcription uses upstream's 12,000 (a page of markdown does not fit in 1,024).
+3. **Records are per-cell JSON files** (upstream's cache shape), not JSONL; upstream `aggregate_results` flattens them.
+4. **Resolved serving identity is not in the cache key**; instead the report hard-fails when one parser key's rows span more than one resolved provider. Rendered-image hash likewise lives in the row (`image_sha`) with a `STALE-RENDER` report gate rather than in the key.
+5. **Raster-only is enforced for all parsers we implement**; upstream PDF-uploading adapters (mistral_ocr_4) are permitted and labelled `input: pdf-direct` with the embedded-text-layer caveat.
+6. **Cost preview:** the direct leg gets a labelled estimate in `--dry-run`; the transcriber scoring leg has no automated preview (upstream has no hook) and is budgeted in the runbook. In-run control is `--max-spend` on realized cost (overshoot ≤ workers in-flight calls).
+7. **Null-gold scoring is stricter than upstream:** upstream's `deep_equal(None, None)` scores a missing/None answer as correct on a null gold; our metrics layer scores null-gold fields correct only on key-present explicit null, and a None answer as an error row. Upstream rows' published-number comparability is unaffected (compared on upstream's own `match`).
+8. **The local-extractor sensitivity check** (part of the ratified extractor decision) is deferred to Stage 3; Stage 1's mitigation is a blocking extractor-validation fixture (5 known-answer transcripts, cached per (extractor, fixture-hash), must be 5/5 before any scoring run).
