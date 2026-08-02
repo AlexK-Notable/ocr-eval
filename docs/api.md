@@ -132,6 +132,14 @@ never appears in any config file. The standard invocation pattern is `bws run --
   `finish_reason: "length"` and empty `message.content`. Handled as designed: `direct.py`'s `_one`
   writes an `error_class: "empty"` row, never a crash and never a silently-wrong answer (see
   [`cli.md`](cli.md)'s worked example).
+- **Answers stranded in the reasoning channel:** distinct from budget exhaustion — in the same
+  live validation (60 cells, `qwen3-vl:8b` via Ollama, `max_tokens` raised to 8192), 13 cells
+  finished at ~1,865 completion tokens (well under the cap) with empty `message.content`: the
+  model emitted its entire answer inside the non-standard `message.reasoning` field and stopped.
+  The harness records these honestly as `error_class: "empty"` rows with the token counts as
+  evidence. Parsing an answer out of the reasoning channel would be a semantic change (scoring
+  thinking output) and is deliberately not done in Stage 1; if Stage 2 adds a reasoning-fallback,
+  it must be a distinct `output_contract` condition value, never a silent widening.
 - **Empty transcripts from thinking transcribers:** the same failure mode on the transcriber side
   (a transcript reduced to near-nothing by a thinking model's budget exhaustion) would otherwise
   pass `parse`'s ok/fail split with a false-green result and then spend one Gemini extractor call
