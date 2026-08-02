@@ -1,8 +1,13 @@
+import io
+
+import fitz  # pymupdf
 import pytest
+from PIL import Image
 
 from ocr_eval_ext.preconditions import (
     CHECKBOX_TAGS,
     PreconditionError,
+    assert_single_page,
     boolean_fields,
     check_bank,
     ink_coverage,
@@ -50,3 +55,42 @@ def test_ink_coverage_blank_vs_marked():
     marked_img.save(marked, "PNG")
     assert ink_coverage(blank.getvalue()) < 0.001
     assert ink_coverage(marked.getvalue()) > 0.2
+
+
+def _uniform_gray_png(value: int) -> bytes:
+    """A flat 10x10 grayscale PNG at exactly `value` — pixels this uniform sidestep any
+    L-mode conversion rounding, isolating the `< 200` boundary itself."""
+    img = Image.new("L", (10, 10), value)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def test_ink_coverage_threshold_boundary_199_200_201():
+    """`ink_coverage` counts a pixel as 'ink' iff its grayscale value is STRICTLY < 200 — so a
+    uniform image at 199 must read as 100% ink, and uniform images at 200 and 201 (the boundary
+    and just above it) must both read as 0% ink."""
+    assert ink_coverage(_uniform_gray_png(199)) == 1.0
+    assert ink_coverage(_uniform_gray_png(200)) == 0.0
+    assert ink_coverage(_uniform_gray_png(201)) == 0.0
+
+
+def _fitz_pdf_bytes(n_pages: int) -> bytes:
+    doc = fitz.open()
+    for _ in range(n_pages):
+        page = doc.new_page(width=200, height=200)
+        page.insert_text((20, 20), "x")
+    return doc.tobytes()
+
+
+def test_assert_single_page_accepts_one_page_pdf(tmp_path):
+    pdf_path = tmp_path / "one.pdf"
+    pdf_path.write_bytes(_fitz_pdf_bytes(1))
+    assert assert_single_page(pdf_path) == 1
+
+
+def test_assert_single_page_rejects_two_page_pdf(tmp_path):
+    pdf_path = tmp_path / "two.pdf"
+    pdf_path.write_bytes(_fitz_pdf_bytes(2))
+    with pytest.raises(PreconditionError, match="page_count == 2"):
+        assert_single_page(pdf_path)
