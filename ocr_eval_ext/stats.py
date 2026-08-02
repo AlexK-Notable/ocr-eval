@@ -20,8 +20,16 @@ def _acc(outs: list[FieldOutcome]) -> float:
     return sum(1 for o in outs if o.status == "correct") / len(outs) if outs else 0.0
 
 
-def cluster_bootstrap_ci(outcomes, *, iters=2000, seed=0, alpha=0.05):
-    docs = list(_by_doc(outcomes).items())
+def _check_params(iters: int, alpha: float) -> None:
+    if not (0 < alpha < 1):
+        raise ValueError(f"alpha must be in (0, 1), got {alpha!r}")
+    if iters < 1:
+        raise ValueError(f"iters must be >= 1, got {iters!r}")
+
+
+def cluster_bootstrap_ci(outcomes, *, iters=2000, seed=0, alpha=0.05) -> tuple[float, float]:
+    _check_params(iters, alpha)
+    docs = sorted(_by_doc(outcomes).items())
     rng = np.random.default_rng(seed)
     stats = []
     for _ in range(iters):
@@ -32,7 +40,8 @@ def cluster_bootstrap_ci(outcomes, *, iters=2000, seed=0, alpha=0.05):
             float(np.percentile(stats, 100 * (1 - alpha / 2))))
 
 
-def paired_delta_ci(a, b, *, iters=2000, seed=0, alpha=0.05):
+def paired_delta_ci(a, b, *, iters=2000, seed=0, alpha=0.05) -> tuple[float, float]:
+    _check_params(iters, alpha)
     da, db = _by_doc(a), _by_doc(b)
     docs = sorted(set(da) | set(db))
     rng = np.random.default_rng(seed)
