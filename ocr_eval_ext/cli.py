@@ -359,10 +359,6 @@ def direct(
         raise typer.Exit(2)   # fail-visible: errors occurred, report will mark them
 
 
-# Forward reference: `report` lands in Task 9; it also calls _preflight(layout) first.
-# `preflight`/`parse`/`score` (Task 8) are implemented below, after `rescore`.
-
-
 @app.command()
 def rescore(run_dir: Path = typer.Option(..., "--run-dir")) -> None:
     """Recompute field_matches/match from stored answers with CURRENT templates — both shapes,
@@ -651,3 +647,41 @@ def score(
                  f"results written to {agg['path']}")
     if len(records) - n_ok:
         raise typer.Exit(2)
+
+
+@app.command()
+def report(
+    run_dir: Path = typer.Option(..., "--run-dir"),
+    registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
+    allow_stale_render: bool = typer.Option(
+        False, "--allow-stale-render",
+        help="D3: proceed even when a vlm__ row's stored image_sha no longer matches a "
+             "freshly recomputed render of the same doc (STALE-RENDER). Default stays "
+             "fail-closed — the report still shows the STALE-RENDER section either way."),
+    iters: int = typer.Option(2000, "--iters", help="Bootstrap resamples per CI/paired delta."),
+) -> None:
+    """Build the shape-segregated markdown report (`<run-dir>/report.md`). Runs `_preflight`
+    against the bank first — a report over the wrong bank (wrong revision, wrong cardinalities)
+    must not render. Any pre-existing `dashboard.html` (upstream's shape-mixed HTML report) is
+    renamed to `dashboard-upstream-UNSEGREGATED.html` so it can never be mistaken for the
+    authoritative output."""
+    from ocr_eval_ext.report_md import ReportError, build_markdown_report
+
+    layout = RunLayout.at(run_dir)
+    _preflight(layout)
+    entries = load_registry(registry)
+    try:
+        md = build_markdown_report(layout, entries, allow_stale_render=allow_stale_render,
+                                   iters=iters)
+    except ReportError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
+    out_path = layout.root / "report.md"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(md)
+    dash = layout.dashboard_path
+    if dash.exists():
+        dash.rename(dash.with_name("dashboard-upstream-UNSEGREGATED.html"))
+        console.print("[yellow]renamed pre-existing dashboard.html -> "
+                      "dashboard-upstream-UNSEGREGATED.html (shape-mixed, not authoritative)[/yellow]")
+    console.print(f"[green]report written[/green] -> {out_path}")

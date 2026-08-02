@@ -1,0 +1,850 @@
+"""Shape-segregated markdown report — `vlm-chat` (Section A) and transcribe-then-extract
+(Section B) NEVER share a leaderboard table (spec's "report segregation" hard rule): a
+transcriber's score already reflects two stages (transcription + a separate Gemini extractor
+call), so a Section A vs Section B number for the "same" model is not the same measurement.
+
+Pure-function core: `build_markdown_report(layout, entries, ...)` only reads
+`eval/cache/*.json`, `qa_bank.json`, `run_meta.json`, and `parses/<parser>/*` off disk — it never
+calls a model, so it is fully testable without API access. All spend/rendering happens upstream
+of this module (`direct.py`/`parse.py`/`score.py`); this module only aggregates what's already on
+disk.
+
+Hard-fail rulings this module enforces (never silently degrade to a warning):
+  - D3 STALE-RENDER: a `vlm__*` row's stored `image_sha` must still match a freshly recomputed
+    render of the same doc under the row's own `condition`. A mismatch means the row was scored
+    against a page image that no longer exists (a swapped PDF, a changed render pipeline) — the
+    row's own answer/score no longer means what the row claims it means. `StaleRenderError`
+    unless the caller passes `allow_stale_render=True`.
+  - D4 serving identity: `vlm__*` cache keys do NOT pin the resolved serving provider (an
+    OpenRouter route can differ per request). If two rows filed under the SAME parser key
+    resolved to different providers, the key is comparing answers from two different serving
+    stacks under one label — `ServingIdentityError`, unconditionally (no escape hatch: unlike
+    staleness this is not something a caller should be able to wave through).
+
+D9 ruling (metrics.py) carried into this report: the headline blank-field number is
+`null_metrics()["overall"].acc_over_all`, never `hallucination_rate` alone — every render of
+`hallucination_rate` here is accompanied by `n_answered` and `error_rate` in the same string.
+
+CI ruling (stats.py review): CIs render ONLY on `acc_over_all` metrics, always with `n_docs`
+alongside, and `separable()`/paired deltas are never computed below `MIN_CLUSTER_DOCS` — below
+the floor this renders "insufficient clusters (n_docs=N)" instead of a possibly-spurious verdict.
+"""
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import re
+import statistics
+from collections import defaultdict
+from dataclasses import dataclass
+from itertools import combinations
+from pathlib import Path
+
+from ocr_eval_ext.config import RegistryEntry
+from ocr_eval_ext.metrics import FieldOutcome, baseline_rows, checkbox_metrics, field_outcomes, null_metrics
+from ocr_eval_ext.parsers_openai import safe_name
+from ocr_eval_ext.preconditions import BLANK_TAGS, CHECKBOX_TAGS, boolean_fields, items_with_tags, null_fields
+from ocr_eval_ext.stats import cluster_bootstrap_ci, paired_delta_ci, separable
+from realdoc_bench.evaluate.runs import RunLayout
+
+# Never call separable()/paired_delta_ci below this many distinct docs feeding the comparison —
+# ruling carried from Task 5's stats.py review (a handful of clustered docs makes "separable"
+# meaningless, not just noisy).
+MIN_CLUSTER_DOCS = 20
+
+# retrieved_at span beyond which a parser key's rows are flagged stale-serving-window (distinct
+# from D3 STALE-RENDER — this is about WHEN cells were collected, not whether the page changed).
+STALENESS_SPAN = dt.timedelta(days=7)
+
+# The extractor (score.py's DEFAULT_MODEL, "gemini-3-flash-preview") is a Google model — a
+# transcriber whose OWN provenance is also Google is judged by a same-family extractor.
+EXTRACTOR_FAMILY_PROVENANCE = "google"
+
+# ☒ ☐ ☑ (Unicode ballot-box glyphs) or ASCII "[x]"/"[ ]" — case-insensitive on the ASCII form.
+_CHECKBOX_GLYPH_RE = re.compile(r"[☒☐☑]|\[x\]|\[ \]", re.IGNORECASE)
+_TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
+
+
+class ReportError(RuntimeError):
+    """Base for hard-fail conditions build_markdown_report refuses to silently paper over."""
+
+
+class StaleRenderError(ReportError):
+    """D3: a vlm__ row's image_sha no longer matches the current render. `.report_md` carries
+    the full report text (STALE-RENDER section included) for a caller that wants to inspect it
+    before deciding whether to retry with --allow-stale-render."""
+
+    def __init__(self, message: str, report_md: str | None = None):
+        super().__init__(message)
+        self.report_md = report_md
+
+
+class ServingIdentityError(ReportError):
+    """D4: one vlm__ parser key's rows resolved to more than one distinct provider. No escape
+    hatch — unlike staleness, this is a cache-key design invariant, not a freshness judgment
+    call."""
+
+
+# ── FieldOutcome tuple builders ─────────────────────────────────────────────────────────────
+
+def _all_fields(items: list[dict]) -> list[tuple]:
+    """Every (qid, key, gold, doc) across every gold_dict key of every bank item — used for the
+    "general per-field" column, which (unlike checkbox/null) is not restricted to one bucket."""
+    return [(it["question_id"], k, v, it["source_file"])
+            for it in items for k, v in (it.get("gold_dict") or {}).items()]
+
+
+# ── Cache loading + parser-key -> registry-entry resolution ────────────────────────────────
+
+def _load_cache_rows(layout: RunLayout) -> dict[str, dict[str, dict]]:
+    """parser -> {qid: row}. Grouped by each row's OWN `"parser"` field (the single source of
+    truth `_worker`/`run_direct` both write), never by filename — robust to any future filename
+    convention change. Unreadable/corrupt files are skipped, matching `aggregate_results`."""
+    by_parser: dict[str, dict[str, dict]] = defaultdict(dict)
+    if not layout.cache_dir.exists():
+        return {}
+    for f in sorted(layout.cache_dir.glob("*.json")):
+        try:
+            rec = json.loads(f.read_text())
+        except Exception:
+            continue
+        pk, qid = rec.get("parser"), rec.get("qid")
+        if not pk or not qid:
+            continue
+        by_parser[pk][qid] = rec
+    return dict(by_parser)
+
+
+def _resolve_entry(parser_key: str, entries: list[RegistryEntry]) -> RegistryEntry | None:
+    """vlm__<id>__<hash> by entry-id segment; openai-compat transcribers by
+    safe_name(entry.id) + "__" prefix; upstream-parser entries by e.upstream_parser EXACTLY
+    (safe_name(e.id) is the WRONG string for these — see module docstring / task brief).
+    Returns None for anything that doesn't resolve — callers route None into Section B's
+    "(unregistered)" bucket rather than crashing."""
+    if parser_key.startswith("vlm__"):
+        rest = parser_key[len("vlm__"):]
+        if "__" not in rest:
+            return None
+        entry_id = rest.rsplit("__", 1)[0]
+        for e in entries:
+            if e.shape == "vlm-chat" and e.id == entry_id:
+                return e
+        return None
+    for e in entries:
+        if e.shape == "transcriber" and e.transport == "openai-compat" \
+                and parser_key.startswith(safe_name(e.id) + "__"):
+            return e
+    for e in entries:
+        if e.transport == "upstream-parser" and e.upstream_parser == parser_key:
+            return e
+    return None
+
+
+@dataclass
+class _Group:
+    parser_key: str
+    entry: RegistryEntry | None
+    rows_by_qid: dict[str, dict]
+
+
+def _categorize(by_parser: dict[str, dict[str, dict]],
+                 entries: list[RegistryEntry]) -> tuple[dict[str, _Group], dict[str, _Group], dict[str, _Group]]:
+    """Splits every parser key into: direct (vlm-chat, real image), no_image (vlm-chat, the
+    no-image control condition — rendered in the Baselines block, not as a ranked Section A
+    row), and section_b (every transcriber/upstream-parser/unregistered key). A parser key's
+    condition is baked into the key itself (that's WHY the no-image variant gets a different
+    key), so checking one row's condition is representative of the whole group."""
+    direct: dict[str, _Group] = {}
+    no_image: dict[str, _Group] = {}
+    section_b: dict[str, _Group] = {}
+    for pk, rows_by_qid in by_parser.items():
+        entry = _resolve_entry(pk, entries)
+        if entry is not None and entry.shape == "vlm-chat":
+            sample = next(iter(rows_by_qid.values()))
+            is_no_image = bool((sample.get("condition") or {}).get("no_image"))
+            (no_image if is_no_image else direct)[pk] = _Group(pk, entry, rows_by_qid)
+        else:
+            section_b[pk] = _Group(pk, entry, rows_by_qid)
+    return direct, no_image, section_b
+
+
+# ── Per-row metric computation (shared by Section A and Section B — the metric definitions
+#    don't change with shape, only the extra columns rendered alongside them do) ────────────
+
+def _n_docs(outcomes: list[FieldOutcome]) -> int:
+    return len({o.doc for o in outcomes})
+
+
+def _error_class_of(row: dict | None) -> str:
+    if row is None:
+        return "missing"                 # no cache row at all for this qid under this parser
+    if "error_class" in row:
+        return row["error_class"]        # vlm__ rows always carry this (direct.py's `_one`)
+    if "error" in row:
+        return "error"                   # score.py rows: plain "error" string, no error_class
+    if "answer" in row:
+        return "none"                    # success
+    return "unknown"                     # malformed row — neither answer nor error present
+
+
+def _error_class_counts(rows_by_qid: dict[str, dict], items: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = defaultdict(int)
+    for it in items:
+        counts[_error_class_of(rows_by_qid.get(it["question_id"]))] += 1
+    return dict(counts)
+
+
+def _general_and_strict(rows_by_qid: dict[str, dict], items: list[dict],
+                        all_fields: list[tuple]) -> tuple[float, float]:
+    """general per-field: acc_over_all across EVERY gold field of EVERY bank item (not just the
+    checkbox/null buckets), via `field_outcomes` so D7/MINOR-1 null-gold and error-precedence
+    semantics stay identical to every other metric in this report. strict per-question: fraction
+    of ALL bank items whose row is fully correct (`match is True`) — denominator is every item,
+    not just answered ones (acc-over-all style: a missing/errored row counts as wrong, not
+    excluded)."""
+    outcomes = field_outcomes(rows_by_qid, all_fields)
+    n = len(outcomes)
+    correct = sum(1 for o in outcomes if o.status == "correct")
+    general = correct / n if n else 0.0
+    n_items = len(items)
+    q_correct = sum(1 for it in items
+                    if (rows_by_qid.get(it["question_id"]) or {}).get("match") is True)
+    strict = q_correct / n_items if n_items else 0.0
+    return general, strict
+
+
+def _beats_majority(model_outcomes: list[FieldOutcome], majority_outcomes: list[FieldOutcome],
+                    *, iters: int, seed: int, alpha: float) -> str:
+    """yes / no / not separable — and, below the cluster floor, "insufficient clusters (n_docs=N)"
+    instead of calling separable() at all. A model is NEVER labelled above-baseline when the
+    delta isn't separable from zero."""
+    docs = len({o.doc for o in model_outcomes} | {o.doc for o in majority_outcomes})
+    if docs < MIN_CLUSTER_DOCS:
+        return f"insufficient clusters (n_docs={docs})"
+    ci = paired_delta_ci(model_outcomes, majority_outcomes, iters=iters, seed=seed, alpha=alpha)
+    if not separable(ci):
+        return "not separable"
+    return "yes" if ci[0] > 0 else "no"
+
+
+def _pairwise_separability(label_outcomes: list[tuple[str, list[FieldOutcome]]],
+                           *, iters: int, seed: int, alpha: float) -> list[str]:
+    lines = []
+    for (la, oa), (lb, ob) in combinations(label_outcomes, 2):
+        docs = len({o.doc for o in oa} | {o.doc for o in ob})
+        if docs < MIN_CLUSTER_DOCS:
+            lines.append(f"- {la} vs {lb}: insufficient clusters (n_docs={docs})")
+            continue
+        ci = paired_delta_ci(oa, ob, iters=iters, seed=seed, alpha=alpha)
+        if separable(ci):
+            better = la if ci[0] > 0 else lb
+            lines.append(f"- {la} vs {lb}: separable — {better} ahead, "
+                        f"Δ=[{ci[0]*100:.1f}pp, {ci[1]*100:.1f}pp]")
+        else:
+            lines.append(f"- {la} vs {lb}: not separable — Δ CI [{ci[0]*100:.1f}pp, "
+                        f"{ci[1]*100:.1f}pp] spans 0")
+    return lines
+
+
+@dataclass
+class RowMetrics:
+    n_expected: int
+    n_seen: int
+    checkbox_outcomes: list[FieldOutcome]
+    null_outcomes: list[FieldOutcome]
+    checkbox: dict
+    null: dict
+    checkbox_ci: tuple[float, float] | None
+    checkbox_docs: int
+    null_ci: tuple[float, float] | None
+    null_docs: int
+    general_field_acc: float
+    strict_question_acc: float
+    error_classes: dict[str, int]
+    beats_majority: str
+
+
+def _compute_row_metrics(rows_by_qid: dict[str, dict], items: list[dict], all_fields: list[tuple],
+                         checkbox_fields: list[tuple], null_fields_all: list[tuple],
+                         majority_outcomes: list[FieldOutcome], *, iters: int, seed: int,
+                         alpha: float) -> RowMetrics:
+    checkbox_outcomes = field_outcomes(rows_by_qid, checkbox_fields)
+    null_outcomes = field_outcomes(rows_by_qid, null_fields_all)
+    cb = checkbox_metrics(checkbox_outcomes)
+    nm = null_metrics(null_outcomes)
+    general, strict = _general_and_strict(rows_by_qid, items, all_fields)
+    cb_docs = _n_docs(checkbox_outcomes)
+    cb_ci = cluster_bootstrap_ci(checkbox_outcomes, iters=iters, seed=seed, alpha=alpha) if cb_docs else None
+    null_docs = _n_docs(null_outcomes)
+    null_ci = cluster_bootstrap_ci(null_outcomes, iters=iters, seed=seed, alpha=alpha) if null_docs else None
+    beats = _beats_majority(checkbox_outcomes, majority_outcomes, iters=iters, seed=seed, alpha=alpha)
+    return RowMetrics(
+        n_expected=len(items), n_seen=len(rows_by_qid),
+        checkbox_outcomes=checkbox_outcomes, null_outcomes=null_outcomes,
+        checkbox=cb, null=nm, checkbox_ci=cb_ci, checkbox_docs=cb_docs,
+        null_ci=null_ci, null_docs=null_docs,
+        general_field_acc=general, strict_question_acc=strict,
+        error_classes=_error_class_counts(rows_by_qid, items), beats_majority=beats,
+    )
+
+
+# ── D3 STALE-RENDER + D4 serving-identity guards (vlm__ rows only) ─────────────────────────
+
+def _check_serving_identity(parser_key: str, rows: list[dict]) -> None:
+    providers = {r.get("resolved_provider") for r in rows if r.get("resolved_provider")}
+    if len(providers) > 1:
+        raise ServingIdentityError(
+            f"D4 serving-identity violation: parser key {parser_key!r} has rows resolved to "
+            f">1 distinct provider ({sorted(providers)}) — the cache key does not pin serving "
+            f"identity, so rows filed under one key must all share it. Split the run or "
+            f"re-pin provider_pin before reporting.")
+
+
+def _check_stale_renders(layout: RunLayout, rows: list[dict],
+                         render_cache: dict[tuple, str | None]) -> list[str]:
+    """Recomputes the CURRENT render hash per referenced doc (once per (stem, condition) pair,
+    memoized in `render_cache` across the whole report) and compares it against each row's own
+    stored `image_sha`. Rows with no image (no_image control, or a render-failed row that never
+    got one) carry `image_sha: None` and are silently skipped — there is nothing to compare."""
+    from ocr_eval_ext.direct import _render_page, condition_hash
+
+    png_cache = layout.root / "docs_png"
+    stale: list[str] = []
+    for r in rows:
+        sha = r.get("image_sha")
+        if not sha:
+            continue
+        stem = r.get("source_file")
+        condition = r.get("condition") or {}
+        key = (stem, condition_hash(condition))
+        if key not in render_cache:
+            try:
+                png = _render_page(layout, stem, condition, png_cache)
+                render_cache[key] = hashlib.sha256(png).hexdigest()
+            except Exception:
+                render_cache[key] = None
+        current = render_cache[key]
+        if current is not None and current != sha:
+            stale.append(stem)
+    return stale
+
+
+# ── Cost / latency ──────────────────────────────────────────────────────────────────────────
+
+def _direct_cost_latency(entry: RegistryEntry | None, rows: list[dict]) -> tuple[str, str]:
+    """Section A: sourced straight from the vlm__ cache rows' own usage/latency_sec (the same
+    fields `direct.py`'s `track()` reads). `local: true` always renders "n/a" for both — never a
+    fake $0.00 (rule carried from Task 6's max-spend review)."""
+    if entry is not None and entry.local:
+        return "n/a", "n/a"
+    latencies = [r["latency_sec"] for r in rows if isinstance(r.get("latency_sec"), int | float)]
+    total_cost, any_cost = 0.0, False
+    for r in rows:
+        usage = r.get("usage") or {}
+        cost = usage.get("cost")
+        if cost is None and entry is not None and entry.pricing:
+            cost = ((usage.get("prompt_tokens", 0) / 1e6) * entry.pricing["input_per_mtok"]
+                    + (usage.get("completion_tokens", 0) / 1e6) * entry.pricing["output_per_mtok"])
+        if cost is not None:
+            total_cost += cost
+            any_cost = True
+    lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
+    cost = f"${total_cost:.4f}" if any_cost else "n/a"
+    return lat, cost
+
+
+def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
+                                parser_key: str) -> tuple[str, str]:
+    """Section B: `eval/cache/` rows written by `score.py` carry NO token/latency fields at all
+    (only `qid`/`parser`/`source_file`/`domain`/`answer`/`field_matches`/`match`/`error`) — the
+    transcription leg's own cost/latency lives in `parses/<parser>/<stem>.json` (written by
+    `run_parse`'s `_parse_one`), which is why these columns are scoped to "the transcription leg
+    only" in the Section B header. `local: true` still renders "n/a" for both, unconditionally."""
+    if entry is not None and entry.local:
+        return "n/a", "n/a"
+    parser_dir = layout.parser_dir(parser_key)
+    if not parser_dir.exists():
+        return "n/a", "n/a"
+    latencies: list[float] = []
+    costs: list[float] = []
+    for meta_path in parser_dir.glob("*.json"):
+        if meta_path.name == "condition.json":     # sidecar, not a per-stem parse record
+            continue
+        try:
+            meta = json.loads(meta_path.read_text())
+        except Exception:
+            continue
+        if not meta.get("ok"):
+            continue
+        if isinstance(meta.get("latency_sec"), int | float):
+            latencies.append(meta["latency_sec"])
+        if isinstance(meta.get("cost_usd"), int | float):
+            costs.append(meta["cost_usd"])
+    lat = f"{statistics.median(latencies):.2f}s" if latencies else "n/a"
+    cost = f"${sum(costs):.4f}" if costs else "n/a"
+    return lat, cost
+
+
+# ── Transcript-recall diagnostic (Section B only) ───────────────────────────────────────────
+
+def _field_tokens(key: str) -> list[str]:
+    return [t for t in _TOKEN_RE.findall(key) if len(t) >= 3]
+
+
+def _transcript_recall(layout: RunLayout, parser_key: str, checkbox_items: list[dict]) -> float | None:
+    """Fraction of checkbox-bucket docs whose `parses/<parser>/<stem>.md` contains BOTH a
+    checkbox glyph AND a token of one of that doc's boolean gold field keys — glyph-only would
+    only prove "emitted checkboxes somewhere," not "emitted this field" (mandatory distinction
+    from the task brief). Requires the parse dir to exist at all; a transcriber that was never
+    parsed under this run renders "n/a" (None), not a misleading 0.0."""
+    parser_dir = layout.parser_dir(parser_key)
+    if not parser_dir.exists():
+        return None
+    doc_tokens: dict[str, set[str]] = defaultdict(set)
+    for it in checkbox_items:
+        doc = it["source_file"]
+        for k, v in (it.get("gold_dict") or {}).items():
+            if isinstance(v, bool):
+                doc_tokens[doc].update(_field_tokens(k))
+    if not doc_tokens:
+        return None
+    recalled = 0
+    for doc, tokens in doc_tokens.items():
+        md_path = layout.parse_md(parser_key, doc)
+        if not md_path.exists():
+            continue
+        text = md_path.read_text(errors="ignore")
+        if not _CHECKBOX_GLYPH_RE.search(text):
+            continue
+        text_lower = text.lower()
+        if any(tok.lower() in text_lower for tok in tokens):
+            recalled += 1
+    return recalled / len(doc_tokens)
+
+
+# ── Formatting helpers ──────────────────────────────────────────────────────────────────────
+
+def _pct(x: float) -> str:
+    return f"{x * 100:.1f}%"
+
+
+def _fmt_ci_metric(value: float, ci: tuple[float, float] | None, n_docs: int) -> str:
+    if ci is None:
+        return f"{_pct(value)} (n_docs={n_docs})"
+    return f"{_pct(value)} [{_pct(ci[0])}, {_pct(ci[1])}] (n_docs={n_docs})"
+
+
+def _fmt_hallucination(null_block: dict) -> str:
+    """D9 ruling: never render hallucination_rate without n_answered and error_rate beside it."""
+    ov = null_block["overall"]
+    return (f"{_pct(null_block['hallucination_rate'])} "
+            f"(n_answered={ov.n_answered}, error_rate={_pct(ov.error_rate)})")
+
+
+def _tos_stamp(entry: RegistryEntry) -> str:
+    if entry.provider_tos_commercial == "blocked":
+        note = f" — {entry.tos_note}" if entry.tos_note else ""
+        return f"⚠ ToS: blocked{note}"
+    if entry.provider_tos_commercial == "conditional":
+        note = f" — {entry.tos_note}" if entry.tos_note else ""
+        return f"⚠ ToS: conditional{note}"
+    return "ToS: ok"
+
+
+def _precision_label(entry: RegistryEntry) -> str:
+    return "unknown (not asserted)" if entry.precision == "provider-default" else entry.precision
+
+
+def _mixed_precision_note(known_precisions: set[str]) -> str | None:
+    if len(known_precisions) > 1:
+        return (f"**mixed precision** in this section: models are served at different pinned "
+                f"precisions ({', '.join(sorted(known_precisions))}) — cross-model deltas may "
+                f"reflect serving precision, not model quality alone.")
+    return None
+
+
+def _error_classes_str(counts: dict[str, int]) -> str:
+    return ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+
+
+def _incomplete_head(label: str, n_seen: int, n_expected: int) -> str:
+    if n_seen < n_expected:
+        return f"**INCOMPLETE ({n_seen}/{n_expected})** {label}"
+    return label
+
+
+CROSS_SHAPE_WARNING = (
+    "**Cross-shape comparability warning:** Section A (`vlm-chat`) rows answer the question "
+    "directly from the rendered page image in one model call. Section B "
+    "(transcribe-then-extract) rows first transcribe the page to markdown, then a SEPARATE "
+    "`gemini-3-flash-preview` extractor call answers the question from that markdown. A Section "
+    "B score reflects BOTH stages at once — a low score can come from a bad transcription OR a "
+    "bad extraction — so a Section A and a Section B number for the \"same\" underlying model "
+    "are not directly comparable rankings. Use the direct-vs-two-stage calibration pair (below, "
+    "when both rows exist) to gauge how much of a two-stage gap is pipeline overhead versus "
+    "genuine transcription quality."
+)
+
+METRIC_DEFINITIONS = (
+    "- **checkbox acc-over-all**: correct / all boolean-typed checkbox-bucket fields (errors "
+    "count as wrong, never excluded from the denominator).\n"
+    "- **blank/null acc-over-all**: correct-null / all null-gold fields bank-wide — the headline "
+    "blank-field number (D9 ruling); a collapsed extractor (answer: null) and an inventive one "
+    "both drive this DOWN, never up.\n"
+    "- **hallucination_rate**: incorrect / n_answered on null-gold fields ONLY — the propensity "
+    "to invent a value given that the extractor answered at all. Meaningless read alone; always "
+    "shown with n_answered and error_rate.\n"
+    "- **general per-field**: acc-over-all across every gold field of every bank item.\n"
+    "- **strict per-question**: fraction of ALL bank items fully correct (row `match is True`).\n"
+    "- **beats majority**: paired-bootstrap delta vs the majority-class predictor on checkbox "
+    "acc-over-all — \"not separable\" (or \"insufficient clusters\" below n_docs=20) never "
+    "counts as \"yes\"."
+)
+
+
+# ── Main entry point ─────────────────────────────────────────────────────────────────────────
+
+def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
+                          bank_path: Path | None = None, allow_stale_render: bool = False,
+                          iters: int = 2000, seed: int = 0, alpha: float = 0.05) -> str:
+    """Pure function: reads cache/bank/run_meta/parses off disk, returns the report body as a
+    markdown string. Never calls a model. Raises `ServingIdentityError` (D4, unconditional) or
+    `StaleRenderError` (D3, unless `allow_stale_render=True`) rather than silently rendering a
+    misleading report."""
+    bank_path = bank_path or layout.bank_path
+    items = json.loads(bank_path.read_text())["items"]
+    # Matches ocr_eval_ext.cli._run_meta_path(layout) exactly (layout.root / "run_meta.json") —
+    # inlined rather than imported to keep this module import-cycle-free of cli.py, which lazily
+    # imports report_md.py from inside its own `report` command body.
+    meta_path = layout.root / "run_meta.json"
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+
+    checkbox_items = items_with_tags(items, CHECKBOX_TAGS)
+    blank_items = items_with_tags(items, BLANK_TAGS)
+    checkbox_fields = boolean_fields(checkbox_items)
+    null_fields_all = null_fields(items)          # whole-bank nulls — the D9 headline denominator
+    all_fields = _all_fields(items)
+    baselines = baseline_rows(checkbox_fields)
+    majority_true = baselines["always_true"] >= baselines["always_false"]
+    majority_outcomes = [
+        FieldOutcome(qid, key, doc, gold, "correct" if gold is majority_true else "incorrect")
+        for qid, key, gold, doc in checkbox_fields
+    ]
+
+    by_parser = _load_cache_rows(layout)
+    direct_groups, no_image_groups, section_b_groups = _categorize(by_parser, entries)
+
+    # ── vlm__ pass: D4 guard, D3 staleness, row metrics — shared by direct + no-image groups.
+    render_cache: dict[tuple, str | None] = {}
+    stale_report: dict[str, list[str]] = {}
+    staleness_warnings: list[str] = []
+    vlm_data: dict[str, dict] = {}
+    for pk, g in {**direct_groups, **no_image_groups}.items():
+        rows = list(g.rows_by_qid.values())
+        _check_serving_identity(pk, rows)                    # D4 — raises immediately, no escape
+        stale = _check_stale_renders(layout, rows, render_cache)
+        if stale:
+            stale_report[pk] = stale
+        metrics = _compute_row_metrics(g.rows_by_qid, items, all_fields, checkbox_fields,
+                                       null_fields_all, majority_outcomes,
+                                       iters=iters, seed=seed, alpha=alpha)
+        lat, cost = _direct_cost_latency(g.entry, rows)
+        providers = sorted({r["resolved_provider"] for r in rows if r.get("resolved_provider")})
+        retrieved_ats = [r["retrieved_at"] for r in rows if r.get("retrieved_at")]
+        span = None
+        if len(retrieved_ats) >= 2:
+            try:
+                parsed = [dt.datetime.fromisoformat(ts) for ts in retrieved_ats]
+                span = max(parsed) - min(parsed)
+            except ValueError:
+                span = None
+        if span is not None and span > STALENESS_SPAN:
+            staleness_warnings.append(
+                f"- **{pk}**: retrieved_at spans {span.days} day(s) "
+                f"({min(parsed).date()} .. {max(parsed).date()}) — exceeds the 7-day freshness "
+                f"window.")
+        vlm_data[pk] = {"latency": lat, "cost": cost, "providers": providers, "metrics": metrics}
+
+    # ── Section B pass ──────────────────────────────────────────────────────────────────────
+    section_b_data: dict[str, dict] = {}
+    for pk, g in section_b_groups.items():
+        metrics = _compute_row_metrics(g.rows_by_qid, items, all_fields, checkbox_fields,
+                                       null_fields_all, majority_outcomes,
+                                       iters=iters, seed=seed, alpha=alpha)
+        lat, cost = _transcription_cost_latency(layout, g.entry, pk)
+        recall = _transcript_recall(layout, pk, checkbox_items)
+        if g.entry is None:
+            input_label = "unknown (unregistered)"
+        elif g.entry.transport == "openai-compat":
+            input_label = "raster-png"
+        else:
+            input_label = "pdf-direct"
+        same_family = g.entry is not None and g.entry.provenance.strip().lower() == EXTRACTOR_FAMILY_PROVENANCE
+        section_b_data[pk] = {
+            "metrics": metrics, "latency": lat, "cost": cost, "recall": recall,
+            "input": input_label, "same_family": same_family,
+        }
+
+    extractor_id = meta.get("extractor_id", "not yet scored")
+
+    lines: list[str] = []
+    lines += _build_header(meta, items)
+    lines += _build_section_a(direct_groups, vlm_data, stale_report)
+    lines += _build_baselines(baselines, checkbox_fields, no_image_groups, vlm_data)
+    lines += _build_cross_shape_note(checkbox_items, blank_items, direct_groups, section_b_groups)
+    lines += _build_section_b(section_b_groups, section_b_data, extractor_id, layout)
+    lines += _build_separability_appendix(direct_groups, section_b_groups, vlm_data,
+                                          section_b_data, iters=iters, seed=seed, alpha=alpha)
+    lines += _build_staleness_section(staleness_warnings)
+    lines += _build_stale_render_section(stale_report)
+
+    md = "\n".join(lines) + "\n"
+    if stale_report and not allow_stale_render:
+        affected = sorted(stale_report)
+        raise StaleRenderError(
+            f"STALE-RENDER: {len(stale_report)} parser key(s) have rows whose stored image_sha "
+            f"no longer matches the current render — {affected}. Re-render/re-score, or pass "
+            f"--allow-stale-render to proceed anyway.", report_md=md)
+    return md
+
+
+# ── Section builders ─────────────────────────────────────────────────────────────────────────
+
+def _build_header(meta: dict, items: list[dict]) -> list[str]:
+    lines = [
+        "# Stage 1 OCR Evaluation Report", "",
+        f"Generated: {dt.datetime.now(dt.UTC).isoformat()}",
+        f"Dataset revision: {meta.get('dataset_revision', 'unknown')} "
+        f"(revision_source: {meta.get('revision_source', 'unknown')})",
+        f"Harness commit: {meta.get('harness_commit', 'unknown')}",
+        f"Extractor: {meta.get('extractor_id', 'not yet scored')}",
+        f"Renders verified: {meta.get('renders_verified', False)}",
+        f"Bank items in this report: {len(items)}",
+        "",
+        "**Dataset licence: CC-BY-4.0** — Extend-AI/RealDoc-Bench. Figures reproduced/derived "
+        "from this dataset in this report are attributed to Extend-AI/RealDoc-Bench under "
+        "CC-BY-4.0.",
+        "",
+    ]
+    if meta.get("partial_corpus"):
+        lines += ["> **⚠ PARTIAL CORPUS** — this run was scored with `--allow-partial-corpus`; "
+                 "results below are over a PARTIAL corpus, not the full bank.", ""]
+    lines += [
+        "## Caveats",
+        "",
+        "- `origin=None` for every bank item: real vs synthetic (filled-in) documents cannot be "
+        "distinguished from the released bank — provenance is mixed and unrecoverable per-item.",
+        "- Composition is an estimated ~18% born-digital (gate2's 40-doc stratified sample: "
+        "74.4% scanned / 17.9% born-digital) — per-class filtering is not possible from the "
+        "released bank alone.",
+        "- Provider-side image downscaling is UNCONTROLLED: hosted providers may resize or cap "
+        "the rendered page before inference; per-provider caps are not independently verified "
+        "per request.",
+        "",
+    ]
+    return lines
+
+
+def _build_section_a(direct_groups: dict[str, _Group], vlm_data: dict[str, dict],
+                     stale_report: dict[str, list[str]]) -> list[str]:
+    lines = ["## Section A — Direct QA (vlm-chat)", ""]
+    if not direct_groups:
+        return [*lines, "_no vlm-chat rows in this run_", ""]
+    known_precisions = {g.entry.precision for g in direct_groups.values()
+                        if g.entry.precision != "provider-default"}
+    note = _mixed_precision_note(known_precisions)
+    if note:
+        lines += [note, ""]
+    lines += ["| model | checkbox acc-over-all | polarity checked/unchecked | blank/null "
+             "acc-over-all | hallucination_rate | general/field | strict/question | beats "
+             "majority |",
+             "|---|---|---|---|---|---|---|---|"]
+    for pk in sorted(direct_groups, key=lambda k: direct_groups[k].entry.id):
+        g = direct_groups[pk]
+        e = g.entry
+        m: RowMetrics = vlm_data[pk]["metrics"]
+        head = _incomplete_head(e.id, m.n_seen, m.n_expected)
+        pol = m.checkbox["polarity"]
+        polarity = f"checked {_pct(pol['checked'].acc_over_all)} / unchecked {_pct(pol['unchecked'].acc_over_all)}"
+        if pk in stale_report:
+            head += " ⚠STALE-RENDER"
+        lines.append(
+            f"| {head} | {_fmt_ci_metric(m.checkbox['overall'].acc_over_all, m.checkbox_ci, m.checkbox_docs)} "
+            f"| {polarity} "
+            f"| {_fmt_ci_metric(m.null['overall'].acc_over_all, m.null_ci, m.null_docs)} "
+            f"| {_fmt_hallucination(m.null)} "
+            f"| {_pct(m.general_field_acc)} | {_pct(m.strict_question_acc)} "
+            f"| {m.beats_majority} |")
+    lines.append("")
+    for pk in sorted(direct_groups, key=lambda k: direct_groups[k].entry.id):
+        g = direct_groups[pk]
+        e = g.entry
+        m = vlm_data[pk]["metrics"]
+        lines.append(
+            f"- **{e.id}** — precision: {_precision_label(e)} · licence: {e.weights_licence} "
+            f"· {_tos_stamp(e)} · contaminated: {'yes' if e.contaminated else 'no'} "
+            f"· providers seen: {', '.join(vlm_data[pk]['providers']) or '(none recorded)'} "
+            f"· median latency: {vlm_data[pk]['latency']} "
+            f"· realized cost: {vlm_data[pk]['cost']} "
+            f"· n: {m.n_seen}/{m.n_expected} "
+            f"· error classes: {_error_classes_str(m.error_classes)}")
+    lines.append("")
+    return lines
+
+
+def _build_baselines(baselines: dict, checkbox_fields: list[tuple],
+                     no_image_groups: dict[str, _Group], vlm_data: dict[str, dict]) -> list[str]:
+    cb = baselines["class_balance"]
+    lines = [
+        "## Baseline rows", "",
+        f"- always-true: {_pct(baselines['always_true'])}",
+        f"- always-false: {_pct(baselines['always_false'])}",
+        f"- majority-class: {_pct(baselines['majority'])} "
+        f"(class balance: true={cb['true']}, false={cb['false']}, n={len(checkbox_fields)})",
+    ]
+    for pk, g in no_image_groups.items():
+        m: RowMetrics = vlm_data[pk]["metrics"]
+        lines.append(
+            f"- no-image control — **{g.entry.id}**: checkbox acc-over-all "
+            f"{_fmt_ci_metric(m.checkbox['overall'].acc_over_all, m.checkbox_ci, m.checkbox_docs)} "
+            f"(question text only, language-prior guessing)")
+    lines.append("")
+    return lines
+
+
+def _find_calibration_pairs(direct_groups: dict[str, _Group],
+                            section_b_groups: dict[str, _Group]) -> list[tuple[RegistryEntry, RegistryEntry]]:
+    """The registered direct-vs-two-stage calibration cell: one model registered under BOTH
+    shapes (matched by the underlying `model` string — the same weights served the same way,
+    just prompted differently)."""
+    vlm_entries = [g.entry for g in direct_groups.values()]
+    transcriber_entries = [g.entry for g in section_b_groups.values()
+                           if g.entry is not None and g.entry.transport == "openai-compat"]
+    return [(v, t) for v in vlm_entries for t in transcriber_entries
+            if v.model and t.model and v.model == t.model]
+
+
+def _build_cross_shape_note(checkbox_items: list[dict], blank_items: list[dict],
+                            direct_groups: dict[str, _Group],
+                            section_b_groups: dict[str, _Group]) -> list[str]:
+    overlap = len({i["question_id"] for i in checkbox_items} & {i["question_id"] for i in blank_items})
+    lines = [
+        "## Cross-shape comparison note", "",
+        CROSS_SHAPE_WARNING, "",
+        f"{overlap} questions appear in both the checkbox and blank-field buckets "
+        f"(of {len(checkbox_items)} checkbox-bucket and {len(blank_items)} blank-field-bucket "
+        f"questions) — a field counted in both buckets contributes to both metrics "
+        f"independently.",
+        "",
+        "**Metric definitions:**", "", METRIC_DEFINITIONS, "",
+    ]
+    pairs = _find_calibration_pairs(direct_groups, section_b_groups)
+    for v, t in pairs:
+        lines.append(f"**Direct-vs-two-stage calibration pair detected:** `{v.id}` (Section A, "
+                     f"direct) vs `{t.id}` (Section B, transcribe-then-extract) — same "
+                     f"underlying model (`{v.model}`); see the separability appendix for the "
+                     f"paired delta between their rows.")
+        lines.append("")
+    return lines
+
+
+def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[str, dict],
+                     extractor_id: str, layout: RunLayout) -> list[str]:
+    lines = ["## Section B — Transcribe-then-extract", "",
+             f"_Cost/latency below describe the TRANSCRIPTION LEG only — the extractor "
+             f"(`{extractor_id}`) call is a separate, shared cost not attributed per-row._", ""]
+    if not section_b_groups:
+        return [*lines, "_no transcriber rows in this run_", ""]
+    any_pdf_direct = any(section_b_data[pk]["input"] == "pdf-direct" for pk in section_b_groups)
+    lines += ["| row | checkbox acc-over-all | blank/null acc-over-all | hallucination_rate | "
+             "general/field | strict/question | transcript-recall | input | beats majority |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    ordered = sorted(section_b_groups, key=lambda pk: (section_b_groups[pk].entry is None,
+                                                       section_b_groups[pk].entry.id
+                                                       if section_b_groups[pk].entry else pk))
+    for pk in ordered:
+        g = section_b_groups[pk]
+        d = section_b_data[pk]
+        m: RowMetrics = d["metrics"]
+        name = g.entry.id if g.entry is not None else f"{pk} (unregistered)"
+        label = f"{name} + extractor {extractor_id}"
+        head = _incomplete_head(label, m.n_seen, m.n_expected)
+        if d["same_family"]:
+            head += " (same-family scoring)"
+        recall = "n/a" if d["recall"] is None else _pct(d["recall"])
+        lines.append(
+            f"| {head} "
+            f"| {_fmt_ci_metric(m.checkbox['overall'].acc_over_all, m.checkbox_ci, m.checkbox_docs)} "
+            f"| {_fmt_ci_metric(m.null['overall'].acc_over_all, m.null_ci, m.null_docs)} "
+            f"| {_fmt_hallucination(m.null)} "
+            f"| {_pct(m.general_field_acc)} | {_pct(m.strict_question_acc)} "
+            f"| {recall} | {d['input']} | {m.beats_majority} |")
+    lines.append("")
+    for pk in ordered:
+        g = section_b_groups[pk]
+        d = section_b_data[pk]
+        m = d["metrics"]
+        name = g.entry.id if g.entry is not None else f"{pk} (unregistered)"
+        detail = [f"- **{name}**"]
+        if g.entry is not None:
+            e = g.entry
+            detail.append(f"precision: {_precision_label(e)} · licence: {e.weights_licence} "
+                         f"· {_tos_stamp(e)} · contaminated: {'yes' if e.contaminated else 'no'}")
+        detail.append("provider: n/a (not persisted)")     # D4/Task-8 note: upstream never
+                                                             # persists ParseResult.raw
+        detail.append(f"median latency: {d['latency']} · realized cost: {d['cost']}")
+        detail.append(f"n: {m.n_seen}/{m.n_expected} · error classes: "
+                      f"{_error_classes_str(m.error_classes)}")
+        lines.append(" · ".join(detail))
+    lines.append("")
+    if any_pdf_direct:
+        lines += ["_pdf-direct rows upload the PDF to the provider directly (no rendered PNG "
+                 "leg); such rows can free-ride on an embedded text layer already in the PDF "
+                 "(measured: 2 of 16 sampled docs carry one) — a pdf-direct score is not purely "
+                 "an OCR/vision measurement._", ""]
+    return lines
+
+
+def _build_separability_appendix(direct_groups: dict[str, _Group], section_b_groups: dict[str, _Group],
+                                 vlm_data: dict[str, dict], section_b_data: dict[str, dict],
+                                 *, iters: int, seed: int, alpha: float) -> list[str]:
+    lines = ["## Separability appendix", "",
+             "Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section "
+             "only (Section A vs Section B pipelines are not directly comparable — see the "
+             "cross-shape note above).", ""]
+    section_a_items = [(direct_groups[pk].entry.id, vlm_data[pk]["metrics"].checkbox_outcomes)
+                       for pk in direct_groups]
+    lines.append("### Section A")
+    lines += _pairwise_separability(section_a_items, iters=iters, seed=seed, alpha=alpha) or ["_fewer than 2 rows_"]
+    lines.append("")
+    section_b_items = [
+        (section_b_groups[pk].entry.id if section_b_groups[pk].entry else pk,
+         section_b_data[pk]["metrics"].checkbox_outcomes)
+        for pk in section_b_groups
+    ]
+    lines.append("### Section B")
+    lines += _pairwise_separability(section_b_items, iters=iters, seed=seed, alpha=alpha) or ["_fewer than 2 rows_"]
+    lines.append("")
+    return lines
+
+
+def _build_staleness_section(warnings: list[str]) -> list[str]:
+    if not warnings:
+        return []
+    return ["## Staleness warnings (retrieved_at span > 7 days)", "", *warnings, ""]
+
+
+def _build_stale_render_section(stale_report: dict[str, list[str]]) -> list[str]:
+    if not stale_report:
+        return []
+    lines = ["## STALE-RENDER", "",
+             "The following parser keys have rows whose stored `image_sha` no longer matches a "
+             "freshly recomputed render of the same document under the row's own `condition` — "
+             "the render pipeline or the source PDF changed since these rows were scored.", ""]
+    for pk, docs in sorted(stale_report.items()):
+        shown = sorted(docs)[:10]
+        suffix = f" (+{len(docs) - 10} more)" if len(docs) > 10 else ""
+        lines.append(f"- **{pk}**: {len(docs)} doc(s) — {shown}{suffix}")
+    lines.append("")
+    return lines
