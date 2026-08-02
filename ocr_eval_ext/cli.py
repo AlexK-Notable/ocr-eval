@@ -537,10 +537,12 @@ def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: b
     A single colliding destination aborts the whole operation with `exit 1`, naming every
     colliding path, and moves nothing.
 
-    M5: called BEFORE `require_extractor_gate` in `score` — never stamp/archive on the strength
-    of an extractor generation that hasn't yet proven it can pass its own fixtures; a failed gate
-    must leave `run_meta.json`/`eval/cache/` exactly as they were. Writes `run_meta.json`
-    atomically (`_atomic_write_json`) so a killed run can never leave a torn file."""
+    M5 (N5-round-3 corrected — the ordering below is the reality, this comment previously claimed
+    the opposite): called AFTER `require_extractor_gate` in `score` — never stamp/archive on the
+    strength of an extractor generation that hasn't yet proven it can pass its own fixtures; a
+    failed gate raises before this function is ever reached, leaving `run_meta.json`/
+    `eval/cache/` exactly as they were. Writes `run_meta.json` atomically (`_atomic_write_json`)
+    so a killed run can never leave a torn file."""
     from ocr_eval_ext.direct import _atomic_write_json
     from realdoc_bench.evaluate.score import DEFAULT_MODEL
 

@@ -346,5 +346,51 @@ def test_provider_capture_is_isolated_across_concurrent_documents(tmp_path):
 
         assert result_a.raw["resolved_providers"] == ["ProviderSmall"]
         assert result_b.raw["resolved_providers"] == ["ProviderBig"]
+        # NEW-1 positive control: at the enforced page_concurrency=1, attribution is exact —
+        # the degraded-attribution flag introduced for page fan-out must NOT appear here.
+        assert "provider_attribution" not in (result_a.raw or {})
+        assert "provider_attribution" not in (result_b.raw or {})
     finally:
         server.shutdown()
+
+
+def test_page_fanout_never_crashes_and_flags_degraded_attribution(tmp_path):
+    """NEW-1 (round 3): a subclass with page_concurrency>1 makes upstream `VisionParserBase.parse`
+    fan pages out across its OWN nested `ThreadPoolExecutor` — `_call_page` then runs on page-
+    worker threads that never primed `self._tl.providers` (only `parse()`, running on the
+    document thread, does that). Before this fix, `_call_page`'s `self._tl.providers.add(...)`
+    raised `AttributeError` on those worker threads, propagating up through
+    `concurrent.futures.as_completed` and failing the WHOLE document — AFTER its API calls were
+    already paid for. Calling `.parse()` directly here (not via `verify`) deliberately bypasses
+    `assert_single_page`, exercising exactly the fan-out path Stage 1's corpus never triggers on
+    its own but that this parser's own `page_concurrency`/`RDB_PAGE_CONCURRENCY` machinery still
+    exposes. Fix must never crash, must still return a complete result, and must flag the
+    resolved providers as attribution-degraded rather than implying page_concurrency=1 precision
+    it can't actually guarantee under fan-out."""
+    pdf = tmp_path / "two_page.pdf"
+    doc = fitz.open()
+    doc.new_page(width=200, height=200)
+    doc.new_page(width=200, height=200)
+    doc.save(pdf)
+
+    class FanoutParser(OpenAICompatVisionParser):
+        page_concurrency = 4   # > 1 pages -> upstream nests its own ThreadPoolExecutor
+
+    responses = [
+        {"body": {"id": "1", "model": "m", "provider": "ProviderA",
+                  "choices": [{"message": {"role": "assistant", "content": "page one content"}}],
+                  "usage": {"prompt_tokens": 1, "completion_tokens": 1}}},
+        {"body": {"id": "2", "model": "m", "provider": "ProviderB",
+                  "choices": [{"message": {"role": "assistant", "content": "page two content"}}],
+                  "usage": {"prompt_tokens": 1, "completion_tokens": 1}}},
+    ]
+    with MockOpenAI(responses=responses) as mock:
+        p = FanoutParser(base_url=mock.base_url, model="org/m")
+        result = p.parse(pdf)   # must NOT raise despite page-worker threads never priming _tl
+
+    assert result.page_count == 2
+    assert "page one content" in result.markdown
+    assert "page two content" in result.markdown
+    assert set(result.raw["resolved_providers"]) == {"ProviderA", "ProviderB"}
+    assert result.raw["provider_attribution"] == (
+        "degraded (page fan-out; cross-document attribution not guaranteed)")

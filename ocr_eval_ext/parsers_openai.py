@@ -89,6 +89,24 @@ class OpenAICompatVisionParser(VisionParserBase):
         # fresh set assigned at the top of `parse()` and read back at the bottom is fully
         # isolated from whatever a DIFFERENT thread's concurrent `parse()` call is doing.
         self._tl = threading.local()
+        # NEW-1 (round 3): the `threading.local()` isolation above assumes `_call_page` only ever
+        # runs on the SAME thread that is currently inside `parse()` for that document — true at
+        # `page_concurrency=1` (Stage 1's enforced reality: single-page corpus), but NOT true the
+        # moment `page_concurrency > 1` or `RDB_PAGE_CONCURRENCY` fans a document's pages out
+        # across upstream `VisionParserBase.parse`'s own NESTED `ThreadPoolExecutor` — a pattern
+        # this project's own docs/comments anticipate even though Stage 1 never exercises it.
+        # Those page-worker threads never ran `self._tl.providers = set()` themselves (only
+        # `parse()` does that, on the DOCUMENT thread), so `self._tl.providers` is simply absent
+        # on them — `_call_page` would raise `AttributeError`, which propagates up through
+        # upstream's per-page future and fails the whole document AFTER the API call was already
+        # paid for. Proportionate fix for a single-page contract: never crash. `_call_page` falls
+        # back to this lock-protected, per-instance set whenever thread-local storage isn't
+        # primed; `parse()` drains it after the fact and flags the result as attribution-degraded
+        # rather than pretending per-document precision was preserved. Exact per-page-thread
+        # attribution would need a context-propagating rewrite of the capture mechanism itself —
+        # deferred to Stage 2, which already owns multi-page support on its roadmap.
+        self._fanout_providers: set[str] = set()
+        self._fanout_lock = threading.Lock()
 
     def _call_page(self, png_bytes: bytes) -> tuple[str, int, int]:
         import base64
@@ -124,11 +142,19 @@ class OpenAICompatVisionParser(VisionParserBase):
             usage = raw.get("usage") or {}
             provider = raw.get("provider")
             if provider:
-                # N1: `providers` only exists on THIS thread's local storage once `parse()` (below)
-                # has run on it — `_call_page` is never reachable any other way in this codebase,
-                # so a missing attribute here would indicate a real programming error, not a
-                # legitimate "nothing to record" case; let it surface rather than swallowing it.
-                self._tl.providers.add(provider)
+                # NEW-1: `self._tl.providers` only exists on the DOCUMENT thread that called
+                # `parse()` (which primes it). At page_concurrency=1 that's always the thread
+                # `_call_page` is running on. Under page fan-out (page_concurrency>1 or
+                # RDB_PAGE_CONCURRENCY), this runs on a page-worker thread that never primed its
+                # own thread-local storage — `getattr` with a default detects that case instead of
+                # raising, and the provider is recorded into the lock-protected fallback set
+                # instead of being lost or crashing the document after its API call was paid for.
+                bucket = getattr(self._tl, "providers", None)
+                if bucket is not None:
+                    bucket.add(provider)
+                else:
+                    with self._fanout_lock:
+                        self._fanout_providers.add(provider)
             return ((resp.choices[0].message.content or ""),
                     usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
         raise RuntimeError("unreachable")  # loop above always returns or raises
@@ -138,13 +164,30 @@ class OpenAICompatVisionParser(VisionParserBase):
         collected across pages by `_call_page` — that base method's per-page loop only threads
         `(text, in_tok, out_tok)` through, with no room for a 4th field, and it's upstream code
         this project doesn't own, so provider capture happens as a thread-local side channel
-        (see `__init__`'s N1 comment) instead of changing that tuple shape."""
+        (see `__init__`'s N1 comment) instead of changing that tuple shape.
+
+        NEW-1 (round 3): after the thread-local read-back, also drains `_fanout_providers` — the
+        lock-protected fallback `_call_page` uses when it runs on a page-worker thread that never
+        primed `self._tl.providers` (page_concurrency>1 / RDB_PAGE_CONCURRENCY fan-out). Anything
+        captured there is merged into `resolved_providers`, but the result is explicitly flagged
+        `provider_attribution: "degraded"` — under fan-out, `_fanout_providers` is shared across
+        WHATEVER documents happen to be concurrently fanning out pages at that moment, so per-
+        document precision is not guaranteed the way it is at the enforced page_concurrency=1."""
         self._tl.providers = set()
         result = super().parse(pdf_path, cache_dir=cache_dir)
-        providers = self._tl.providers
+        providers = set(self._tl.providers)
+        degraded = False
+        with self._fanout_lock:
+            if self._fanout_providers:
+                providers |= self._fanout_providers
+                self._fanout_providers.clear()
+                degraded = True
         if providers:
             raw = dict(result.raw or {})
             raw["resolved_providers"] = sorted(providers)
+            if degraded:
+                raw["provider_attribution"] = ("degraded (page fan-out; cross-document "
+                                                "attribution not guaranteed)")
             result.raw = raw
         return result
 
