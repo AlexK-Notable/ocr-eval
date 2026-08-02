@@ -11,6 +11,7 @@ Two top-level command groups:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -244,7 +245,10 @@ def layout_rescore(
 # Shared by both `evaluate` and `layout` command groups.
 
 def _env() -> None:
-    # Load .env.local first so its values win (load_dotenv skips already-set vars).
+    # Fork policy: keys come from the environment only (see spec §Keys and secrets).
+    # Upstream's .env loading is opt-in via RDB_ALLOW_DOTENV=1.
+    if os.environ.get("RDB_ALLOW_DOTENV") != "1":
+        return
     load_dotenv(Path.cwd() / ".env.local")
     load_dotenv(Path.cwd() / ".env")
 

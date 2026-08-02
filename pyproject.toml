@@ -37,13 +37,14 @@ dev = [
 
 [project.scripts]
 realdoc-bench = "realdoc_bench.cli:app"
+ocr-eval = "ocr_eval_ext.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["realdoc_bench"]
+packages = ["realdoc_bench", "ocr_eval_ext"]
 
 [tool.ruff]
 line-length = 110
@@ -54,5 +55,5 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "tests_ext"]
 addopts = "-ra -q"

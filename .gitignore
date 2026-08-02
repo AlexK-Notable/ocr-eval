@@ -26,3 +26,6 @@ runs/
 # Local OS junk
 .DS_Store
 .claude/
+
+# SDD scratch (fork-local; not part of upstream)
+.superpowers/
