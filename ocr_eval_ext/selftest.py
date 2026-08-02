@@ -29,6 +29,38 @@ FIXTURES: list[dict] = [
     {"kind": "refusal_is_error",
      "rf": "Return exactly: box_marked=<boolean>", "gold": {"box_marked": True},
      "answer": None, "expect_match": False},
+
+    # ── Comparator-selection layer ──────────────────────────────────────────────────────────
+    # The six fixtures above never exercise `string_keys`' fuzzy/exact split: none of them use a
+    # plain <string> field with a fuzzy-only variant. These three do — see task-7-report.md's
+    # fix-round section for the empirical mutation-kill check behind each construction (each was
+    # actually run through a monkeypatched string_keys/FUZZ_THRESHOLD and confirmed to flip).
+    #
+    # A note on a fixture NOT included here: an earlier draft tried "wrong boolean given as a
+    # typo'd string ('truee'), plus correct text, expect_match=False" as a way to probe whether
+    # string_keys wrongly treats a boolean field as fuzzy-eligible. Verified empirically that
+    # construction can't discriminate anything: score_typed's `match = all(fm.values())` is
+    # already pinned to False by the deliberately-wrong boolean field regardless of how that
+    # field is scored (fuzzy_equal(str, bool) is False unconditionally, since its type guard
+    # requires BOTH sides to be str — gold here is a real Python bool), so no aggregate-level
+    # assertion built around "one deliberately-wrong field ⇒ expect_match=False" can ever catch
+    # a comparator-selection bug. The three fixtures below instead make the CORRECT case
+    # expect_match=True, so a wrongly-excluded (or wrongly-included) string field actually flips
+    # the aggregate result.
+    {"kind": "fuzzy_string_punctuation_variant",
+     "rf": "Return exactly: notes=<text>", "gold": {"notes": "The quick brown fox jumped"},
+     "answer": {"notes": "The quick brown fox jumped."}, "expect_match": True},
+    {"kind": "fuzzy_string_same_wordcount_wrong",
+     "rf": "Return exactly: notes=<text>", "gold": {"notes": "The quick brown fox jumped"},
+     "answer": {"notes": "The slow green fox walked"}, "expect_match": False},
+    # Mixed boolean+text template: confirms build_template/widen_types_from_gold keep per-field
+    # typing distinct (the boolean field renders <boolean>, not <string>) and string_keys returns
+    # exactly {"name"} — not "{}" (collapsed template) and not {"active", "name"} (over-included).
+    {"kind": "mixed_boolean_text_template_keeps_types_distinct",
+     "rf": "Return exactly: active=<boolean>; name=<text>",
+     "gold": {"active": True, "name": "Maria Isabella Rodriguez Torres"},
+     "answer": {"active": True, "name": "Maria Isabella Rodriguez Torres."},
+     "expect_match": True},
 ]
 
 
