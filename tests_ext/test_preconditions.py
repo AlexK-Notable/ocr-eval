@@ -1,8 +1,13 @@
 import pytest
 
 from ocr_eval_ext.preconditions import (
-    CHECKBOX_TAGS, PreconditionError, boolean_fields, check_bank, ink_coverage,
-    items_with_tags, null_fields,
+    CHECKBOX_TAGS,
+    PreconditionError,
+    boolean_fields,
+    check_bank,
+    ink_coverage,
+    items_with_tags,
+    null_fields,
 )
 
 
@@ -32,12 +37,16 @@ def test_check_bank_fails_closed_on_wrong_counts():
 
 def test_ink_coverage_blank_vs_marked():
     import io
+
     from PIL import Image
-    blank = io.BytesIO(); Image.new("RGB", (100, 100), "white").save(blank, "PNG")
+
+    blank = io.BytesIO()
+    Image.new("RGB", (100, 100), "white").save(blank, "PNG")
     marked_img = Image.new("RGB", (100, 100), "white")
     for x in range(50):
         for y in range(50):
             marked_img.putpixel((x, y), (0, 0, 0))
-    marked = io.BytesIO(); marked_img.save(marked, "PNG")
+    marked = io.BytesIO()
+    marked_img.save(marked, "PNG")
     assert ink_coverage(blank.getvalue()) < 0.001
     assert ink_coverage(marked.getvalue()) > 0.2
