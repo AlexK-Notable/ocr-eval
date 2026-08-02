@@ -130,3 +130,6 @@ attempt.
 | Paddle OCR VL 1.5 | 1500 | 0.584 | 0.684 | 0.450 | 0.661 | 0.524 |
 | Azure DI | 1500 | 0.558 | 0.687 | 0.521 | 0.492 | 0.644 |
 | dots.mocr | 1500 | 0.238 | 0.320 | 0.188 | 0.225 | 0.253 |
+
+
+> Note (final re-review #6): the report's upstream-construction pair matches `score.py::summarize` exactly; upstream's *dashboard* aggregator differs (no ok-filter in the question denominator), so if the README's numbers turn out dashboard-sourced, question% may read slightly lower there on runs containing error rows. field% is unaffected.

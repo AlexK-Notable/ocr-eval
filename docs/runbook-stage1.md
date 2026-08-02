@@ -172,7 +172,7 @@ uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@openrouter -m qwen3.
   -m qwen3-vl-32b@openrouter -m gemini-3.5-flash@google-vlmchat --max-spend 40
 ```
 Expect the printed summary's `cached` count to equal every `(model × bank item)` cell and `ok`/
-`error` both `0` — e.g. `{'ok': 0, 'error': 0, 'cached': 5424}` for 4 models × 1,356 items. Zero
+`error` both `0` — e.g. `{'ok': 0, 'error': 0, 'cached': 5424, 'cached_ok': 5424, 'cached_error': 0}` for 4 models × 1,356 items. Zero
 HTTP calls made: `run_direct`'s cell-building loop (`if force or not cpath.exists():
 cells.append(...)`) excludes a cell from the dispatch list entirely whenever its cache file
 already exists — `--force` overrides that and includes it unconditionally regardless of cache
@@ -338,10 +338,10 @@ Gemini, ±2.5pp; §1 for dots.ocr, CI-overlap-with-documented-caveats — see th
 **3. ≥3 hosted VLM rows, ≥1 local specialist (BF16), ≥1 hosted OCR endpoint, frontier anchor,
 calibration pair.**
 ```
-grep -E "^- \*\*qwen3-vl-8b@openrouter\*\* —|^- \*\*qwen3\.5-9b@openrouter\*\* —|^- \*\*qwen3-vl-32b@openrouter\*\* —" \
+grep -E "^- \*\*qwen3-vl-8b@openrouter( \[cond [0-9a-f]{12}\])?\*\* —|^- \*\*qwen3\.5-9b@openrouter( \[cond [0-9a-f]{12}\])?\*\* —|^- \*\*qwen3-vl-32b@openrouter( \[cond [0-9a-f]{12}\])?\*\* —" \
   runs/stage1/report.md   # 3 hosted VLM (Section A, direct-QA detail bullets: `report_md.py`'s
                            # `_build_section_a` renders `- **<id>** — <stamp>...`)
-grep -E "^- \*\*gemini-3\.5-flash@google-vlmchat\*\* —" runs/stage1/report.md   # frontier ceiling anchor (also Section A)
+grep -E "^- \*\*gemini-3\.5-flash@google-vlmchat( \[cond [0-9a-f]{12}\])?\*\* —" runs/stage1/report.md   # frontier ceiling anchor (also Section A)
 grep -E "^- \*\*(glm-ocr@local-vllm|dots-ocr@local-vllm)\*\* ·" runs/stage1/report.md   # local
                            # specialist (BF16) — Section B (transcribe-then-extract) detail
                            # bullets use a DIFFERENT separator than Section A's (`_build_section_b`
@@ -352,7 +352,7 @@ grep "calibration pair detected" runs/stage1/report.md            # calibration 
 R-b: every grep above is anchored on the STABLE detail-bullet line (`- **<id>** ` + section-specific
 separator), never a table cell. A table cell's leading text can carry an `[INCOMPLETE k/N]` marker
 or (F4) a `[cond <hash>]` disambiguation suffix before its closing `" |"`, either of which breaks a
-naive `"<id> |"`-anchored grep; the bullet line's closing `**` is unaffected by both and still
+naive `"<id> |"`-anchored grep; `[INCOMPLETE k/N]` decorates only the table cell, but `[cond <hash>]` is baked INSIDE the `**...**` label — patterns below anchor on the opening `- **<id>` only, which survives both and still
 excludes e.g. the `qwen3-vl-8b@openrouter-transcriber` calibration row and the "calibration pair
 detected" prose line, both of which contain `qwen3-vl-8b@openrouter` as a substring but are never
 followed directly by the closing `**`.

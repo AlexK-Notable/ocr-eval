@@ -368,8 +368,9 @@ def direct(
     # under "cached" — surface it explicitly and fail-visible, rather than a summary reading
     # "cached: N, error: 0" that hides N-of-those-cached being unresolved failures.
     if summary.get("cached_error"):
-        console.print(f"[red]{summary['cached_error']} cached error cell(s) present — rerun "
-                      f"with --force (or --retry via force) to re-attempt error cells[/red]")
+        console.print(f"[red]{summary['cached_error']} cached error cell(s) present — cheapest remedy: "
+                      f"delete just those rows from eval/cache/ and rerun (only they re-attempt); "
+                      f"--force re-runs and RE-BILLS the entire matrix[/red]")
         raise typer.Exit(2)
     if summary.get("error"):
         raise typer.Exit(2)   # fail-visible: errors occurred, report will mark them
