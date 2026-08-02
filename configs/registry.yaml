@@ -5,8 +5,18 @@
 #   - OpenRouter model + endpoint listings: https://openrouter.ai/api/v1/models,
 #     https://openrouter.ai/api/v1/models/<id>/endpoints
 #   - Public announcements (web search) for closed models with no HF card.
-# See task-2-report.md for the full verification log and corrections made to the
-# task-2-brief.md seed values.
+#   - gate3-conclusion-ranking.md (provider ToS findings, referenced inline where used).
+#
+# Corrections applied to the task-2-brief.md seed's month-level placeholders/guesses:
+#   - qwen3-vl-8b-instruct, qwen3-vl-32b-instruct, qwen3.5-9b release dates corrected to
+#     exact HF createdAt.
+#   - dots.ocr HF id redirect-corrected: rednote-hilab/dots.ocr -> dots-studio/dots.ocr
+#     (org renamed/moved on HF; license:mit and weights unchanged).
+#   - glm-ocr release date corrected to HF createdAt (zai-org/GLM-OCR, license:mit confirmed).
+#   - gemini-3.5-flash, mistral-ocr release dates corrected to public announcement dates
+#     (approximate — closed models, no HF card).
+#   - qwen3.5-9b provider_pin corrected: Alibaba does not serve this model on OpenRouter at
+#     all; repinned to DeepInfra on ToS grounds (see that entry for the rationale).
 
 - id: qwen3-vl-8b@openrouter
   shape: vlm-chat
@@ -23,6 +33,8 @@
   release_date: "2025-10-11"           # HF createdAt (Qwen/Qwen3-VL-8B-Instruct)
 
 - id: qwen3.5-9b@openrouter
+  # NOTE: all Stage 1 vlm-chat candidates predate the dataset — the contamination flag is
+  # exercised by mistral-ocr@mistral (transcriber); flag logic is shape-independent.
   shape: vlm-chat
   transport: openai-compat
   base_url: https://openrouter.ai/api/v1
@@ -31,17 +43,27 @@
   precision: provider-default
   provider_pin: {order: ["DeepInfra"], allow_fallbacks: false}
     # CORRECTED from seed's ["Alibaba"]: verified via GET .../qwen/qwen3.5-9b/endpoints that
-    # Alibaba does NOT serve this model on OpenRouter at all (only third-party: SiliconFlow,
-    # DeepInfra, Venice, Parasail, Together — all $0.10/$0.15 per Mtok except Together).
-    # DeepInfra (bf16) picked as best-guess pin for determinism — # UNVERIFIED choice of
-    # *which* third-party provider to pin; confirm/replace at serving bring-up (Task 8).
+    # Alibaba does NOT serve this model on OpenRouter at all — only third-party: SiliconFlow
+    # $0.10/$0.15, DeepInfra $0.10/$0.15, Venice $0.10/$0.15, Parasail $0.10/$0.25, Together
+    # $0.17/$0.25 per Mtok.
+    #
+    # DeepInfra pinned on ToS grounds per gate3-conclusion-ranking.md Part 2: DeepInfra has
+    # "the cleanest commercial ToS found" ("You may use the Services for any legal commercial
+    # purposes unless specifically prohibited below"). SiliconFlow (international) is
+    # disqualified outright — its ToS §3.4(p) "bars any commercial purposes". Together bars
+    # transmitting financial/medical/sensitive personal data, which document OCR routinely
+    # does. Venice and Parasail were not assessed in the survey; DeepInfra is the only
+    # affirmatively-cleared option among the five, not merely the cheapest.
   weights_licence: apache-2.0          # verified via HF Qwen/Qwen3.5-9B license tag
   provider_tos_commercial: ok
+  tos_note: >-
+    pinned DeepInfra: cleanest commercial ToS in survey; SiliconFlow barred
+    (no commercial use), Together bars sensitive-data transmission
   provenance: Alibaba
   release_date: "2026-02-27"           # HF createdAt (Qwen/Qwen3.5-9B). CORRECTED from seed's
                                         # placeholder "2026-02-01" + seed comment claiming a
                                         # contamination flag — verified release_date (2026-02-27)
-                                        # is BEFORE CONTAMINATION_CUTOFF (2026-06-03); NOT flagged.
+                                        # is BEFORE CONTAMINATION_CUTOFF; NOT flagged.
 
 - id: gemini-3.5-flash@google
   shape: transcriber
@@ -106,14 +128,15 @@
   precision: provider-default
   weights_licence: closed
   provider_tos_commercial: ok
+  tos_note: "PDF-upload endpoint (pdf-direct label); no prompt accepted"
   provenance: Mistral
   release_date: "2026-06-23"           # approximate — closed model, no HF card. Web-verified
                                         # (mistral.ai/news/ocr-4, MarkTechPost 2026-06-23,
                                         # TechTimes). CORRECTED from seed placeholder "2026-05-01" —
-                                        # this MOVES the date to AFTER CONTAMINATION_CUTOFF
-                                        # (2026-06-03): Mistral OCR 4 is now contamination-flagged,
-                                        # the opposite of the seed's implicit assumption. Flag this
-                                        # prominently in the Stage 1 report.
+                                        # this MOVES the date to AFTER CONTAMINATION_CUTOFF: Mistral
+                                        # OCR 4 is now contamination-flagged, the opposite of the
+                                        # seed's implicit assumption. Flag this prominently in the
+                                        # Stage 1 report.
 
 - id: glm-ocr@local-vllm
   shape: transcriber
@@ -124,6 +147,7 @@
   precision: bf16
   weights_licence: mit
   provider_tos_commercial: ok          # self-hosted — no provider ToS
+  tos_note: "self-hosted: no provider ToS"
   provenance: Zhipu
   release_date: "2026-01-30"           # HF createdAt (zai-org/GLM-OCR). CORRECTED from seed
                                         # placeholder "2026-04-01".
@@ -142,6 +166,7 @@
   precision: bf16
   weights_licence: mit                 # verified via HF dots-studio/dots.ocr license tag
   provider_tos_commercial: ok
+  tos_note: "self-hosted: no provider ToS"
   provenance: RedNote
   release_date: "2025-07-30"           # HF createdAt (dots-studio/dots.ocr). CORRECTED from seed
                                         # placeholder "2025-08-01" — pre-dataset, reproduction target.

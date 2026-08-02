@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pydantic
 import pytest
 
 from ocr_eval_ext.config import CONTAMINATION_CUTOFF, RegistryEntry, get_entry, load_registry
@@ -56,6 +57,15 @@ def test_get_entry_unknown_raises():
         get_entry([], "nope")
 
 
+def test_unknown_field_rejected(tmp_path):
+    """Typo'd YAML keys (e.g. promptible/loacl/weights_license) must not validate silently."""
+    bad = MINIMAL + "  promptible: false\n"
+    p = tmp_path / "r.yaml"
+    p.write_text(bad)
+    with pytest.raises(pydantic.ValidationError):
+        load_registry(p)
+
+
 def test_registry_yaml_parses_and_satisfies_dod_categories():
     """configs/registry.yaml: unique ids + Stage 1 DoD category coverage."""
     entries = load_registry(Path(__file__).parent.parent / "configs" / "registry.yaml")
@@ -88,3 +98,7 @@ def test_registry_yaml_parses_and_satisfies_dod_categories():
     assert models_by_shape["vlm-chat"] & models_by_shape["transcriber"], (
         "need >=1 model present under both vlm-chat and transcriber shapes (calibration pair)"
     )
+
+    # `contaminated` property coverage: one flagged (post-cutoff), one not (pre-cutoff).
+    assert get_entry(entries, "mistral-ocr@mistral").contaminated is True
+    assert get_entry(entries, "qwen3-vl-8b@openrouter").contaminated is False

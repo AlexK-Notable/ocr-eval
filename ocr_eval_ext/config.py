@@ -5,12 +5,16 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
-CONTAMINATION_CUTOFF = "2026-06-03"  # RealDoc-Bench HF publication date
+CONTAMINATION_CUTOFF = "2026-05-24"
+# HF createdAt of Extend-AI/RealDoc-Bench (first public availability; spec rev 2 cited
+# lastModified 2026-06-03 — reviewer verified createdAt 2026-05-24T19:26Z).
 
 
 class RegistryEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     id: str
     shape: Literal["vlm-chat", "transcriber"]
     transport: Literal["openai-compat", "upstream-parser"]
