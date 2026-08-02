@@ -293,6 +293,12 @@ def test_stale_render_hard_fails_without_flag_and_renders_with_flag(tmp_path):
     md = build_markdown_report(layout, [entry], iters=50, allow_stale_render=True)
     assert "## STALE-RENDER" in md
     assert "doc_0" in md.split("## STALE-RENDER")[1]
+    # Round-2 disclosure (3b): the operator-facing STALE-RENDER section itself — not just the
+    # developer-facing docstring — must say this check also fires on a different pymupdf
+    # version/OS/machine than the one that originally scored the row, not only a swapped PDF.
+    stale_section = md.split("## STALE-RENDER")[1]
+    assert "pymupdf version" in stale_section
+    assert "does not automatically mean the underlying PDF changed" in stale_section
 
 
 def _write_single_vlm_registry(path: Path, entry_id: str, base_url: str) -> None:
@@ -627,6 +633,11 @@ def test_m1_section_b_zero_cost_from_none_coercion_renders_unpriced(tmp_path):
 # ── M2: an unregistered row's stamp columns are always "unknown (unregistered)", never blank ─────
 
 def test_m2_section_b_unregistered_row_shows_unknown_stamp_never_blank(tmp_path):
+    """Round-2 fix: the previous assertion (bare `"unknown (unregistered)"`) is non-discriminating
+    — Section B's `input` column ALSO renders that exact fragment for an unresolved entry
+    (`input_label = "unknown (unregistered)"`), so the old test passed even before `_stamp_columns`
+    existed. Assert the full stamp-column fragment instead, which only `_stamp_columns(None)`
+    produces."""
     layout = _minimal_layout(tmp_path)
     items = [{"question_id": "q0", "source_file": "doc_0", "domain": "test",
              "question": "value?", "capabilities": [], "gold_dict": {"a": "x"}}]
@@ -640,7 +651,7 @@ def test_m2_section_b_unregistered_row_shows_unknown_stamp_never_blank(tmp_path)
 
     md = build_markdown_report(layout, [], iters=50)
     section_b = md.split("## Section B")[1]
-    assert "unknown (unregistered)" in section_b
+    assert "precision: unknown (unregistered)" in section_b
 
 
 # ── M6: the separability appendix states its sign convention exactly once ────────────────────────
@@ -680,6 +691,94 @@ def test_m7_empty_resolved_provider_counts_as_distinct_value_for_d4(tmp_path):
         build_markdown_report(layout, [entry], iters=50)
 
 
+# ── Round 2 HIGH regression: D4 must compare ANSWERED rows only, never errored cells ──────────────
+
+def _d4_answered_row(pk: str, qid: str, stem: str, gold: bool, provider: str) -> dict:
+    """Row shape copied from direct.py's `_one` success path — `common` dict + answer fields."""
+    return {"qid": qid, "parser": pk, "source_file": stem, "domain": "test",
+           "condition": STAGE1_CONDITION, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+           "prompt_sha": "deadbeef0000", "image_sha": None, "image_px": None, "image_bytes": None,
+           "raw_response": json.dumps({"checked": gold}),
+           "usage": {"prompt_tokens": 100, "completion_tokens": 10},
+           "resolved_provider": provider, "latency_sec": 0.5,
+           "answer": {"checked": gold}, "field_matches": {"checked": True}, "match": True,
+           "error_class": "none"}
+
+
+def _d4_api_error_row(pk: str, qid: str, stem: str) -> dict:
+    """Row shape copied from direct.py's `_one` except-branch: `{**base, "error": ..., "error_class":
+    "api_error"}` — `base` NEVER carries "resolved_provider" (that key only exists on `common`,
+    built AFTER a successful HTTP response), so a real api_error row has no such key at all."""
+    return {"qid": qid, "parser": pk, "source_file": stem, "domain": "test",
+           "condition": STAGE1_CONDITION, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+           "prompt_sha": "deadbeef0000", "image_sha": None, "image_px": None, "image_bytes": None,
+           "error": "Connection timeout", "error_class": "api_error"}
+
+
+def test_d4_regression_transient_api_error_does_not_block_a_healthy_run(tmp_path):
+    """[HIGH regression] Reviewer proved M7's unconditional `(r.get("resolved_provider") or
+    "(empty)")` counted an api_error row's ABSENT resolved_provider as its own "(empty)" identity
+    — one timeout in an otherwise single-provider (DeepInfra) run tripped the escape-hatch-free
+    ServingIdentityError. Two healthy DeepInfra rows + one api_error row must build cleanly."""
+    layout = _minimal_layout(tmp_path)
+    items = [
+        {"question_id": "cb0", "source_file": "doc_0", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": True}},
+        {"question_id": "cb1", "source_file": "doc_1", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": False}},
+        {"question_id": "cb2", "source_file": "doc_2", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": True}},
+    ]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    pk = parser_key("vlmHealthy@mock", STAGE1_CONDITION)
+    rows = [
+        _d4_answered_row(pk, "cb0", "doc_0", True, "DeepInfra"),
+        _d4_answered_row(pk, "cb1", "doc_1", False, "DeepInfra"),
+        _d4_api_error_row(pk, "cb2", "doc_2"),
+    ]
+    for rec in rows:
+        cpath = layout.cache_path(rec["qid"], pk)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps(rec))
+
+    entry = RegistryEntry(id="vlmHealthy@mock", shape="vlm-chat", transport="openai-compat",
+                          base_url="http://vlmHealthy.invalid/v1", model="org/vlmHealthy",
+                          api_key_env=None, precision="bf16", weights_licence="mit",
+                          provider_tos_commercial="ok", provenance="Test", release_date="2025-01-01")
+    md = build_markdown_report(layout, [entry], iters=50)   # must NOT raise
+    assert "vlmHealthy@mock" in md
+
+
+def test_d4_regression_still_fires_on_two_answered_rows_with_different_providers(tmp_path):
+    """Companion to the regression fix above: the guard must still fire when TWO ANSWERED rows
+    (both error_class == "none") disagree on provider — including the DeepInfra-vs-empty-string
+    shape the reviewer specified."""
+    layout = _minimal_layout(tmp_path)
+    items = [
+        {"question_id": "cb0", "source_file": "doc_0", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": True}},
+        {"question_id": "cb1", "source_file": "doc_1", "domain": "test",
+         "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": False}},
+    ]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    pk = parser_key("vlmAmbig@mock", STAGE1_CONDITION)
+    rows = [
+        _d4_answered_row(pk, "cb0", "doc_0", True, "DeepInfra"),
+        _d4_answered_row(pk, "cb1", "doc_1", False, ""),
+    ]
+    for rec in rows:
+        cpath = layout.cache_path(rec["qid"], pk)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps(rec))
+
+    entry = RegistryEntry(id="vlmAmbig@mock", shape="vlm-chat", transport="openai-compat",
+                          base_url="http://vlmAmbig.invalid/v1", model="org/vlmAmbig",
+                          api_key_env=None, precision="bf16", weights_licence="mit",
+                          provider_tos_commercial="ok", provenance="Test", release_date="2025-01-01")
+    with pytest.raises(ServingIdentityError, match=r"\(empty\)"):
+        build_markdown_report(layout, [entry], iters=50)
+
+
 # ── M8: a parse dir with zero .md files renders transcript-recall n/a, never a fake 0.0 ──────────
 
 def test_m8_transcript_recall_na_when_parse_dir_has_zero_md_files(tmp_path):
@@ -700,3 +799,7 @@ def test_m4_m5_m9_glossary_disclosures_present(tmp_path):
     assert "CI-below-floor caveat" in md
     assert "Section B staleness is not assessed" in md
     assert "bank-wide" in md.lower()
+    # Round-2 disclosure (3a): transcript-recall's snake_case/word-boundary caveat must be in the
+    # operator-facing glossary (METRIC_DEFINITIONS), not just the internal _field_tokens docstring.
+    assert "Snake_case field keys" in md
+    assert "conservative undercount" in md.lower()

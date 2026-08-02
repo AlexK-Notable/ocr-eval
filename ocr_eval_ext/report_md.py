@@ -27,10 +27,14 @@ Hard-fail rulings this module enforces (never silently degrade to a warning):
     resolved to different providers, the key is comparing answers from two different serving
     stacks under one label — `ServingIdentityError`, unconditionally (no escape hatch: unlike
     staleness this is not something a caller should be able to wave through). Also shape-keyed,
-    not registration-keyed (I1): applies to every `vlm__` parser key. A missing/falsy
-    `resolved_provider` counts as its own distinct value, `"(empty)"`, rather than being dropped
-    from the comparison — a mix of "resolved to ProviderA" and "nothing recorded" is still an
-    identity inconsistency (review finding M7).
+    not registration-keyed (I1): applies to every `vlm__` parser key. Only ANSWERED rows
+    (`error_class == "none"`) enter the comparison (round-2 regression fix — see
+    `_check_serving_identity`'s docstring: a transient `api_error`/`render_error` row never
+    reached any provider and must not be compared as a distinct identity). Among answered rows, a
+    missing/falsy `resolved_provider` counts as its own distinct value, `"(empty)"`, rather than
+    being dropped from the comparison — a mix of "resolved to ProviderA" and "nothing recorded"
+    on two rows that BOTH actually answered is still an identity inconsistency (review finding
+    M7).
 
 D9 ruling (metrics.py) carried into this report: the headline blank-field number is
 `null_metrics()["overall"].acc_over_all`, never `hallucination_rate` alone — every render of
@@ -336,16 +340,28 @@ def _compute_row_metrics(rows_by_qid: dict[str, dict], items: list[dict], all_fi
 # ── D3 STALE-RENDER + D4 serving-identity guards (vlm__ rows only) ─────────────────────────
 
 def _check_serving_identity(parser_key: str, rows: list[dict]) -> None:
-    """M7: a falsy/missing `resolved_provider` is NOT dropped from the comparison — it counts as
-    its own distinct value `"(empty)"`, so a mix of "resolved to ProviderA" and "nothing
-    recorded" is still flagged as a serving-identity inconsistency, not silently ignored."""
-    providers = {(r.get("resolved_provider") or "(empty)") for r in rows}
+    """M7: a falsy/missing `resolved_provider` on an ANSWERED row is NOT dropped from the
+    comparison — it counts as its own distinct value `"(empty)"`, so a mix of "resolved to
+    ProviderA" and "nothing recorded" on rows that both actually got an answer is still flagged
+    as a serving-identity inconsistency, not silently ignored.
+
+    Round-2 regression fix: the comparison set is restricted to ANSWERED rows
+    (`error_class == "none"`) BEFORE the "(empty)" fallback is applied. `direct.py`'s `_one` only
+    ever sets `resolved_provider` on the `common` dict it builds AFTER a successful HTTP response
+    — an `api_error`/`render_error`/etc. row (a transient timeout, a blank render, ...) carries NO
+    such key at all and never reached any provider. Treating that absence as its own distinct
+    "(empty)" identity — as the M7 fix originally did, unconditionally — meant one ordinary
+    transient failure in an otherwise single-provider run would trip this unconditional,
+    escape-hatch-free guard. A row that never got an answer has nothing to say about WHICH
+    provider served it, so it must not enter the comparison at all."""
+    answered = [r for r in rows if r.get("error_class") == "none"]
+    providers = {(r.get("resolved_provider") or "(empty)") for r in answered}
     if len(providers) > 1:
         raise ServingIdentityError(
-            f"D4 serving-identity violation: parser key {parser_key!r} has rows resolved to "
-            f">1 distinct provider ({sorted(providers)}) — the cache key does not pin serving "
-            f"identity, so rows filed under one key must all share it. Split the run or "
-            f"re-pin provider_pin before reporting.")
+            f"D4 serving-identity violation: parser key {parser_key!r} has ANSWERED rows "
+            f"resolved to >1 distinct provider ({sorted(providers)}) — the cache key does not "
+            f"pin serving identity, so rows filed under one key must all share it. Split the run "
+            f"or re-pin provider_pin before reporting.")
 
 
 def _check_stale_renders(layout: RunLayout, rows: list[dict], render_cache: dict[tuple, str],
@@ -461,6 +477,18 @@ def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
 # ── Transcript-recall diagnostic (Section B only) ───────────────────────────────────────────
 
 def _field_tokens(key: str) -> list[str]:
+    """DISCLOSURE (round-2 review, no machinery change): `_TOKEN_RE` splits a snake_case key
+    like `"signature_present"` into separate tokens (`"signature"`, `"present"`), but the
+    word-boundary regex `\\b` this feeds into (see `_transcript_recall`) treats `_` as a WORD
+    character (Python's `\\w` == `[a-zA-Z0-9_]`), not a boundary. So a transcript that emits the
+    field's full snake_case identifier verbatim — e.g. literally the text "signature_present" —
+    will satisfy NEITHER `\\bsignature\\b` NOR `\\bpresent\\b`, because neither sub-token has an
+    actual word boundary against the underscore it's glued to. Net effect: `_TOKEN_RE`'s split
+    on underscores buys nothing for THIS purpose — the boundary matcher effectively treats the
+    whole snake_case string as a single indivisible word. This is a CONSERVATIVE UNDERCOUNT (a
+    real semantic match can be missed), never an overcount — deliberately left as-is rather than
+    "fixed" by also matching the joined identifier, since introducing that match rule changes the
+    field's recall semantics rather than merely disclosing them."""
     return [t for t in _TOKEN_RE.findall(key) if len(t) >= 3]
 
 
@@ -471,6 +499,10 @@ def _transcript_recall(layout: RunLayout, parser_key: str, checkbox_items: list[
     I2: matching must respect word boundaries — a bare substring check would let field key
     "checked" match inside "unchecked", counting a transcript that emitted the OPPOSITE state as
     if it had recalled the field.
+
+    Snake_case caveat (see `_field_tokens`): a transcript that emits a compound identifier like
+    "signature_present" verbatim will NOT be recalled via either of its split sub-tokens — `\\b`
+    treats the underscore as a word character, not a boundary. Conservative undercount by design.
 
     M8: requires the parse dir to contain at least one `.md` file — a dir that exists but holds
     zero transcripts (e.g. only a `condition.json` sidecar, or a parser that was registered but
@@ -593,7 +625,13 @@ METRIC_DEFINITIONS = (
     "vlm__ rows (the only rows carrying `image_sha`) — a swapped/stale PDF behind a transcriber "
     "or upstream-parser row is NOT detected by this report.\n"
     "- the blank/null column's n is BANK-WIDE (every null-gold field in the whole corpus, not "
-    "just the blank-field-tagged bucket) — e.g. n=188 on the full RealDoc-Bench corpus."
+    "just the blank-field-tagged bucket) — e.g. n=188 on the full RealDoc-Bench corpus.\n"
+    "- **transcript-recall**: fraction of checkbox-bucket docs whose transcript contains both a "
+    "checkbox glyph and a word-boundary match of a gold field key token. Snake_case field keys "
+    "(e.g. `signature_present`) are split into separate tokens, but the boundary matcher treats "
+    "underscore as a word character, not a boundary — a transcript that emits the compound "
+    "identifier verbatim will NOT be recalled via either half. This is a conservative "
+    "undercount, never an overcount."
 )
 
 
@@ -955,7 +993,15 @@ def _build_stale_render_section(stale_report: dict[str, dict[str, str]]) -> list
              "The following parser keys have rows that are STALE-RENDER (stored `image_sha` no "
              "longer matches a freshly recomputed render) or RENDER-UNAVAILABLE (the referenced "
              "document could not be re-rendered at all — treated as a failure, not a pass, since "
-             "the row's basis can no longer be confirmed).", ""]
+             "the row's basis can no longer be confirmed).",
+             "",
+             "This check is intentionally sensitive to MORE than a swapped PDF: a different "
+             "pymupdf version, OS/font stack, or machine than the one that originally scored "
+             "these rows can also change the rendered pixels enough to change the hash. A "
+             "STALE-RENDER here does not automatically mean the underlying PDF changed — it "
+             "means THIS environment cannot currently confirm the row still matches what it "
+             "claims to; re-render on the original scoring machine/pymupdf version before "
+             "assuming the worse explanation.", ""]
     for pk, docs in sorted(stale_report.items()):
         entries_str = [f"{stem} ({reason})" for stem, reason in sorted(docs.items())]
         shown = entries_str[:10]
