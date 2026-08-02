@@ -1,164 +1,126 @@
-<p align="center">
-  <img src="docs/assets/realdocbench_logo.png" alt="RealDocBench — A Real-World Benchmark for Document Agents" width="100%">
-</p>
+# ocr-eval
 
-# RealDocBench
+Stage 1 of a benchmark/eval pipeline for document/form extraction — **checkbox state first** —
+measuring VLMs (direct QA) and OCR systems (transcribe-then-extract) on RealDocBench. This is a
+fork of [`extend-hq/realdoc-bench`](https://github.com/extend-hq/realdoc-bench) (Apache-2.0),
+pinned at harness commit `fb26a687` with dataset revision `906170ab` (HF
+`Extend-AI/RealDoc-Bench`, CC-BY-4.0). Upstream's own README is preserved verbatim at
+[`docs/upstream-README.md`](docs/upstream-README.md).
 
-[![RealDoc-Bench on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RealDoc--Bench-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench)
-[![RealDoc-Bench-Layout on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RealDoc--Bench--Layout-yellow)](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout)
+## Why this exists
 
-A document parsing benchmark that measures two things on real documents:
+A prior model-selection survey (the design spec's cited provenance —
+[`docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md`](docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md))
+audited the document-AI benchmark landscape and found that no published checkbox-*state* accuracy
+number exists anywhere: across sixteen benchmarks checked by name, not one scores checkbox or
+selection-mark state as its own metric. RealDocBench is the exception that makes this project
+possible — a public, CC-BY-4.0, real-scanned-forms bank that tags checkbox questions at all.
 
-1. **Layout quality** — bounding-box and block-type predictions versus human annotation, with F1, adjusted F1, mAP, and per-block-type breakdowns.
-2. **QA extraction quality** — for each (question, parser) pair, an LLM extractor (**Gemini 3 Flash**) is asked to answer the question from the parser's markdown alone. Per-field scoring with `deep_equal` against a typed-JSON gold (with a conservative fuzzy fall-back for plain-string fields).
+But the upstream "checkbox" bucket doesn't measure what it's named for. This repo's own review of
+the bucket ([`docs/superpowers/specs/reviews/2026-08-01-review-opus.md`](docs/superpowers/specs/reviews/2026-08-01-review-opus.md))
+found it holds 1,117 gold fields, of which only 258 (23.1%) are boolean — the rest are strings,
+numbers, nulls, and lists. A "checkbox accuracy" number computed the naive way (all fields in the
+bucket) is ~77% determined by string/number extraction, not checkbox reading. This pipeline's
+primary metric is instead **per-field accuracy restricted to the 258 boolean golds** (165 checked /
+93 unchecked), always reported **polarity-split** — a page-level or bucket-level metric cannot see
+checkbox *inversion* (answering the opposite of what's checked), which is the failure mode this
+project exists to expose.
 
-Each mode reports cost and latency alongside quality.
+## Two measurement shapes — never ranked in one table
 
-## Document QA Leaderboard (1,356 questions / 3,742 fields)
+- **`vlm-chat`** — a model sees the page image + question and answers directly, one call.
+- **`transcriber`** — a system transcribes the page to markdown; a separate pinned Gemini extractor
+  answers the question from the transcript alone (upstream's own construction). A transcriber row
+  measures *(transcriber ∘ extractor)*, not the transcriber alone.
 
-| Parser | Per-field Accuracy | Per-question Accuracy |
-| --- | ---: | ---: |
-| **Extend Parse 2.0** | **96.0%** | **90.9%** |
-| LlamaParse (Agentic) | 92.2% | 84.5% |
-| Reducto (Agentic) | 91.4% | 83.8% |
-| Extend Parse Light 1.0 | 90.5% | 82.7% |
-| Gemini 3.5 Flash | 89.3% | 82.2% |
-| LlamaParse | 89.2% | 80.8% |
-| Azure DI | 89.1% | 79.6% |
-| Mistral OCR 4 | 88.8% | 81.3% |
-| Reducto | 88.7% | 80.5% |
-| AWS Textract | 70.7% | 54.0% |
+A transcriber's checkbox score is dominated by whether its markdown renders checkbox glyphs at
+all — that's a different measurement than a VLM reading the page directly, so the two shapes never
+share a leaderboard table. See [`docs/architecture.md`](docs/architecture.md) and
+[`docs/scoring.md`](docs/scoring.md) for the full rationale.
 
-## Layout Leaderboard
-| **Model** | **N** | **Strict F1** | **Adjusted F1** | **Macro F1** | **Precision** | **Recall** |
-| --- | --- | --- | --- | --- | --- | --- |
-| **Extend Parse 2.0** | 1500 | **0.781** | **0.847** | 0.702 | 0.818 | 0.748 |
-| **AWS Textract** | 1500 | **0.626** | **0.709** | 0.526 | 0.598 | 0.656 |
-| **Paddle OCR VL 1.5** | 1500 | **0.584** | **0.684** | 0.450 | 0.661 | 0.524 |
-| **Azure DI** | 1500 | **0.558** | **0.687** | 0.521 | 0.492 | 0.644 |
-| **dots.mocr** | 1500 | **0.238** | **0.320** | 0.188 | 0.225 | 0.253 |
+## Quickstart — keyless local validation
 
-## Installation
-```bash
-uv sync
-```
-
-## API Keys
-
-All secrets load from `.env` (or `.env.local` for machine-specific overrides; gitignored, wins on conflict) at the repo root — auto-loaded by the CLI. See [`.env.example`](.env.example) for the full list of supported variables. Keys needed per command:
-
-- `score` — `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
-- `parse` — whatever the parsers require: `EXTEND_API_KEY`, `LLAMA_CLOUD_API_KEY`, `MISTRAL_API_KEY`, AWS / Azure creds, …
-- `download` and the layout dataset fetch — no key needed (the datasets are public)
-
-**Dataset overrides** — point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at a local snapshot to skip the HF download.
-
-## QA-extraction benchmark
-
-The full pipeline is download → parse → score → report. Every stage is per-parser scoped, cached, and reusable.
-
-**QA Evaluator** — the extraction step uses **Gemini 3 Flash** (`gemini-3-flash-preview`) for every parser. It reads only the parser's markdown, emits typed JSON, and that JSON is scored deterministically with `deep_equal` against the gold — the model never sees the gold and never assigns a score itself. The same model and prompt are applied to every parser, so no parser is judged differently (including the `gemini_3_5_flash` parser, which is scored by the same judge as everyone else).
+No API keys required. Exercises render → cache → report end-to-end against a local
+OpenAI-compatible endpoint (Ollama). Full details, caveats, and the thinking-model empty-response
+gotcha are in [`docs/runbook-stage1.md`](docs/runbook-stage1.md#local-validation-path-no-keys-needed).
 
 ```bash
-# 1. Pull the bench dataset (qa_bank.json + docs/) from the HF Hub
-realdoc-bench evaluate download --run-dir runs/qa --dataset Extend-AI/Realdoc-Bench
-
-# 2. Parse every PDF with one or more parsers (idempotent; --force to re-parse)
-realdoc-bench evaluate parse --run-dir runs/qa -p reducto -p aws_textract -p azure_di
-# OCR 4 is available as:
-realdoc-bench evaluate parse --run-dir runs/qa -p mistral_ocr_4
-
-# 3. Score every (question × parser) pair with Gemini 3 Flash + deep_equal
-#    No -p means: score every parser found under <run-dir>/parses/
-realdoc-bench evaluate score --run-dir runs/qa
-
-# 4. Build the dashboard
-realdoc-bench evaluate report --run-dir runs/qa
+uv run ocr-eval selftest                                                    # offline scorer gate
+uv run ocr-eval preflight qwen3-vl-8b@ollama-validation \
+  --registry configs/registry-local-validation.yaml                        # confirm Ollama serves it
+uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@ollama-validation \
+  --registry configs/registry-local-validation.yaml --dry-run              # cell count, no spend
+uv run ocr-eval direct --run-dir runs/stage1 -m qwen3-vl-8b@ollama-validation \
+  --registry configs/registry-local-validation.yaml --limit 5              # real (free) local calls
+uv run ocr-eval report --run-dir runs/stage1 \
+  --registry configs/registry-local-validation.yaml                        # -> runs/stage1/report.md
 ```
 
-Or all at once for a known parser set:
+## Status
 
-```bash
-realdoc-bench evaluate run --run-dir runs/qa -p reducto -p aws_textract
+| Area | State |
+|---|---|
+| Full-corpus download + `verify` (581 docs, cardinality preconditions) | Implemented, live-validated |
+| Keyless local direct-QA smoke (Ollama vlm-chat → cache → `report.md`) | Implemented, live-validated |
+| Condition-hash disambiguation (same registry id, two condition hashes) | Implemented, live-validated |
+| Hosted `vlm-chat` candidates (OpenRouter Qwen3-VL/Qwen3.5) | Implemented; needs `OPENROUTER_API_KEY`, unrun |
+| Gemini extractor validation gate + scoring leg | Implemented; needs `GEMINI_API_KEY`, unrun |
+| Hosted transcriber (Mistral OCR 4) | Implemented; needs `MISTRAL_API_KEY`, unrun |
+| Local vLLM specialists (GLM-OCR, dots.ocr) | Implemented ([local-serving.md](docs/local-serving.md)); unrun |
+| Reproduction gate (DoD #2) | Implemented; needs a scored transcriber row to evaluate |
+| Stage 2 (conditions, classical engines) / Stage 3 (CheckboxQA, HITL) | Not started — see [roadmap](docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md) |
+
+## Doc map
+
+| Doc | Covers |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | Module map, run-dir anatomy, condition dict, cache semantics, fork boundaries, fail-closed gate inventory |
+| [`docs/cli.md`](docs/cli.md) | Every `ocr-eval` command, upstream commands used/avoided, a worked keyless example |
+| [`docs/scoring.md`](docs/scoring.md) | The scoring rubric — upstream scorer, our metrics layer, baselines, uncertainty, reproduction gate |
+| [`docs/api.md`](docs/api.md) | Provider contract, retry policy, cost control, per-provider serving notes and caveats |
+| [`docs/runbook-stage1.md`](docs/runbook-stage1.md) | The operational, numbered Stage 1 run procedure and DoD checklist |
+| [`docs/local-serving.md`](docs/local-serving.md) | vLLM launch lines and context-budget arithmetic for local specialists |
+| [`docs/applicability-table.md`](docs/applicability-table.md) | Which condition axis binds to which pipeline step, per shape |
+| [`docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md`](docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md) | The design spec (rev 2 + rev 2.1 divergence appendix) |
+| [`docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md`](docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md) | The implementation plan and full divergence ledger (D1–D10) |
+| [`docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md`](docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md) | Stage 2/3 direction |
+| [`docs/superpowers/specs/table3-snapshot.md`](docs/superpowers/specs/table3-snapshot.md) | Pinned reproduction targets (paper Table 3 + README leaderboard snapshot) |
+| [`docs/upstream-README.md`](docs/upstream-README.md) | Upstream's own README, preserved verbatim |
+
+## Repo layout
+
+```
+ocr-eval/
+  realdoc_bench/         upstream (minimally touched — see docs/architecture.md's fork boundaries)
+  ocr_eval_ext/          this fork's additions:
+    config.py              registry schema + loader (RegistryEntry, load_registry, get_entry)
+    preconditions.py       fail-closed cardinality/render gates (check_bank, assert_single_page)
+    metrics.py             boolean/null-restricted per-field outcomes, baselines
+    stats.py               document-clustered bootstrap CIs, paired deltas, separability
+    direct.py              vlm-chat runner (run_direct) — image + question -> typed JSON answer
+    parsers_openai.py      openai-compat transcriber adapter, registered into upstream's parser registry
+    selftest.py            scorer + extractor fail-closed self-tests
+    report_md.py           shape-segregated markdown report builder
+    cli.py                 the `ocr-eval` CLI (verify/selftest/direct/parse/score/rescore/report)
+  configs/                pins.yaml, registry.yaml, registry-local-validation.yaml
+  docs/                   this documentation suite + runbook + superpowers/ provenance chain
+  tests_ext/, tests/      this fork's tests + upstream's own test suite
 ```
 
-**Run-dir layout**:
+## Licences
 
-```
-runs/qa/
-  docs/                          # input — documents (PDFs)
-  qa_bank.json                   # input — typed-template QA bank
-  parses/<parser>/<stem>.md      # parser output (+ <stem>.json meta)
-  eval/cache/<qid>__<parser>.json   # per-(question, parser) scoring cache
-  eval/results.json              # flat snapshot rebuilt by `report`
-  dashboard.html                 # the dashboard
-```
+- **Code:** Apache-2.0 (upstream `realdoc_bench/`, and this fork's additions in `ocr_eval_ext/`
+  under the same terms — see [`LICENSE`](LICENSE)).
+- **Dataset:** RealDocBench is CC-BY-4.0 — any figures reproduced or derived from it must be
+  attributed to `Extend-AI/RealDoc-Bench` (done automatically in every generated `report.md`).
+- **CheckboxQA (Stage 3, not yet built):** CC BY-NC. Any report containing CheckboxQA numbers will
+  be stamped `CC BY-NC — internal model selection only` in code, never merged into a commercial
+  comparison.
 
-**Cache semantics**:
+## Keys policy
 
-- `parse` skips `(parser, doc)` when `.md` + `.json` exist and the json's `ok=true`. `--force` busts the cache for the listed parsers only.
-- `score` skips `(qid, parser)` when the cache file exists. **On hit, the cached answer is re-scored with the current scoring code**, so editing scoring thresholds + re-running `score` updates verdicts without spending a single API call. `--force` re-calls the model.
-- Per-parser scope is strict: scoring `-p X` never touches any other parser's cache files.
-
-**API keys** — see [API Keys](#api-keys). `score` needs `GEMINI_API_KEY`, `parse` needs whatever the parsers require; `download` needs no key (the dataset is public).
-
-## Layout benchmark
-
-```bash
-# 0. (optional) Pre-download the layout dataset — prewarm the HF cache,
-#    or materialize a filtered subset into --out-dir.
-realdoc-bench layout download --dataset Extend-AI/RealDocBench-Layout
-
-# 1. Run one or more processors over the layout dataset and score every page
-realdoc-bench layout eval --dataset Extend-AI/RealDocBench-Layout --processor gt_self --limit 5
-
-# 2. Build the markdown + Pareto-plot report from a previous run
-realdoc-bench layout report --run-id <id>
-```
-
-`--dataset` defaults to `Extend-AI/RealDocBench-Layout` and can be omitted; pass a different HF repo id to point at another snapshot. `layout download` accepts the same `--dataset`/`--revision`, plus `--domain`/`--limit` to fetch a filtered slice and `--out-dir` to materialize the snapshot at a known path (point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at it to use it without re-downloading).
-
-### Scorer
-
-Two scorers are wired into `layout eval`; both build on a Hungarian matcher.
-
-- **`f1`** (default) — Hungarian on `1 − IoU`, IoU ≥ 0.5, wrong-type pair → FP + FN. Backwards-compatible with the legacy leaderboard.
-- **`adjacency`** — Hungarian on `1 − IoU + 0.25·type` (wrong-type pair stays TP, surfaced as `misclassifications`) with adjacency split/merge recovery; reports an additional **adjusted F1** that lets the matcher merge adjacent same-type fragments to recover from over/under-segmentation. See [`realdoc_bench/layout/metrics/adjacency/`](realdoc_bench/layout/metrics/adjacency/).
-
-```bash
-realdoc-bench layout eval -p extend_v2_0_0 --limit 50 --scorer adjacency
-```
-
-The adjacency scorer also has a Python API and a re-score command that re-scores an existing run's cached predictions (no model calls):
-
-```python
-from realdoc_bench.layout.metrics.adjacency import score_pairs
-result = score_pairs(pairs, iou_threshold=0.5, gap_threshold=0.02)   # pairs := [(pred_blocks, gt_blocks, page_w, page_h), ...]
-print(result.strict.micro_f1, result.adjusted.micro_f1)
-```
-
-```bash
-realdoc-bench layout rescore --run-id <id>
-```
-
-### Assumptions
-
-- **Block-type vocabulary — 9 classes:** `text`, `heading`, `section_heading`, `header`, `footer`, `page_number`, `figure`, `table`, `key_value`. The dataset's raw COCO `category_id` integers are folded into these on load by `realdoc_bench/layout/normalizers/coco.py`; processor normalizers map vendor output into the same set. Legacy cached `prediction.json` files written under the previous 18-class names load unchanged — a Pydantic `field_validator` coerces them on read.
-- **Dataset:** [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout) (1,500 pages) by default; override with `--dataset <repo-id>`. Manifest + image + COCO blobs all come from HF on first use (or point `REALDOC_BENCH_DATASET_EXTEND_AI_REALDOCBENCH_LAYOUT` at a local snapshot).
-- **Matching:** axis-aligned IoU, threshold 0.5 (`--iou-threshold` to change). No confidence sweep — every prediction counts positive at IoU ≥ 0.5; mAP is computed separately when `confidence_present=True`.
-- **Adjusted F1 (adjacency only):** after the 1:1 match, unmatched same-type preds with gap < `0.02 × max(page_w, page_h)` are merged and re-scored; symmetric for unmatched GTs.
-- **Cost & latency:** each processor reports `cost_estimate_usd` / `latency_sec` per page when available; aggregates carry `$/page` and `latency_sec/page`, and the snapshot Pareto plots use them.
-
-## Datasets
-
-Distributed via the [Hugging Face Hub](https://huggingface.co/Extend-AI) under the `Extend-AI` org.
-
-- [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout) — 1,500-page layout benchmark with COCO annotations.
-- [`Extend-AI/RealDoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench) — QA-extraction bench (1,359 questions × 581 documents). What `evaluate download` pulls.
-
-The layout set ships its `manifest.csv` (page list + per-page metadata) alongside `images/` and `annotations/` on HF.
-
-## License
-
-- Code in this repo: Apache-2.0 (see `LICENSE`).
-- Benchmark datasets live on Hugging Face and carry their own licenses — see the dataset pages: [`Extend-AI/RealDoc-Bench`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench), [`Extend-AI/RealDoc-Bench-Layout`](https://huggingface.co/datasets/Extend-AI/RealDoc-Bench-Layout).
+Environment-only. Keys are injected via `bws run --project-id <id> -- <cmd>`
+([`docs/runbook-stage1.md`](docs/runbook-stage1.md) prerequisites) — never a config file, never
+committed. Upstream's `.env`/`.env.local` loading is disabled by default; the one upstream file
+this fork modifies (`realdoc_bench/cli.py`'s `_env()`) makes it opt-in only via
+`RDB_ALLOW_DOTENV=1`.
