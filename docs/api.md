@@ -85,8 +85,12 @@ should be at most 4).
   than a false claim of a specific quant level. See [`cli.md`](cli.md)'s worked example for the
   thinking-model `max_tokens` exhaustion caveat this serving path surfaces live; Ollama's
   OpenAI-compat shim has no code-level way to suppress thinking in this codebase — there is no
-  `think` field anywhere in `STAGE1_CONDITION`'s sampling dict, and the runbook records that raising
-  `max_tokens` is the only available workaround.
+  `think` field anywhere in `STAGE1_CONDITION`'s sampling dict. A second shim limit, verified
+  live 2026-08-02: the request-level `max_tokens` is **silently clamped to `num_ctx −
+  prompt_tokens`** — the server's context window wins, and Ollama's default `num_ctx` is 4096.
+  The endpoint cannot set `num_ctx` per-request; the working fix is a derived model with
+  `PARAMETER num_ctx <N>` baked in via a Modelfile (see the caveats section below and the
+  runbook).
 - **vLLM:** see [`local-serving.md`](local-serving.md) for exact launch lines and versions pinned.
   Context-budget arithmetic matters: `OpenAICompatVisionParser.max_tokens` is pinned to **4096** via
   `TRANSCRIBER_CONDITION` (not upstream's inherited 12,000-token default) specifically so
@@ -132,14 +136,26 @@ never appears in any config file. The standard invocation pattern is `bws run --
   `finish_reason: "length"` and empty `message.content`. Handled as designed: `direct.py`'s `_one`
   writes an `error_class: "empty"` row, never a crash and never a silently-wrong answer (see
   [`cli.md`](cli.md)'s worked example).
-- **Answers stranded in the reasoning channel:** distinct from budget exhaustion — in the same
-  live validation (60 cells, `qwen3-vl:8b` via Ollama, `max_tokens` raised to 8192), 13 cells
-  finished at ~1,865 completion tokens (well under the cap) with empty `message.content`: the
-  model emitted its entire answer inside the non-standard `message.reasoning` field and stopped.
-  The harness records these honestly as `error_class: "empty"` rows with the token counts as
-  evidence. Parsing an answer out of the reasoning channel would be a semantic change (scoring
-  thinking output) and is deliberately not done in Stage 1; if Stage 2 adds a reasoning-fallback,
-  it must be a distinct `output_contract` condition value, never a silent widening.
+- **Request `max_tokens` silently clamped by Ollama's `num_ctx` (corrected diagnosis):** in the
+  same live validation (60 cells, `qwen3-vl:8b` via Ollama, `max_tokens` raised to 8192), 13
+  cells still returned empty `message.content` at ~1,865 completion tokens. This was initially
+  misread as the model voluntarily stopping with its answer stranded in the non-standard
+  `message.reasoning` field — but every one of those 13 rows sums to **exactly**
+  `prompt_tokens + completion_tokens = 4096`: Ollama's default `num_ctx`, which caps generation
+  at `num_ctx − prompt` regardless of the requested `max_tokens`. The model was truncated
+  mid-reasoning; the cut-off chain (sometimes containing answer text) sits in
+  `message.reasoning`, which is what made it look like a channel-routing failure. Verified
+  2026-08-02 by re-running the matrix against a derived model with `PARAMETER num_ctx 16384`
+  baked in (`qwen3-vl:8b-ctx16k` — the OpenAI-compat endpoint has no per-request way to set
+  `num_ctx`): 55/60 answered vs 47/60, recovering 11 of the 13 clamped cells. The 5 residual
+  empties each consumed ~14,100 completion tokens and hit exactly `total_tokens = 16384` —
+  runaway reasoning loops that no finite window is guaranteed to satisfy. Notably, 3 of those 5
+  had answered fine under the 4096 window: at `temperature 0.0`, whether a given cell goes
+  runaway is not stable across serving configs. Harness policy is unchanged: these are honest
+  `error_class: "empty"` rows with the token counts as evidence. Parsing an answer out of the
+  reasoning channel would be a semantic change (scoring thinking output) and is deliberately not
+  done in Stage 1; if Stage 2 adds a reasoning-fallback, it must be a distinct `output_contract`
+  condition value, never a silent widening.
 - **Empty transcripts from thinking transcribers:** the same failure mode on the transcriber side
   (a transcript reduced to near-nothing by a thinking model's budget exhaustion) would otherwise
   pass `parse`'s ok/fail split with a false-green result and then spend one Gemini extractor call

@@ -31,3 +31,22 @@
   provenance: Alibaba
   release_date: "2025-10-11"
   local: true
+
+# Derived model: identical Q4_K_M weights + `PARAMETER num_ctx 16384` baked in via Modelfile
+# (created 2026-08-02 — Ollama's OpenAI-compat endpoint cannot set num_ctx per-request, and its
+# default 4096 window silently clamps generation to num_ctx − prompt regardless of the requested
+# max_tokens; see docs/api.md caveats). Distinct id so its cache rows can never be confused with
+# the 4096-window runs.
+- id: qwen3-vl-8b@ollama-validation-ctx16k
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b-ctx16k
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok    # self-hosted
+  tos_note: "self-hosted validation entry; num_ctx=16384 derived model — excluded from any comparative table by policy"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true

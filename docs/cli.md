@@ -128,4 +128,8 @@ This lands under a distinct cache key by design (`condition_hash` folds the whol
 so it never overwrites the default-budget attempt's error rows — see
 [`architecture.md`](architecture.md#the-condition-dict) for the live-validated two-condition
 example this produced. A CLI flag for this (e.g. `direct --max-tokens N`) is future work, not yet
-built.
+built. One caveat discovered after this example was first written: against Ollama, raising
+`max_tokens` alone is bounded by the serving side — the shim silently clamps generation to
+`num_ctx − prompt` (default `num_ctx=4096`) regardless of the request. See
+[`api.md`](api.md#known-provider-behavior-caveats-from-validation) for the verified diagnosis and
+the derived-model (`PARAMETER num_ctx`) fix.

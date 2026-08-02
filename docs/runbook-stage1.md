@@ -269,10 +269,29 @@ run_direct(layout, [entry], condition=cond, limit=5)
 ```
 This lands under a **distinct cache key by design** (`condition_hash` folds the whole condition
 dict, so a different `max_tokens` is a different, trackable `vlm__...__<cond>` key, never a silent
-overwrite of the `error_class: "empty"` rows from the default-budget attempt). Also note: Ollama's
-OpenAI-compat shim ignores a `think: false` request field — there is currently no way to suppress
-thinking through that route, so raising `max_tokens` is the only available workaround, not a
-side-channel toggle.
+overwrite of the `error_class: "empty"` rows from the default-budget attempt). Also note two
+Ollama shim limits, both verified live:
+
+1. It ignores a `think: false` request field — there is no way to suppress thinking through
+   that route.
+2. The request-level `max_tokens` is **silently clamped to `num_ctx − prompt_tokens`** — the
+   server's context window wins, and Ollama's default `num_ctx` is 4096. Asking for 8192
+   completion tokens behind a 4096 window is a no-op that surfaces as empty-content rows whose
+   `usage` sums to exactly 4096 (this was live-diagnosed 2026-08-02; it had earlier been misread
+   as answers stranded in `message.reasoning` — see `docs/api.md`'s caveats section for the
+   corrected diagnosis). The OpenAI-compat endpoint cannot set `num_ctx` per-request; bake it
+   into a derived model instead:
+   ```bash
+   printf 'FROM qwen3-vl:8b\nPARAMETER num_ctx 16384\n' > /tmp/Modelfile.ctx16k
+   ollama create qwen3-vl:8b-ctx16k -f /tmp/Modelfile.ctx16k
+   ```
+   then point a registry entry's `model:` at the derived name (see
+   `qwen3-vl-8b@ollama-validation-ctx16k` in `configs/registry-local-validation.yaml`) and widen
+   `max_tokens` in the amended condition. Verified result: 55/60 answered vs 47/60 at the 4096
+   window, recovering 11 of 13 clamped cells; the residual 5 were runaway reasoning loops that
+   consumed the full 16k window (~14k completion tokens, ~3–4 min per cell) — no finite window
+   guarantees a thinking model converges, and which cells go runaway is not stable across
+   serving configs even at `temperature 0.0`.
 
 ## Warnings
 
