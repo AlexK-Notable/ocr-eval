@@ -51,7 +51,7 @@ def _observed_dataset_revision(layout: RunLayout) -> str | None:
     return None
 
 
-def _stamp_base_meta(layout: RunLayout, pins: dict, *, partial_corpus: bool = False) -> None:
+def _stamp_base_meta(layout: RunLayout, pins: dict, *, mark_partial_corpus: bool = False) -> None:
     """Called at the end of ANY successful `_preflight` — verify, direct, rescore, parse, and
     score. Fills in `dataset_revision`/`harness_commit` once, the first time a run dir passes
     preflight; never overwrites them afterwards (a run dir's identity is fixed at first success,
@@ -61,10 +61,14 @@ def _stamp_base_meta(layout: RunLayout, pins: dict, *, partial_corpus: bool = Fa
     recording which source was used so a run stamped before `evaluate download` ever ran is
     distinguishable from one whose revision was actually cross-checked against disk.
 
-    `partial_corpus` (I6), by contrast, is OVERWRITTEN on every call — it reflects the mode of
-    the MOST RECENT preflight, not a fixed identity: a run dir preflighted with
-    `--allow-partial-corpus` is marked `true`; the next preflight that passes the full
-    completeness check (no flag) clears it back to `false`."""
+    N3 RULING (supersedes the round-1 "overwritten every call" design): `partial_corpus` is
+    STICKY-true. `mark_partial_corpus=True` (i.e. this preflight used `--allow-partial-corpus`)
+    sets it to `true`. Every OTHER call — including a normal preflight that just re-confirmed
+    full corpus completeness — leaves an existing `true` alone; a plain `_preflight` success is
+    NOT considered strong enough evidence to clear the flag (it doesn't confirm renders, and
+    doesn't want the flag to flicker back to `false` via routine low-cost calls). The ONLY
+    sanctioned way to clear it is `verify`'s own full-sweep success path (renders + complete
+    corpus), which writes `partial_corpus = False` directly — see `verify()`."""
     meta_p = _run_meta_path(layout)
     meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
     if "dataset_revision" not in meta:
@@ -76,7 +80,10 @@ def _stamp_base_meta(layout: RunLayout, pins: dict, *, partial_corpus: bool = Fa
             meta["dataset_revision"] = pins["dataset_revision"]
             meta["revision_source"] = "pins"
     meta.setdefault("harness_commit", pins["harness_commit"])
-    meta["partial_corpus"] = partial_corpus
+    if mark_partial_corpus:
+        meta["partial_corpus"] = True
+    else:
+        meta.setdefault("partial_corpus", False)   # sticky: never flips true -> false here
     meta_p.write_text(json.dumps(meta, indent=2))
 
 
@@ -84,9 +91,10 @@ def _check_corpus_completeness(layout: RunLayout, items: list[dict]) -> None:
     """C1 (flagged in Task 7 review, carried here): docs/ must be a superset of every
     source_file the bank references. Lives inside `_preflight` itself — rather than duplicated
     per-command (verify used to run this check standalone, after its own `_preflight` call) — so
-    EVERY command that calls `_preflight` (verify, direct, rescore, parse, score) is protected for
-    free, unless the caller explicitly opted out via `--allow-partial-corpus` (I6; `verify` never
-    exposes that flag). Cheap (path existence only, no rendering). Without this, an empty (or
+    EVERY command that calls `_preflight` (verify, direct, parse, score) is protected for free,
+    unless the caller explicitly opted out via `--allow-partial-corpus` (I6; `verify` never
+    exposes that flag) or is `rescore` (N4; never applicable — see `_preflight`'s
+    `skip_corpus_check`). Cheap (path existence only, no rendering). Without this, an empty (or
     `evaluate download --limit`-narrowed) docs/ against a full, real-shaped bank would
     sweep/parse/score zero PDFs and look like a clean pass — a false pass reachable in normal
     operation, not just a contrived test.
@@ -107,13 +115,23 @@ def _check_corpus_completeness(layout: RunLayout, items: list[dict]) -> None:
         raise typer.Exit(1)
 
 
-def _preflight(layout: RunLayout, *, allow_partial_corpus: bool = False) -> None:
+def _preflight(layout: RunLayout, *, allow_partial_corpus: bool = False,
+              skip_corpus_check: bool = False) -> None:
     """The gate every spending/reporting command calls first. Fail-closed.
 
     `allow_partial_corpus` (I6): when true, skips `_check_corpus_completeness` with a yellow
-    warning instead of failing closed, and records `partial_corpus: true` in `run_meta.json` so
-    the bypass is visible on disk, not just in a log line. Default is `False` everywhere;
-    `verify` never passes `True` — it has no `--allow-partial-corpus` flag at all."""
+    warning instead of failing closed, and marks `partial_corpus: true` in `run_meta.json` (see
+    `_stamp_base_meta`'s N3 docstring — this is a sticky, user-visible flag, not a per-call
+    toggle) so the bypass is visible on disk, not just in a log line. Default is `False`
+    everywhere; `verify` never passes `True` — it has no `--allow-partial-corpus` flag at all.
+
+    `skip_corpus_check` (N4 RULING): used ONLY by `rescore`, which recomputes scores from
+    already-cached answers and never reads `docs/` at all — the corpus-completeness question
+    ("does every bank source_file have a PDF on disk?") simply doesn't apply to it, so it's
+    skipped silently (no warning banner, unlike `allow_partial_corpus`, since nothing is actually
+    being bypassed) and `partial_corpus` is left completely untouched either way. Mutually
+    exclusive in practice with `allow_partial_corpus` (no command needs both; `skip_corpus_check`
+    takes precedence if somehow both were set)."""
     if st.run_offline():
         console.print("[red]scorer self-test failed — refusing to proceed[/red]")
         raise typer.Exit(1)
@@ -147,7 +165,9 @@ def _preflight(layout: RunLayout, *, allow_partial_corpus: bool = False) -> None
     try:
         items = json.loads(layout.bank_path.read_text())["items"]
         check_bank(items)
-        if allow_partial_corpus:
+        if skip_corpus_check:
+            pass    # rescore: never reads docs/, corpus completeness is not applicable
+        elif allow_partial_corpus:
             console.print("[yellow]--allow-partial-corpus: corpus-completeness check "
                           "skipped[/yellow]")
         else:
@@ -155,7 +175,7 @@ def _preflight(layout: RunLayout, *, allow_partial_corpus: bool = False) -> None
     except (FileNotFoundError, KeyError, PreconditionError) as e:
         console.print(f"[red]preflight FAILED: {e}[/red]")
         raise typer.Exit(1) from e
-    _stamp_base_meta(layout, pins, partial_corpus=allow_partial_corpus)
+    _stamp_base_meta(layout, pins, mark_partial_corpus=allow_partial_corpus)
 
 
 def _png_cache_path(png_cache: Path, stem: str, condition: dict) -> Path:
@@ -242,6 +262,11 @@ def verify(
     # vLLM runs in its own serving env, not this one — its version is recorded per model in
     # docs/local-serving.md (Task 8), which is the operative record for local rows.
     meta["renders_verified"] = True
+    # N3 RULING: this full sweep (renders + complete corpus, never --skip-renders, never
+    # --allow-partial-corpus — verify has no such flag) is the ONLY event allowed to clear a
+    # sticky `partial_corpus` flag back to `false`. Every other successful preflight (including
+    # this same command's own `--skip-renders` path) leaves an existing `true` alone.
+    meta["partial_corpus"] = False
     meta_p.write_text(json.dumps(meta, indent=2))
     console.print("[green]verify PASS[/green] — pins, cardinalities, pages, renders all green")
 
@@ -350,12 +375,18 @@ def rescore(run_dir: Path = typer.Option(..., "--run-dir")) -> None:
     the current bank, or a terminal error record with nothing to rescore) are counted under
     `skipped_not_in_bank` and left untouched. Writes are atomic (`_atomic_write_json`, the same
     tmp-file + os.replace pattern `direct.py` uses) so a killed rescore can never leave a torn
-    cache row."""
+    cache row.
+
+    N4 RULING: skips the corpus-completeness check entirely (`_preflight(..., skip_corpus_check=
+    True)`) — rescore only ever reads `eval/cache/` and the bank, never `docs/`, so "does every
+    bank source_file have a PDF on disk" is not a question this command can be blocked by. All
+    other preflight gates (pins, harness-commit ancestry, dataset-revision cross-check, bank
+    cardinality) still apply in full."""
     from ocr_eval_ext.direct import _atomic_write_json
     from realdoc_bench.evaluate.score import _ensure_template, score_typed
 
     layout = RunLayout.at(run_dir)
-    _preflight(layout)
+    _preflight(layout, skip_corpus_check=True)
     items = {i["question_id"]: i for i in json.loads(layout.bank_path.read_text())["items"]}
     examined = skipped_not_in_bank = changed = 0
     for f in sorted(layout.cache_dir.glob("*.json")):
@@ -501,6 +532,11 @@ def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: b
     parsed out of the filename) since that's the single source of truth `_worker`/`run_direct`
     both write.
 
+    N2: collisions are checked for ALL candidate rows BEFORE any file is moved — never
+    file-by-file (which would leave a partial, already-mutated archive if row N of M collided).
+    A single colliding destination aborts the whole operation with `exit 1`, naming every
+    colliding path, and moves nothing.
+
     M5: called BEFORE `require_extractor_gate` in `score` — never stamp/archive on the strength
     of an extractor generation that hasn't yet proven it can pass its own fixtures; a failed gate
     must leave `run_meta.json`/`eval/cache/` exactly as they were. Writes `run_meta.json`
@@ -519,25 +555,31 @@ def _enforce_extractor_generation(layout: RunLayout, new_extractor_generation: b
                           f"eval/cache@{prev}/ first)[/red]")
             raise typer.Exit(1)
         archive = layout.root / "eval" / f"cache@{prev}"
-        moved = 0
+
+        to_move: list[Path] = []
         if layout.cache_dir.exists():
             for f in sorted(layout.cache_dir.glob("*.json")):
                 try:
                     rec = json.loads(f.read_text())
                 except Exception:
                     rec = {}
-                if str(rec.get("parser", "")).startswith("vlm__"):
-                    continue          # direct rows: no extractor dependency, left live
-                archive.mkdir(parents=True, exist_ok=True)
-                target = archive / f.name
-                if target.exists():
-                    console.print(f"[red]archive target {target} already exists — refusing to "
-                                  f"overwrite; move or remove it before retrying[/red]")
-                    raise typer.Exit(1)
-                f.rename(target)
-                moved += 1
-        console.print(f"[yellow]--new-extractor-generation: archived {moved} extractor-dependent "
-                      f"row(s) to {archive}; vlm__* direct rows left live[/yellow]")
+                if not str(rec.get("parser", "")).startswith("vlm__"):
+                    to_move.append(f)   # extractor-dependent (incl. unreadable/unknown) rows only
+
+        collisions = [f for f in to_move if (archive / f.name).exists()]
+        if collisions:
+            console.print(f"[red]archive target(s) already exist under {archive} — refusing to "
+                          f"overwrite; move or remove them before retrying: "
+                          f"{[str(archive / f.name) for f in collisions]}[/red]")
+            raise typer.Exit(1)     # nothing moved — the scan above was read-only
+
+        if to_move:
+            archive.mkdir(parents=True, exist_ok=True)
+            for f in to_move:
+                f.rename(archive / f.name)
+        console.print(f"[yellow]--new-extractor-generation: archived {len(to_move)} "
+                      f"extractor-dependent row(s) to {archive}; vlm__* direct rows left "
+                      f"live[/yellow]")
     meta["extractor_id"] = DEFAULT_MODEL
     _atomic_write_json(meta_p, meta)
 

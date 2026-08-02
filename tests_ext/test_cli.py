@@ -694,6 +694,109 @@ def test_parse_allow_partial_corpus_bypasses_corpus_check(tmp_path, monkeypatch)
     assert (layout.parser_dir(parser_name) / "present.md").exists()
 
 
+# ── N3 RULING: partial_corpus is sticky-true — only verify's full sweep clears it ──────────────
+
+def test_partial_corpus_flag_is_sticky_across_a_later_full_preflight(tmp_path, monkeypatch):
+    """A LATER, completely ordinary preflight success (full corpus-completeness check passes, no
+    --allow-partial-corpus) must NOT flip the flag back to false — the ruling requires the more
+    expensive verify full-sweep specifically, not just any passing preflight."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    doc = fitz.open()
+    doc.new_page(width=612, height=792).insert_text((72, 72), "present")
+    doc.save(layout.docs_dir / "present.pdf")
+    layout.bank_path.write_text(json.dumps({"items": [
+        {"question_id": "q1", "source_file": "present", "gold_dict": {"a": 1}},
+    ]}))
+    registry_yaml = tmp_path / "registry.yaml"
+    with MockOpenAI(reply_text="hello") as mock:
+        _write_openai_compat_transcriber_registry(registry_yaml, mock.base_url, "org/t1",
+                                                  entry_id="stickytest@local")
+        parser_name = f"stickytest_local__{direct_mod.condition_hash(TRANSCRIBER_CONDITION)}"
+
+        first = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                    "--registry", str(registry_yaml), "-p", parser_name,
+                                    "--allow-partial-corpus"])
+        assert first.exit_code == 0, first.output
+        assert json.loads((layout.root / "run_meta.json").read_text())["partial_corpus"] is True
+
+        # Completely ordinary follow-up call — corpus IS complete, no flag needed or passed.
+        second = runner.invoke(app, ["parse", "--run-dir", str(layout.root),
+                                     "--registry", str(registry_yaml), "-p", parser_name,
+                                     "--force"])
+        assert second.exit_code == 0, second.output
+
+    meta2 = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta2["partial_corpus"] is True   # still sticky — NOT cleared by the plain success
+
+
+def test_verify_full_sweep_clears_sticky_partial_corpus(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _fake_layout_with_one_good_page(tmp_path)
+    runner.invoke(app, ["verify", "--run-dir", str(layout.root), "--skip-renders"])
+    meta_p = layout.root / "run_meta.json"
+    meta = json.loads(meta_p.read_text())
+    meta["partial_corpus"] = True   # simulate an earlier --allow-partial-corpus call
+    meta_p.write_text(json.dumps(meta))
+
+    result = runner.invoke(app, ["verify", "--run-dir", str(layout.root)])   # full sweep
+    assert result.exit_code == 0, result.output
+    assert json.loads(meta_p.read_text())["partial_corpus"] is False
+
+
+def test_verify_skip_renders_does_not_clear_sticky_partial_corpus(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _fake_layout_with_one_good_page(tmp_path)
+    runner.invoke(app, ["verify", "--run-dir", str(layout.root), "--skip-renders"])
+    meta_p = layout.root / "run_meta.json"
+    meta = json.loads(meta_p.read_text())
+    meta["partial_corpus"] = True
+    meta_p.write_text(json.dumps(meta))
+
+    result = runner.invoke(app, ["verify", "--run-dir", str(layout.root), "--skip-renders"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(meta_p.read_text())["partial_corpus"] is True   # sticky: not the full sweep
+
+
+# ── N4 RULING: rescore skips the corpus-completeness check entirely ────────────────────────────
+
+def test_rescore_succeeds_on_partial_corpus_dir(tmp_path, monkeypatch):
+    """rescore only ever reads eval/cache/ and the bank, never docs/ — a bank item referencing a
+    source_file with no matching PDF must not block it, and no --allow-partial-corpus flag is
+    even needed (rescore has none)."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 72), "irrelevant — rescore never renders")
+    doc.save(layout.docs_dir / "doc_1.pdf")
+    bank = {"items": [
+        {"question_id": "q1", "source_file": "doc_1", "domain": "test",
+         "question": "Is question 1 checkbox marked?", "capabilities": ["checkbox_state"],
+         "gold_dict": {"a": True}, "response_format": "Return exactly: a=<boolean>",
+         "gold_answer": "a=true"},
+        # references a PDF that does NOT exist under docs/ — verify/parse/score (without
+        # --allow-partial-corpus) would refuse on this alone; rescore must not care.
+        {"question_id": "q2", "source_file": "missing_doc", "domain": "test",
+         "question": "irrelevant", "capabilities": [], "gold_dict": {"a": True},
+         "response_format": "Return exactly: a=<boolean>", "gold_answer": "a=true"},
+    ]}
+    layout.bank_path.write_text(json.dumps(bank))
+    cache_path = layout.cache_path("q1", "vlm__m1@mock__deadbeef0000")
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(json.dumps({
+        "qid": "q1", "parser": "vlm__m1@mock__deadbeef0000", "answer": {"a": True},
+        "field_matches": {"a": False}, "match": False}))   # hand-corrupted: should heal to True
+
+    result = runner.invoke(app, ["rescore", "--run-dir", str(layout.root)])
+    assert result.exit_code == 0, result.output
+    assert "corpus incomplete" not in _plain(result.output)
+    healed = json.loads(cache_path.read_text())
+    assert healed["match"] is True
+
+
 def test_parse_wrapper_enforces_corpus_completeness(tmp_path, monkeypatch):
     """Carried finding from Task 7 review: the corpus-completeness check must also protect the
     parse/score wrappers, not just `verify`."""
@@ -782,8 +885,14 @@ def test_score_cli_refuses_to_mix_extractor_generations(tmp_path, monkeypatch):
     assert second.exit_code == 1
     assert "old-extractor-id" in second.output
     assert "--new-extractor-generation" in second.output
-    # refused BEFORE spending the extractor-validation Gemini calls again — no new stamp beyond
-    # the one written by the first (successful) run above.
+    # N5: `require_extractor_gate` now runs BEFORE the generation-mismatch refusal (M5/M6), so
+    # this single stamp is NOT evidence that the refusal short-circuits the gate — it's evidence
+    # that the gate is cached per `DEFAULT_MODEL` (a real Python constant), which this test never
+    # changes between the two invocations; only `run_meta.json`'s "extractor_id" is hand-edited
+    # to simulate a mismatch. Since `DEFAULT_MODEL` is unchanged, the SAME stamp file satisfies
+    # both calls regardless of ordering. Had `DEFAULT_MODEL` genuinely changed between the two
+    # calls, the gate (running first) would spend fresh Gemini calls before the refusal ever
+    # fired — the refusal would still happen afterward, just not for free.
     assert len(list(layout.root.glob(".extractor_ok_*"))) == 1
 
 
@@ -875,6 +984,45 @@ def test_enforce_extractor_generation_treats_corrupt_row_as_extractor_dependent(
 
     assert not corrupt.exists()
     assert (layout.root / "eval" / "cache@old-id" / corrupt.name).exists()
+
+
+# ── N2: archive pre-scans ALL destination collisions before moving ANY file ─────────────────────
+
+def test_enforce_extractor_generation_prescans_collisions_moves_nothing_on_conflict(tmp_path):
+    layout = RunLayout.at(tmp_path / "run")
+    layout.ensure_dirs()
+
+    row1 = layout.cache_path("q1", "t1_local__abc123")
+    row1_content = {"qid": "q1", "parser": "t1_local__abc123", "answer": {"a": "1"}}
+    row1.parent.mkdir(parents=True, exist_ok=True)
+    row1.write_text(json.dumps(row1_content))
+
+    row2 = layout.cache_path("q2", "t1_local__abc123")
+    row2_content = {"qid": "q2", "parser": "t1_local__abc123", "answer": {"a": "2"}}
+    row2.write_text(json.dumps(row2_content))
+
+    # Pre-create a COLLIDING file at row2's would-be archive destination — row1's destination is
+    # clear. Before N2, a file-by-file loop would have already moved row1 by the time it hit
+    # row2's collision and bailed; the pre-scan must catch this BEFORE touching row1 at all.
+    archive = layout.root / "eval" / "cache@old-id"
+    archive.mkdir(parents=True)
+    (archive / row2.name).write_text(json.dumps({"pre-existing": "conflicting content"}))
+
+    (layout.root / "run_meta.json").write_text(json.dumps({"extractor_id": "old-id"}))
+
+    with pytest.raises(cli_mod.typer.Exit):
+        cli_mod._enforce_extractor_generation(layout, True)
+
+    # Nothing moved: row1 is still live (would have been moved first under the old file-by-file
+    # design), row2 is still live, and the pre-existing archive file is untouched.
+    assert row1.exists()
+    assert json.loads(row1.read_text()) == row1_content
+    assert row2.exists()
+    assert json.loads(row2.read_text()) == row2_content
+    assert json.loads((archive / row2.name).read_text()) == {"pre-existing": "conflicting content"}
+    # extractor_id must not have been updated either — the whole operation aborted cleanly.
+    meta = json.loads((layout.root / "run_meta.json").read_text())
+    assert meta["extractor_id"] == "old-id"
 
 
 # ── M1: score refuses an unknown -p name BEFORE writing sticky "markdown missing" rows ──────────

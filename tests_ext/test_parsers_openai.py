@@ -181,6 +181,26 @@ def test_register_openai_parsers_raises_on_stale_binding_mismatch(tmp_path):
         register_openai_parsers(registry_b)
 
 
+def test_register_openai_parsers_raises_on_provider_pin_only_mismatch(tmp_path):
+    """N1-round-2 disclosed-gap closure: provider_pin is now part of the binding tuple, so two
+    registrations that agree on base_url/model/api_key_env but disagree on provider_pin must
+    still raise — not be silently treated as a compatible no-op."""
+    registry_a = tmp_path / "a.yaml"
+    registry_b = tmp_path / "b.yaml"
+    base = {
+        "id": "pinmismatch@openrouter", "shape": "transcriber", "transport": "openai-compat",
+        "base_url": "https://openrouter.ai/api/v1", "model": "org/pinmismatch",
+        "api_key_env": None, "precision": "provider-default", "weights_licence": "mit",
+        "provider_tos_commercial": "ok", "provenance": "X", "release_date": "2025-01-01",
+    }
+    _write_registry(registry_a, [{**base, "provider_pin": {"order": ["Alibaba"]}}])
+    _write_registry(registry_b, [{**base, "provider_pin": {"order": ["DeepInfra"]}}])
+
+    register_openai_parsers(registry_a)
+    with pytest.raises(ValueError, match="already registered"):
+        register_openai_parsers(registry_b)
+
+
 def test_register_openai_parsers_reregistering_same_binding_is_a_true_no_op(tmp_path):
     """The idempotent-reuse path (matching binding) must still work after I3 — only a MISMATCH
     should raise."""
@@ -259,3 +279,72 @@ def test_preflight_url_build_has_no_doubled_slash(monkeypatch):
     served = preflight(_entry("http://localhost:8000/v1/", "org/t1"))
     assert served == "org/t1"
     assert captured["url"] == "http://localhost:8000/v1/models"
+
+
+# ── N1: resolved-provider capture must be isolated across concurrent DOCUMENT parse() calls ────
+# `run_parse` shares ONE parser instance across `workers` concurrent document threads (confirmed
+# against `realdoc_bench/evaluate/parse.py`'s `_parse_one`/`ThreadPoolExecutor`); hosted
+# (non-`local:true`) transcribers are exactly the ones with no serialized-workers override, so
+# they run with real cross-document concurrency against a single instance.
+
+def test_provider_capture_is_isolated_across_concurrent_documents(tmp_path):
+    import concurrent.futures
+    import json as _json
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    # doc_a's page is tiny (small rendered PNG); doc_b's page has a large filled rectangle (much
+    # bigger PNG). A deterministic, content-based way for a single mock server to tell the two
+    # documents' requests apart without any cross-request coordination.
+    pdf_a = tmp_path / "a.pdf"
+    doc = fitz.open()
+    doc.new_page(width=200, height=200)
+    doc.save(pdf_a)
+    pdf_b = tmp_path / "b.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=1600, height=1600)
+    page.draw_rect(fitz.Rect(0, 0, 1600, 1600), fill=(0, 0, 0))
+    doc.save(pdf_b)
+
+    # Forces both requests to be genuinely in-flight simultaneously — the highest-contention
+    # window for the shared-state mutation this test guards against — rather than relying on
+    # network timing luck to (maybe) overlap two threads.
+    barrier = threading.Barrier(2)
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = _json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            data_url = body["messages"][0]["content"][1]["image_url"]["url"]
+            b64 = data_url.split(",", 1)[1]
+            provider = "ProviderBig" if len(b64) > 20000 else "ProviderSmall"
+            barrier.wait(timeout=5)
+            resp = {"id": "1", "model": "m", "provider": provider,
+                   "choices": [{"message": {"role": "assistant", "content": "hi"}}],
+                   "usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+            data = _json.dumps(resp).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def log_message(self, *a):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{server.server_port}/v1"
+        p = OpenAICompatVisionParser(base_url=base_url, model="org/m")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+            fut_a = ex.submit(p.parse, pdf_a)
+            fut_b = ex.submit(p.parse, pdf_b)
+            result_a = fut_a.result(timeout=10)
+            result_b = fut_b.result(timeout=10)
+
+        assert result_a.raw["resolved_providers"] == ["ProviderSmall"]
+        assert result_b.raw["resolved_providers"] == ["ProviderBig"]
+    finally:
+        server.shutdown()

@@ -7,6 +7,7 @@ commands (they call `register_openai_parsers` before delegating to upstream `run
 `run_score`)."""
 from __future__ import annotations
 
+import threading
 import time
 from pathlib import Path
 
@@ -74,7 +75,20 @@ class OpenAICompatVisionParser(VisionParserBase):
         self._model = model
         self._provider_pin = provider_pin      # I2: hosted transcribers (e.g. OpenRouter) honor
                                                  # this exactly like direct.py's `_one` does
-        self._resolved_providers: set[str] = set()
+        # N1: upstream `run_parse` builds ONE `ParseProvider` instance per parser name and shares
+        # it across every document — `_parse_one` calls `pinst.parse(pdf)` directly inside a
+        # `ThreadPoolExecutor(max_workers=workers)` worker thread (confirmed against
+        # `realdoc_bench/evaluate/parse.py`), and hosted (non-local) transcribers are exactly the
+        # ones with no `_default_parse_workers` override, so they run with the real default of 8
+        # concurrent document-threads on this SAME instance. `page_concurrency=1` only serializes
+        # requests WITHIN one document's `parse()` call — it says nothing about two DIFFERENT
+        # documents' `parse()` calls running concurrently on separate threads. Plain instance
+        # state here (a bare `set()`) would let two concurrently-parsing documents stomp on each
+        # other's provider set — `threading.local()` gives every thread its own storage, and
+        # since upstream never calls `parse()` more than once at a time on a given thread, a
+        # fresh set assigned at the top of `parse()` and read back at the bottom is fully
+        # isolated from whatever a DIFFERENT thread's concurrent `parse()` call is doing.
+        self._tl = threading.local()
 
     def _call_page(self, png_bytes: bytes) -> tuple[str, int, int]:
         import base64
@@ -110,22 +124,27 @@ class OpenAICompatVisionParser(VisionParserBase):
             usage = raw.get("usage") or {}
             provider = raw.get("provider")
             if provider:
-                self._resolved_providers.add(provider)
+                # N1: `providers` only exists on THIS thread's local storage once `parse()` (below)
+                # has run on it — `_call_page` is never reachable any other way in this codebase,
+                # so a missing attribute here would indicate a real programming error, not a
+                # legitimate "nothing to record" case; let it surface rather than swallowing it.
+                self._tl.providers.add(provider)
             return ((resp.choices[0].message.content or ""),
                     usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
         raise RuntimeError("unreachable")  # loop above always returns or raises
 
     def parse(self, pdf_path: Path, *, cache_dir: Path | None = None) -> ParseResult:
-        """I2: wraps `VisionParserBase.parse` purely to surface the resolved provider(s)
+        """I2/N1: wraps `VisionParserBase.parse` purely to surface the resolved provider(s)
         collected across pages by `_call_page` — that base method's per-page loop only threads
         `(text, in_tok, out_tok)` through, with no room for a 4th field, and it's upstream code
-        this project doesn't own, so provider capture happens as an instance-level side channel
-        instead of changing that tuple shape."""
-        self._resolved_providers = set()
+        this project doesn't own, so provider capture happens as a thread-local side channel
+        (see `__init__`'s N1 comment) instead of changing that tuple shape."""
+        self._tl.providers = set()
         result = super().parse(pdf_path, cache_dir=cache_dir)
-        if self._resolved_providers:
+        providers = self._tl.providers
+        if providers:
             raw = dict(result.raw or {})
-            raw["resolved_providers"] = sorted(self._resolved_providers)
+            raw["resolved_providers"] = sorted(providers)
             result.raw = raw
         return result
 
@@ -150,10 +169,10 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
     same registered name (same entry id + same TRANSCRIBER_CONDITION hash) while pointing at
     different endpoints — e.g. a stale/fake entry registered earlier in the same process, then a
     real one under the same id later. Silently keeping the first-registered (now stale) class
-    bound to the wrong `(base_url, model, api_key_env)` would route all subsequent calls to the
-    wrong server without any error. Every class built here carries its `(base_url, model,
-    api_key_env)` binding as `_registry_binding`; a name collision with a DIFFERENT binding
-    raises `ValueError` naming both endpoints instead of reusing the stale one."""
+    bound to the wrong `(base_url, model, api_key_env, provider_pin)` would route all subsequent
+    calls to the wrong server (or the wrong upstream provider) without any error. Every class
+    built here carries its full binding as `_registry_binding`; a name collision with a DIFFERENT
+    binding raises `ValueError` naming both endpoints instead of reusing the stale one."""
     from ocr_eval_ext.config import load_registry
     from ocr_eval_ext.direct import condition_hash
 
@@ -163,15 +182,15 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
         if e.shape != "transcriber" or e.transport != "openai-compat":
             continue
         name = f"{safe_name(e.id)}__{suffix}"
-        binding = (e.base_url, e.model, e.api_key_env)
+        binding = (e.base_url, e.model, e.api_key_env, e.provider_pin)
         if name in parser_registry:
             existing_binding = getattr(parser_registry.get(name), "_registry_binding", None)
             if existing_binding is not None and existing_binding != binding:
                 raise ValueError(
                     f"parser {name!r} is already registered for a different endpoint — "
-                    f"existing binding (base_url, model, api_key_env)={existing_binding!r}, new "
-                    f"binding from registry entry {e.id!r}={binding!r}. Refusing to silently "
-                    f"reuse the stale registration.")
+                    f"existing binding (base_url, model, api_key_env, provider_pin)="
+                    f"{existing_binding!r}, new binding from registry entry {e.id!r}="
+                    f"{binding!r}. Refusing to silently reuse the stale registration.")
             names.append(name)          # idempotent re-import: same binding, safe to reuse
             continue
 
