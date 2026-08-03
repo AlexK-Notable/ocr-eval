@@ -295,7 +295,11 @@ Ollama shim limits, both verified live:
    ```
    then point a registry entry's `model:` at the derived name (see
    `qwen3-vl-8b@ollama-validation-ctx16k` in `configs/registry-local-validation.yaml`) and widen
-   `max_tokens` in the amended condition. Verified result: 55/60 answered vs 47/60 at the 4096
+   `max_tokens` in the amended condition. The clamp also bites the *Instruct* build at full-bank
+   scale — 5 pages exceed 4096 prompt tokens outright (`api_error`) and 44 dense-page cells
+   truncate mid-JSON at the wall (`parse_error`) — so full-bank local validation uses the
+   `qwen3-vl-8b-instruct@ollama-validation-ctx8k` entry (num_ctx=8192; worst observed prompt
+   ~4.2k tokens at 150 dpi). Verified result: 55/60 answered vs 47/60 at the 4096
    window, recovering 11 of 13 clamped cells; the residual 5 were runaway reasoning loops that
    consumed the full 16k window (~14k completion tokens, ~3–4 min per cell) — no finite window
    guarantees a thinking model converges, and which cells go runaway is not stable across

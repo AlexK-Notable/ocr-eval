@@ -28,6 +28,26 @@
   release_date: "2025-10-11"
   local: true
 
+# Derived model: identical Instruct Q4_K_M weights + `PARAMETER num_ctx 8192` (created
+# 2026-08-02). Ollama's default 4096 window is too small for the full bank: 5 mortgage pages
+# exceed 4096 prompt tokens outright (HTTP 400 → api_error) and 44 dense-page multi-field cells
+# get their JSON truncated at exactly total=4096 (→ parse_error). 8192 covers the worst observed
+# prompt (~4.2k) plus the full 1024 completion budget. THIS is the recommended entry for
+# full-bank local validation runs; the plain-instruct entry above suffices for small slices.
+- id: qwen3-vl-8b-instruct@ollama-validation-ctx8k
+  shape: vlm-chat
+  transport: openai-compat
+  base_url: http://localhost:11434/v1
+  model: qwen3-vl:8b-instruct-ctx8k
+  api_key_env: null
+  precision: provider-default    # actual: Q4_K_M GGUF — validation-only entry
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok    # self-hosted
+  tos_note: "self-hosted validation entry; Instruct build, num_ctx=8192 — excluded from any comparative table by policy"
+  provenance: Alibaba
+  release_date: "2025-10-11"
+  local: true
+
 - id: qwen3-vl-8b-instruct@ollama-transcriber-validation
   shape: transcriber
   transport: openai-compat

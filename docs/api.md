@@ -165,7 +165,15 @@ never appears in any config file. The standard invocation pattern is `bws run --
   runaway reasoning loops that no finite window is guaranteed to satisfy. Notably, 3 of those 5
   had answered fine under the 4096 window: at `temperature 0.0`, whether a given cell goes
   runaway is not stable across serving configs. Harness policy is unchanged: these are honest
-  `error_class: "empty"` rows with the token counts as evidence. Parsing an answer out of the
+  `error_class: "empty"` rows with the token counts as evidence. The same 4096 window also bites
+  the *Instruct* build at full-bank scale, in two further costumes (quantified on the complete
+  1,356-cell run, 2026-08-02): 5 mortgage pages exceed 4096 prompt tokens outright (HTTP 400 →
+  `api_error`), and 44 dense-page multi-field cells get their JSON truncated at exactly
+  `total_tokens = 4096` (→ `parse_error`, none of them at the 1024 completion cap). Full-bank
+  local validation therefore needs `num_ctx=8192` (the `...-ctx8k` registry entry); observed
+  prompt maximum is ~4.2k tokens at 150 dpi, and observed clean completions max out at 338
+  tokens (p99 = 126), so `STAGE1_CONDITION`'s 1024 completion cap has ~3× headroom and needs no
+  change for hosted providers, which serve the model's full context. Parsing an answer out of the
   reasoning channel would be a semantic change (scoring thinking output) and is deliberately not
   done in Stage 1; if Stage 2 adds a reasoning-fallback, it must be a distinct `output_contract`
   condition value, never a silent widening.
