@@ -102,3 +102,20 @@ def test_registry_yaml_parses_and_satisfies_dod_categories():
     # `contaminated` property coverage: one flagged (post-cutoff), one not (pre-cutoff).
     assert get_entry(entries, "mistral-ocr@mistral").contaminated is True
     assert get_entry(entries, "qwen3-vl-8b@openrouter").contaminated is False
+
+
+def test_docstrange_entry_points_at_the_registered_parser_and_declares_raster_input():
+    """The DocStrange row is an upstream-parser entry whose adapter rasterizes. Both halves are
+    load-bearing: `upstream_parser` is the EXACT string the report resolves rows by, and
+    `input_mode` is what keeps it out of the pdf-direct free-ride caveat."""
+    from realdoc_bench.evaluate.parsers.base import registry as parser_registry
+
+    entries = load_registry(Path(__file__).parent.parent / "configs" / "registry.yaml")
+    e = get_entry(entries, "docstrange@nanonets")
+
+    assert e.shape == "transcriber"
+    assert e.transport == "upstream-parser"
+    assert e.upstream_parser in parser_registry
+    assert e.input_mode == "raster-png"
+    assert e.api_key_env == "DOCSTRANGE_API_KEY"
+    assert e.contaminated is False       # 2025-07-31 public availability, pre-cutoff

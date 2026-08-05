@@ -66,6 +66,7 @@ uv run ocr-eval report --run-dir runs/stage1 \
 | Hosted `vlm-chat` candidates (OpenRouter Qwen3-VL/Qwen3.5) | Implemented; needs `OPENROUTER_API_KEY`, unrun |
 | Gemini extractor validation gate + scoring leg | Implemented; needs `GEMINI_API_KEY`, unrun |
 | Hosted transcriber (Mistral OCR 4) | Implemented; needs `MISTRAL_API_KEY`, unrun |
+| Hosted transcriber (Nanonets DocStrange) | Implemented, single-page live smoke passed; full corpus unrun — needs `DOCSTRANGE_API_KEY`, $0.01/page (581 pages ≈ $5.81), ~55 s/page |
 | Local vLLM specialists (GLM-OCR, dots.ocr) | Implemented ([local-serving.md](docs/local-serving.md)); unrun |
 | Reproduction gate (DoD #2) | Implemented; needs a scored transcriber row to evaluate |
 | Stage 2 (conditions, classical engines) / Stage 3 (CheckboxQA, HITL) | Not started — see [roadmap](docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md) |

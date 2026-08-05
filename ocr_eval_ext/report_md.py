@@ -161,6 +161,22 @@ def _resolve_entry(parser_key: str, entries: list[RegistryEntry]) -> RegistryEnt
     return None
 
 
+def _input_label(entry: RegistryEntry | None) -> str:
+    """What Section B's `input` column says the provider actually received.
+
+    An explicit `input_mode` on the entry wins. Otherwise fall back to the historical transport
+    proxy (openai-compat -> raster-png, else pdf-direct), which is only ever a proxy: transport
+    says how we talk to a provider, not what we hand it. An upstream-parser adapter that
+    rasterizes (docstrange@nanonets) is raster-png despite the transport, and calling it
+    pdf-direct would attach the embedded-text-layer free-ride caveat to a row that cannot
+    free-ride on one."""
+    if entry is None:
+        return "unknown (unregistered)"
+    if entry.input_mode is not None:
+        return entry.input_mode
+    return "raster-png" if entry.transport == "openai-compat" else "pdf-direct"
+
+
 def _row_label(pk: str, entry: RegistryEntry | None) -> str:
     return entry.id if entry is not None else f"{pk} (unregistered)"
 
@@ -800,12 +816,7 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
                                        iters=iters, seed=seed, alpha=alpha)
         lat, cost = _transcription_cost_latency(layout, g.entry, pk)
         recall = _transcript_recall(layout, pk, checkbox_items)
-        if g.entry is None:
-            input_label = "unknown (unregistered)"
-        elif g.entry.transport == "openai-compat":
-            input_label = "raster-png"
-        else:
-            input_label = "pdf-direct"
+        input_label = _input_label(g.entry)
         same_family = g.entry is not None and g.entry.provenance.strip().lower() == EXTRACTOR_FAMILY_PROVENANCE
         section_b_data[pk] = {
             "metrics": metrics, "latency": lat, "cost": cost, "recall": recall,

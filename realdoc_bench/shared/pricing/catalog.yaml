@@ -23,6 +23,9 @@ llamaparse:                         {unit: page,   usd: 0.0125}
 llamaparse_cost_effective:          {unit: page,   usd: 0.00375}
 # Mistral OCR 4 API: $4 / 1,000 pages.
 mistral_ocr_4:                      {unit: page,   usd: 0.004}
+# Nanonets DocStrange cloud API: $1 = 100 credits, 1 credit = 1 page -> $0.01/page.
+# Metered against the API's own `pages_processed`, not our rendered page count.
+docstrange_sync:                    {unit: page,   usd: 0.010}
 
 # ── VLMs invoked as parse providers (token billing) ─────────────────────────
 # Gemini 3.5 Flash standard pay-as-you-go: $1.50 / 1M input, $9.00 / 1M output.

@@ -32,6 +32,13 @@ class RegistryEntry(BaseModel):
     local: bool = False
     promptable: bool = True
     pricing: dict | None = None
+    input_mode: Literal["raster-png", "pdf-direct"] | None = None
+    # What the provider actually receives, for the report's `input` column. `None` keeps the
+    # historical inference (openai-compat -> raster-png, anything else -> pdf-direct), which was
+    # only ever a proxy: transport says how we talk to a provider, not what we hand it. An
+    # upstream-parser entry whose adapter rasterizes (docstrange@nanonets) is raster-png despite
+    # the transport, and inferring "pdf-direct" for it would attach the embedded-text-layer
+    # free-ride caveat to a row that cannot free-ride. Set it explicitly to override.
 
     @model_validator(mode="after")
     def _check_transport_fields(self) -> RegistryEntry:

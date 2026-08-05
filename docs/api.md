@@ -117,6 +117,56 @@ should be at most 4).
   `transport: upstream-parser` Gemini transcriber entry (`gemini-3.5-flash@google`) that goes
   through upstream's native Gemini adapter instead.
 
+- **Nanonets DocStrange** (`docstrange@nanonets`, parser `docstrange_sync`) posts one rendered
+  150-dpi PNG per page to `POST /api/v1/extract/sync` on `https://extraction-api.nanonets.com`
+  with `output_format=markdown`, Bearer-authed from `DOCSTRANGE_API_KEY`. Notes:
+  - **Raster-only despite accepting PDFs.** The endpoint would take a PDF upload; the adapter
+    never sends one (D5). This is why the entry declares `input_mode: raster-png` — without it
+    the report would infer `pdf-direct` from `transport: upstream-parser` and hang the
+    embedded-text-layer caveat on a row that only ever sees a PNG.
+  - **Page-billed.** `$1 = 100 credits`, `1 credit = 1 page` → `$0.010/page` in `catalog.yaml`;
+    the 581-page corpus is $5.81 at list. Cost is metered from pages *billed*, not pages
+    rendered, so a billing surprise lands in the artifact instead of being papered over — but
+    see the next bullet for how reliable that number is. Set `DOCSTRANGE_MAX_PAGES=<n>` to
+    refuse further billable calls once `n` pages have been billed in the process (unset = no
+    cap); already-written transcripts are cached and are never re-billed on resume.
+  - **Two live deviations from the published OpenAPI schema** (verified 2026-08-04, both handled
+    by the adapter — do not "fix" them back toward the schema without re-checking):
+    1. `result.markdown` is an **object** `{"content": "<markdown>", "metadata": {...}}`, not the
+       bare string the schema documents. Both shapes are accepted; a 200 carrying neither raises
+       rather than writing an empty transcript.
+    2. `pages_processed` comes back **null on the sync response**, even though the same record
+       fetched from `GET /api/v1/extract/results/{record_id}` carries `1`. When the API declines
+       to say, the adapter bills one page per request and records
+       `billed_pages_source: "assumed-1-per-request"` in the parse metadata, so a spend audit
+       never has to guess which number it is reading.
+  - **~55 s per page** end-to-end on a real corpus page (52.9 s measured, `processing_time`
+    59.9 s on another). That sets the wall-clock: 581 pages is ~9 h strictly sequential, or
+    roughly an hour at the default `--workers 8` cross-document concurrency. There is no
+    documented concurrency cap; start conservative and watch for 429s.
+  - **A 429 whose body reads as exhausted credits fails immediately** rather than being retried
+    as rate limiting — otherwise the run burns four attempts per page and buries the real reason
+    it stopped. Transient 408/429/5xx and connection errors retry with backoff (`Retry-After`
+    honoured, clamped to 60 s); 4xx other than 408/429 fail the document at once.
+  - **Stock prompt, by choice.** The endpoint accepts `custom_instructions` (+ `prompt_mode`),
+    but the Stage 1 parser sends none, measuring the service as a deployer would get it. That
+    means the row does **not** carry the pinned `_MARKDOWN_PROMPT` contract, which is what
+    `promptable: false` communicates in this row's report stamp. A contract-prompted variant is
+    a subclass setting `custom_instructions` (folded into `config_hash()`, so the two never share
+    a cache identity).
+  - **Why this provider is interesting:** Nanonets' OCR model prompt is the only surveyed one
+    that explicitly asks for checkbox glyphs ("Prefer using ☐ and ☑ for check boxes", from the
+    `docstrange` SDK's `pipeline/nanonets_processor.py`), and Stage 1's bank is checkbox-heavy.
+    That evidence is from the SDK's **local** pipeline and the hosted endpoint's checkpoint is
+    undisclosed — but a live smoke transcript of `finance_1` did emit `☑`, so the behaviour
+    carries over to the hosted service on at least one real corpus page. Same transcript:
+    tables rendered as embedded **HTML** (`<table>`, including `rowspan`), blank form fields as
+    runs of underscores, and a `<header>` pseudo-tag. The underscore convention is worth
+    watching — the pinned contract asks for `**<label>:** <blank>` on empty fields, and a
+    stock-prompt row does not follow it.
+  - The pip `docstrange` SDK is **not** used and is not a guide to this endpoint: it still calls
+    a legacy `/extract` route with `output_type` rather than v1's `output_format`.
+
 ## The Gemini extractor dependency
 
 `gemini-3-flash-preview` (`realdoc_bench/evaluate/score.py`'s `DEFAULT_MODEL`) is required in two
@@ -135,7 +185,8 @@ exposed in a prior session transcript.
 ## Keys
 
 Environment-only. Every registry entry with a key requirement names the variable via
-`api_key_env` (e.g. `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`); the value itself
+`api_key_env` (e.g. `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
+`DOCSTRANGE_API_KEY`); the value itself
 never appears in any config file. The standard invocation pattern is `bws run --project-id <id> --
 <cmd>` (Bitwarden Secrets Manager injection — see the runbook's prerequisites). Upstream's
 `.env`/`.env.local` loading is disabled by default and only re-enabled by setting

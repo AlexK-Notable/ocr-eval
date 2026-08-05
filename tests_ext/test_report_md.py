@@ -33,6 +33,7 @@ from ocr_eval_ext.report_md import (
     _beats_majority,
     _direct_cost_latency,
     _general_and_strict,
+    _input_label,
     _mixed_precision_note,
     _pairwise_separability,
     _section_mixed_precision_note,
@@ -878,6 +879,38 @@ def test_stamp_columns_renders_not_promptable_contract():
 
 def test_stamp_columns_unregistered_includes_contract_as_unknown():
     assert "contract: unknown (unregistered)" in _stamp_columns(None)
+
+
+# ── Section B `input` column: explicit input_mode overrides the transport proxy ──────────────
+
+def _transcriber_entry(**overrides) -> RegistryEntry:
+    base = dict(id="inputX@test", shape="transcriber", transport="upstream-parser",
+                upstream_parser="input_x", precision="provider-default", weights_licence="closed",
+                provider_tos_commercial="ok", provenance="Test", release_date="2025-01-01")
+    base.update(overrides)
+    return RegistryEntry(**base)
+
+
+def test_input_label_defaults_to_transport_proxy():
+    """Unchanged behaviour for every pre-existing entry: openai-compat reads raster-png,
+    anything else reads pdf-direct."""
+    assert _input_label(_stamp_entry()) == "raster-png"
+    assert _input_label(_transcriber_entry()) == "pdf-direct"
+
+
+def test_input_label_honours_explicit_raster_png_on_an_upstream_parser_entry():
+    """docstrange@nanonets is an upstream-parser entry whose adapter rasterizes. Inheriting the
+    transport proxy would label it pdf-direct and hang the embedded-text-layer free-ride caveat
+    on a row that only ever sees a PNG."""
+    assert _input_label(_transcriber_entry(input_mode="raster-png")) == "raster-png"
+
+
+def test_input_label_honours_explicit_pdf_direct_on_an_openai_compat_entry():
+    assert _input_label(_stamp_entry(input_mode="pdf-direct")) == "pdf-direct"
+
+
+def test_input_label_unregistered_entry():
+    assert _input_label(None) == "unknown (unregistered)"
 
 
 def test_tos_stamp_renders_note_for_ok_entries_too():

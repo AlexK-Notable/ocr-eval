@@ -161,6 +161,57 @@
                                         # seed's implicit assumption. Flag this prominently in the
                                         # Stage 1 report.
 
+- id: docstrange@nanonets
+  shape: transcriber
+  transport: upstream-parser
+  upstream_parser: docstrange_sync        # realdoc_bench/evaluate/parsers/docstrange.py
+  input_mode: raster-png                  # D5: this fork's own adapter, so raster-only is
+                                          # binding — we send the 150-dpi PNG even though the
+                                          # endpoint would accept a PDF. NOT a pdf-direct row;
+                                          # the text-layer free-ride caveat does not apply.
+  promptable: false                       # The endpoint DOES accept `custom_instructions`
+                                          # (+ prompt_mode append/replace) — but Stage 1 runs it
+                                          # STOCK, sending none, to measure the service as a
+                                          # deployer would get it. So this row does not carry the
+                                          # pinned `_MARKDOWN_PROMPT` transcription contract,
+                                          # which is what the report's `contract:` stamp exists
+                                          # to tell the reader. Register a subclass with
+                                          # `custom_instructions` set (it is folded into
+                                          # config_hash) if strict prompt parity is wanted later.
+  api_key_env: DOCSTRANGE_API_KEY
+  precision: provider-default             # hosted; served checkpoint undisclosed per request
+                                          # No `pricing:` block — that field is the token-rate
+                                          # schema the vlm-chat dry-run reads. Page-billed
+                                          # transcribers price from catalog.yaml's
+                                          # `docstrange_sync` ($0.010/page; $1 = 100 credits,
+                                          # 1 credit = 1 page). 581-page corpus -> $5.81 at list.
+  weights_licence: closed                 # the HOSTED endpoint does not disclose which checkpoint
+                                          # serves a request. Nanonets does publish open OCR
+                                          # weights (nanonets/Nanonets-OCR-s, createdAt
+                                          # 2025-06-10; nanonets/Nanonets-OCR2-3B, createdAt
+                                          # 2025-10-13 — both verified via HF API 2026-08-04) and
+                                          # the docstrange SDK's local path pulls Nanonets-OCR-s,
+                                          # but that is the LOCAL pipeline, not this endpoint.
+                                          # Treat as closed until the service documents otherwise.
+  provider_tos_commercial: ok
+  tos_note: >-
+    NOT zero-retention: nanonets.com/terms 6.6 reserves the right to retain Customer Data up to
+    30 days post-termination (contrast mistral-ocr's contractual zero-retention). No commercial-
+    use bar found; 4.1(iii) bars resale/third-party access to the Services, which benchmarking
+    for our own account is not. Read 2026-08-04; NOT part of the gate3 provider survey, so this
+    is a first-pass reading of the master terms, not a surveyed finding.
+  provenance: Nanonets
+  release_date: "2025-07-31"              # PyPI first release of `docstrange` 1.0.0 (verified via
+                                          # pypi.org/pypi/docstrange/json, 2026-08-04) — the
+                                          # earliest public availability we can evidence for this
+                                          # service. Pre-CONTAMINATION_CUTOFF, so NOT flagged.
+                                          # CAVEAT: this is a hosted, continuously-updatable
+                                          # endpoint with an undisclosed checkpoint — the clean
+                                          # flag is a FLOOR on provenance, not a guarantee that
+                                          # what serves us today predates the dataset. Do not
+                                          # read this row's "contaminated: no" as strongly as a
+                                          # pinned open-weights row's.
+
 - id: glm-ocr@local-vllm
   shape: transcriber
   transport: openai-compat
