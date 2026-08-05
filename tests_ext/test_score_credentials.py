@@ -57,6 +57,38 @@ def test_key_is_sent_as_header_not_url_param():
     assert CANARY not in seen["url"], "key must not appear anywhere in the URL"
 
 
+def test_error_message_includes_response_body_but_never_the_key():
+    """A 400 from Google carries its reason in the BODY; httpx's own message has only the status
+    and URL. Without the body, a revoked key, an unknown model id, and a malformed request are the
+    same undiagnosable `400 Bad Request` — encountered for real on a `:generateContent` 400.
+
+    The body must be surfaced AND the key must still stay out of the message.
+    """
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": {
+            "code": 400, "status": "INVALID_ARGUMENT",
+            "message": "models/some-model is not found for API version v1beta",
+        }})
+
+    with pytest.raises(httpx.HTTPStatusError) as ei:
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    msg = str(ei.value)
+    assert "response body:" in msg
+    assert "INVALID_ARGUMENT" in msg
+    assert "is not found for API version" in msg    # the actionable part
+    assert CANARY not in msg                         # ...without regressing the leak fix
+
+
+def test_error_body_enrichment_is_truncated():
+    """A provider that returns an HTML error page must not flood the log/traceback."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, text="X" * 50_000)
+
+    with pytest.raises(httpx.HTTPStatusError) as ei:
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    assert len(str(ei.value)) < 2_000
+
+
 def test_key_absent_from_http_error_message():
     """The exact leak that occurred: httpx puts the request URL in HTTPStatusError, so a key in the
     URL ends up in tracebacks, logs, and session transcripts."""

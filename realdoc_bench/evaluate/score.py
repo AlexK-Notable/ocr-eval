@@ -253,6 +253,26 @@ def _extract_retry_wait(resp: httpx.Response | None, attempt: int) -> float:
     return max(0.0, min(_EXTRACT_MAX_WAIT_SEC, wait))
 
 
+def _status_error_with_body(e: httpx.HTTPStatusError) -> httpx.HTTPStatusError:
+    """Re-wrap an `HTTPStatusError` so its message includes the response body.
+
+    Google puts the machine-readable reason in the body (`error.message`/`error.status`), while
+    httpx's message has only the status line and URL. Without this, a revoked key, an unknown model
+    id, and a malformed request are indistinguishable `400 Bad Request` tracebacks.
+
+    Safe to surface: the key travels in a header, never the URL, and Google does not echo the key
+    back in the error body. Truncated so a large HTML error page cannot flood a log.
+    """
+    try:
+        detail = e.response.text[:800]
+    except Exception:                      # response not readable (streamed/closed) — keep original
+        return e
+    if not detail:
+        return e
+    return httpx.HTTPStatusError(f"{e}\nresponse body: {detail}",
+                                 request=e.request, response=e.response)
+
+
 def _post_with_retry(c: httpx.Client, url: str, body: dict, headers: dict) -> dict:
     """POST with bounded retry on 408/429/5xx and connection-level failures.
 
@@ -260,6 +280,12 @@ def _post_with_retry(c: httpx.Client, url: str, body: dict, headers: dict) -> di
     still fail the run (the gate is fail-closed by design), just not on the first transient blip.
     `httpx.HTTPStatusError` messages are safe to propagate now that the key travels in a header
     rather than the URL.
+
+    The raised message is ENRICHED WITH THE RESPONSE BODY (`_status_error_with_body`). httpx's own
+    message carries only the status and URL, but Google returns the actual reason in the body — a
+    revoked key, an unknown model id, and a malformed request are all bare `400 Bad Request`
+    otherwise, which makes a real failure undiagnosable from the traceback alone. Encountered for
+    real: a 400 on `:generateContent` whose cause was invisible until the body was read.
     """
     last_exc: Exception | None = None
     for attempt in range(_EXTRACT_MAX_ATTEMPTS):
@@ -271,7 +297,7 @@ def _post_with_retry(c: httpx.Client, url: str, body: dict, headers: dict) -> di
             code = e.response.status_code
             retryable = code in (408, 429) or 500 <= code < 600
             if not retryable or attempt == _EXTRACT_MAX_ATTEMPTS - 1:
-                raise
+                raise _status_error_with_body(e) from e
             last_exc = e
             time.sleep(_extract_retry_wait(e.response, attempt))
         except (httpx.TransportError, httpx.StreamError) as e:
