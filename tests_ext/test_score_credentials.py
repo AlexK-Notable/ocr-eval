@@ -57,6 +57,80 @@ def test_key_is_sent_as_header_not_url_param():
     assert CANARY not in seen["url"], "key must not appear anywhere in the URL"
 
 
+def _api_key_invalid_body() -> dict:
+    """Google's real 400 shape for a bad key — captured live 2026-08-05 by sending a UUID."""
+    return {"error": {
+        "code": 400, "message": "API key not valid. Please pass a valid API key.",
+        "status": "INVALID_ARGUMENT",
+        "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                     "reason": "API_KEY_INVALID", "domain": "googleapis.com"}],
+    }}
+
+
+def test_invalid_key_raises_actionable_credential_error():
+    """A pasted-UUID-instead-of-a-key arrives as HTTP 400 INVALID_ARGUMENT, which reads as "our
+    request was malformed" and sends the reader looking in entirely the wrong place. It cost a real
+    debugging cycle, so the reason is surfaced as a named error with the fix in the message.
+
+    `RuntimeError` subclass on purpose: the gate's callers already treat RuntimeError as a
+    configuration fault, so this routes to the existing fail-closed path."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json=_api_key_invalid_body())
+
+    with pytest.raises(score.ExtractorCredentialError) as ei:
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    msg = str(ei.value)
+    assert isinstance(ei.value, RuntimeError)        # routes to the existing fail-closed path
+    assert "API_KEY_INVALID" in msg
+    assert "GEMINI_API_KEY" in msg                    # names the variable actually in use
+    assert "403" in msg                               # the missing-vs-invalid asymmetry
+    assert CANARY not in msg                          # never leak the rejected value itself
+
+
+def test_invalid_key_is_not_retried():
+    """Retrying a rejected credential is pure waste — and at 1,356 questions per transcriber it is
+    very slow waste. A credential 400 must cost exactly one attempt."""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(400, json=_api_key_invalid_body())
+
+    with pytest.raises(score.ExtractorCredentialError):
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    assert calls["n"] == 1
+
+
+def test_non_credential_400_is_not_misreported_as_a_key_problem():
+    """The complement, and the guard against over-reach: an unknown-model or malformed-request 400
+    must NOT be dressed up as a credential failure. Only `error.details[].reason` decides."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": {
+            "code": 400, "status": "INVALID_ARGUMENT",
+            "message": "Unknown name \"maxOutputTokens\": Cannot find field.",
+        }})
+
+    with pytest.raises(httpx.HTTPStatusError) as ei:
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    assert not isinstance(ei.value, score.ExtractorCredentialError)
+    assert "Cannot find field" in str(ei.value)       # body still surfaced
+
+
+def test_missing_key_403_is_not_relabelled_as_invalid():
+    """A 403 (no identity established) is a different failure from a 400 (key sent but rejected).
+    Verified live: no key header -> 403 PERMISSION_DENIED, with no ErrorInfo reason at all."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403, json={"error": {
+            "code": 403, "status": "PERMISSION_DENIED",
+            "message": "Method doesn't allow unregistered callers",
+        }})
+
+    with pytest.raises(httpx.HTTPStatusError) as ei:
+        score.gemini_extract("q?", '{"a": <boolean>}', "md", client=_client(handler))
+    assert not isinstance(ei.value, score.ExtractorCredentialError)
+    assert "unregistered callers" in str(ei.value)
+
+
 def test_error_message_includes_response_body_but_never_the_key():
     """A 400 from Google carries its reason in the BODY; httpx's own message has only the status
     and URL. Without the body, a revoked key, an unknown model id, and a malformed request are the

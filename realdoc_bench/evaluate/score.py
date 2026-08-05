@@ -253,16 +253,72 @@ def _extract_retry_wait(resp: httpx.Response | None, attempt: int) -> float:
     return max(0.0, min(_EXTRACT_MAX_WAIT_SEC, wait))
 
 
-def _status_error_with_body(e: httpx.HTTPStatusError) -> httpx.HTTPStatusError:
+def _google_error_reason(resp: httpx.Response) -> str | None:
+    """Google's machine-readable `error.details[].reason` (e.g. `API_KEY_INVALID`), or None.
+
+    Distinct from `error.status` (`INVALID_ARGUMENT`), which is far too coarse to act on — the same
+    status covers a bad key, a malformed body, and an out-of-range parameter."""
+    try:
+        err = resp.json().get("error") or {}
+    except (ValueError, TypeError):
+        return None
+    for d in err.get("details") or []:
+        if isinstance(d, dict) and d.get("reason"):
+            return str(d["reason"])
+    return None
+
+
+# Google returns these as HTTP 400, NOT 401/403 — an INVALID key is a malformed *argument* to the
+# API, whereas a MISSING key never establishes an identity and yields 403 instead. Verified live
+# 2026-08-05: no key header -> 403 PERMISSION_DENIED; a UUID pasted in place of a key -> 400
+# INVALID_ARGUMENT with reason=API_KEY_INVALID. Worth naming explicitly because that asymmetry
+# already caused one wrong diagnosis (a 400 was read as "the key authenticated, so the request
+# shape must be at fault" — it had not authenticated at all).
+_CREDENTIAL_REASONS = {
+    "API_KEY_INVALID",           # malformed/not-a-key value (the pasted-UUID case)
+    "API_KEY_SERVICE_BLOCKED",   # key exists but this API is not enabled for it
+    "API_KEY_HTTP_REFERRER_BLOCKED",
+    "API_KEY_IP_ADDRESS_BLOCKED",
+    "API_KEY_ANDROID_APP_BLOCKED",
+    "API_KEY_IOS_APP_BLOCKED",
+    "ACCESS_TOKEN_EXPIRED",
+    "CREDENTIALS_MISSING",
+}
+
+
+class ExtractorCredentialError(RuntimeError):
+    """The extractor rejected the credential itself — not a transient blip, not a bad request.
+
+    A `RuntimeError` subclass on purpose: `gemini_extract`'s callers (`selftest.run_extractor`,
+    `cli.require_extractor_gate`) already expect `RuntimeError` for configuration faults, so this
+    routes to the existing fail-closed path instead of surfacing as a raw httpx traceback."""
+
+
+def _status_error_with_body(e: httpx.HTTPStatusError) -> Exception:
     """Re-wrap an `HTTPStatusError` so its message includes the response body.
 
     Google puts the machine-readable reason in the body (`error.message`/`error.status`), while
     httpx's message has only the status line and URL. Without this, a revoked key, an unknown model
     id, and a malformed request are indistinguishable `400 Bad Request` tracebacks.
 
+    A credential rejection is additionally converted to `ExtractorCredentialError` with an
+    actionable message, because "400 Bad Request" reads as *our* request being malformed and sends
+    the reader looking in the wrong place entirely (observed: it cost one debugging cycle and one
+    wrong conclusion). The underlying response stays reachable via `__cause__` for anything that
+    wants the raw detail.
+
     Safe to surface: the key travels in a header, never the URL, and Google does not echo the key
     back in the error body. Truncated so a large HTML error page cannot flood a log.
     """
+    reason = _google_error_reason(e.response)
+    if reason in _CREDENTIAL_REASONS:
+        var = "GEMINI_API_KEY" if os.environ.get("GEMINI_API_KEY") else "GOOGLE_API_KEY"
+        return ExtractorCredentialError(
+            f"extractor rejected the API key ({reason}, HTTP {e.response.status_code}). "
+            f"The value in ${var} is present but not accepted by Google — check you copied the key "
+            f"itself and not, say, a project id or UUID. "
+            f"NB a MISSING key returns 403 instead, so a 400 here still means a key was sent. "
+            f"Verify with: uv run python scripts/probe_gemini_extractor.py")
     try:
         detail = e.response.text[:800]
     except Exception:                      # response not readable (streamed/closed) — keep original
