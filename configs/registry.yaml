@@ -63,6 +63,17 @@
   pricing: {input_per_mtok: 0.100, output_per_mtok: 0.150}     # verified live 2026-08-02 via
                                         # GET openrouter.ai/api/v1/models/qwen/qwen3.5-9b/endpoints,
                                         # DeepInfra/bf16 endpoint (the pinned provider above)
+  reasoning: {max_tokens: 4096}          # THINKING MODEL. Caps reasoning at 4k inside the
+                                          # condition's 16k completion budget, leaving 12k for the
+                                          # answer. Uncapped, thinking consumed the whole
+                                          # allowance and returned empty content — measured
+                                          # 2026-08-04: ~15% of this entry's first 153 direct
+                                          # cells came back error_class "empty", and its
+                                          # transcriber smoke produced a 9-byte transcript on a
+                                          # dense page. Verified via the OpenRouter models API
+                                          # that this is the only Qwen entry advertising
+                                          # reasoning/include_reasoning; do not copy this field
+                                          # onto the -instruct entries, which would risk a 400.
   weights_licence: apache-2.0          # verified via HF Qwen/Qwen3.5-9B license tag
   provider_tos_commercial: ok
   tos_note: >-
@@ -143,6 +154,17 @@
   provider_pin: {order: ["DeepInfra"], allow_fallbacks: false}   # ToS grounds — see the
                                         # qwen3.5-9b@openrouter entry above for the full rationale
   pricing: {input_per_mtok: 0.100, output_per_mtok: 0.150}
+  reasoning: {max_tokens: 4096}          # THINKING MODEL. Caps reasoning at 4k inside the
+                                          # condition's 16k completion budget, leaving 12k for the
+                                          # answer. Uncapped, thinking consumed the whole
+                                          # allowance and returned empty content — measured
+                                          # 2026-08-04: ~15% of this entry's first 153 direct
+                                          # cells came back error_class "empty", and its
+                                          # transcriber smoke produced a 9-byte transcript on a
+                                          # dense page. Verified via the OpenRouter models API
+                                          # that this is the only Qwen entry advertising
+                                          # reasoning/include_reasoning; do not copy this field
+                                          # onto the -instruct entries, which would risk a 400.
   weights_licence: apache-2.0
   provider_tos_commercial: ok
   tos_note: >-

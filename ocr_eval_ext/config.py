@@ -29,6 +29,15 @@ class RegistryEntry(BaseModel):
     provenance: str
     release_date: str
     provider_pin: dict | None = None
+    reasoning: dict | None = None
+    # Per-entry reasoning control, passed through to the provider in `extra_body` exactly like
+    # `provider_pin` — and, like it, NOT folded into the condition hash, because it describes the
+    # endpoint binding rather than the experimental condition. OpenRouter shape:
+    # `{max_tokens: 4096}` caps thinking, `{enabled: false}` disables it. Only set it on entries
+    # whose provider advertises `reasoning`/`include_reasoning` in supported_parameters; sending
+    # it to a model that does not support it risks a 400. Exists because a thinking model with an
+    # uncapped reasoning budget spends the whole completion allowance before writing an answer
+    # and returns empty content.
     local: bool = False
     promptable: bool = True
     pricing: dict | None = None

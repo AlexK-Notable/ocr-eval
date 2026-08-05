@@ -63,6 +63,7 @@ from ocr_eval_ext.parsers_openai import safe_name
 from ocr_eval_ext.preconditions import BLANK_TAGS, CHECKBOX_TAGS, boolean_fields, items_with_tags, null_fields
 from ocr_eval_ext.stats import cluster_bootstrap_ci, paired_delta_ci, separable
 from realdoc_bench.evaluate.runs import RunLayout
+from realdoc_bench.evaluate.score import DEFAULT_MODEL as _EXTRACTOR_MODEL
 
 # Never call separable()/paired_delta_ci below this many distinct docs feeding the comparison —
 # ruling carried from Task 5's stats.py review (a handful of clustered docs makes "separable"
@@ -73,7 +74,7 @@ MIN_CLUSTER_DOCS = 20
 # from D3 STALE-RENDER — this is about WHEN cells were collected, not whether the page changed).
 STALENESS_SPAN = dt.timedelta(days=7)
 
-# The extractor (score.py's DEFAULT_MODEL, "gemini-3-flash-preview") is a Google model — a
+# The extractor (score.py's DEFAULT_MODEL, imported below as _EXTRACTOR_MODEL) is a Google model — a
 # transcriber whose OWN provenance is also Google is judged by a same-family extractor.
 EXTRACTOR_FAMILY_PROVENANCE = "google"
 
@@ -700,7 +701,7 @@ CROSS_SHAPE_WARNING = (
     "**Cross-shape comparability warning:** Section A (`vlm-chat`) rows answer the question "
     "directly from the rendered page image in one model call. Section B "
     "(transcribe-then-extract) rows first transcribe the page to markdown, then a SEPARATE "
-    "`gemini-3-flash-preview` extractor call answers the question from that markdown. A Section "
+    f"`{_EXTRACTOR_MODEL}` extractor call answers the question from that markdown. A Section "
     "B score reflects BOTH stages at once — a low score can come from a bad transcription OR a "
     "bad extraction — so a Section A and a Section B number for the \"same\" underlying model "
     "are not directly comparable rankings. Use the direct-vs-two-stage calibration pair (below, "

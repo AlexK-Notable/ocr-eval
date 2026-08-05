@@ -881,6 +881,19 @@ def test_stamp_columns_unregistered_includes_contract_as_unknown():
     assert "contract: unknown (unregistered)" in _stamp_columns(None)
 
 
+# ── the cross-shape warning must name the LIVE extractor, not a stale literal ─────────────────
+# Regression guard: D11 moved score.py's DEFAULT_MODEL and this warning kept naming the old
+# model, so one report contradicted itself — line 49 said gemini-3-flash-preview while the
+# Section B header said gemini-3.1-flash-lite.
+
+def test_cross_shape_warning_names_the_live_extractor_model():
+    from realdoc_bench.evaluate.score import DEFAULT_MODEL
+
+    from ocr_eval_ext.report_md import CROSS_SHAPE_WARNING
+
+    assert f"`{DEFAULT_MODEL}`" in CROSS_SHAPE_WARNING
+
+
 # ── Section B `input` column: explicit input_mode overrides the transport proxy ──────────────
 
 def _transcriber_entry(**overrides) -> RegistryEntry:

@@ -64,6 +64,36 @@ def entry(base_url: str) -> RegistryEntry:
     )
 
 
+# ── reasoning cap reaches the wire on the direct leg too ───────────────────────────────────────
+# The 2026-08-04 finding was not transcriber-only: uncapped thinking made ~15% of qwen3.5-9b's
+# direct cells come back error_class "empty" against 3 parse_errors across qwen3-vl-8b's full
+# 1,356. The vlm-chat path needs the same guard as the transcriber path.
+
+def test_run_direct_sends_reasoning_cap_when_entry_sets_one(tmp_path):
+    layout = make_run_dir(tmp_path)
+    e = entry("placeholder")
+    with MockOpenAI(reply_text='{"a": true}') as mock:
+        e = e.model_copy(update={"base_url": mock.base_url,
+                                 "reasoning": {"max_tokens": 4096}})
+        run_direct(layout, [e])
+    assert mock.requests[0]["reasoning"] == {"max_tokens": 4096}
+
+
+def test_run_direct_omits_reasoning_when_entry_sets_none(tmp_path):
+    """Endpoints that do not advertise reasoning must never receive the field — it risks a 400."""
+    layout = make_run_dir(tmp_path)
+    with MockOpenAI(reply_text='{"a": true}') as mock:
+        run_direct(layout, [entry(mock.base_url)])
+    assert "reasoning" not in mock.requests[0]
+
+
+def test_stage1_condition_completion_budget_is_pinned():
+    """Guards the budget against silent drift. 1024 -> 32768 on 2026-08-04 because a thinking
+    model spends the allowance before writing an answer; raising it costs nothing for
+    non-thinking models, since max_tokens is a cap rather than a target."""
+    assert STAGE1_CONDITION["sampling"]["max_tokens"] == 32768
+
+
 def test_condition_hash_stable_and_order_free():
     a = condition_hash({"x": 1, "y": {"z": 2}})
     b = condition_hash({"y": {"z": 2}, "x": 1})

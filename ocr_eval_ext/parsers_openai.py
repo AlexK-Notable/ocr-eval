@@ -19,7 +19,7 @@ from realdoc_bench.evaluate.parsers.cloud_vlm import _MARKDOWN_PROMPT
 
 # The condition every openai-compat transcriber is scored under in Stage 1 — raw preprocessing,
 # pymupdf@150dpi renders (the same render leg as direct.py's STAGE1_CONDITION), temperature 0,
-# 4096-token completion budget (C1 — see OpenAICompatVisionParser.max_tokens below), single
+# 32768-token completion budget (C1 — see OpenAICompatVisionParser.max_tokens below), single
 # sample. Folded into the registered parser NAME itself (see `register_openai_parsers` below),
 # not just recorded as metadata: Stage 2's deskew preprocessing will register a NEW parser name
 # (different condition -> different hash) instead of silently overwriting these raw transcripts
@@ -28,9 +28,18 @@ from realdoc_bench.evaluate.parsers.cloud_vlm import _MARKDOWN_PROMPT
 TRANSCRIBER_CONDITION = {
     "preprocess": "raw",
     "render": {"engine": "pymupdf", "dpi": 150},
-    "sampling": {"temperature": 0.0, "max_tokens": 4096},
+    "sampling": {"temperature": 0.0, "max_tokens": 32768},
     "sample_index": 0,
 }
+# max_tokens 4096 -> 16384 -> 32768 (2026-08-04, user-decided; 32k is a BASELINE cap,
+# deliberately generous so nothing truncates while actual demand is measured). A thinking transcriber spends the budget
+# on reasoning and emits nothing: qwen3.5-9b produced a 9-byte transcript ("## Page 1" and no
+# content) on the denser of two smoke pages while transcribing the other correctly at 3.9kB —
+# page-dependent, so it would have salted a full run with silent holes rather than failing
+# outright. `parse` does fail closed on it (the md_length <= 16 chars/page gate) but only after
+# the pages are billed. Entries whose provider supports it also cap thinking via the registry's
+# `reasoning` field, so it cannot consume the whole allowance. Raising the cap costs nothing for
+# non-thinking transcribers, which stop when the page is done.
 
 MAX_RETRIES = 4
 
@@ -50,16 +59,19 @@ class OpenAICompatVisionParser(VisionParserBase):
     page_concurrency = 1        # local GPU: one in-flight request; hosted entries may override
     dpi = TRANSCRIBER_CONDITION["render"]["dpi"]
     max_tokens = TRANSCRIBER_CONDITION["sampling"]["max_tokens"]
-    # C1: local-serving.md serves at --max-model-len 8192. A full-page prompt (markdown-
-    # extraction instructions + one rendered page image, ~1.3-1.9k image tokens at 150dpi) plus
-    # upstream's inherited 12000-token completion budget blows straight through that context
-    # window — the server 400s, `_is_retryable` correctly classifies a 400 as permanent (not a
-    # transient 408/429/5xx), and EVERY local page fails on its first attempt, never retried.
-    # 4096 completion tokens fits a full page of markdown comfortably while leaving headroom
-    # under the 8192 model-len budget for prompt + image tokens.
+    # C1 (SUPERSEDED 2026-08-04 — read this before serving a local transcriber). The budget was
+    # originally 4096 to fit local-serving.md's `--max-model-len 8192`: a full-page prompt
+    # (markdown-extraction instructions + one rendered page image, ~1.3-1.9k image tokens at
+    # 150dpi) plus upstream's inherited 12000-token completion budget blows through that window,
+    # the server 400s, `_is_retryable` correctly classifies a 400 as permanent (not a transient
+    # 408/429/5xx), and EVERY local page fails on its first attempt, never retried.
+    # The budget is now 32768 (see TRANSCRIBER_CONDITION), which does NOT fit inside 8192.
+    # Local vLLM entries (glm-ocr, dots-ocr) must therefore be served with a larger
+    # `--max-model-len` — docs/local-serving.md now specifies 65536. Serving them at 8192 against
+    # this condition reproduces exactly the failure described above, on every page.
 
     def __init__(self, *, base_url: str, model: str, api_key_env: str | None = None,
-                 provider_pin: dict | None = None):
+                 provider_pin: dict | None = None, reasoning: dict | None = None):
         import os
 
         from openai import OpenAI
@@ -73,6 +85,8 @@ class OpenAICompatVisionParser(VisionParserBase):
         # documents (up to MAX_RETRIES outer attempts x the SDK's own retries each).
         self._client = OpenAI(base_url=base_url, api_key=key or "none", max_retries=0)
         self._model = model
+        self._reasoning = reasoning            # caps thinking so it cannot eat the whole
+                                                 # completion budget (see TRANSCRIBER_CONDITION)
         self._provider_pin = provider_pin      # I2: hosted transcribers (e.g. OpenRouter) honor
                                                  # this exactly like direct.py's `_one` does
         # N1: upstream `run_parse` builds ONE `ParseProvider` instance per parser name and shares
@@ -117,6 +131,8 @@ class OpenAICompatVisionParser(VisionParserBase):
         extra_body = {}
         if self._provider_pin:
             extra_body["provider"] = self._provider_pin
+        if self._reasoning:
+            extra_body["reasoning"] = self._reasoning
         kwargs = {
             "model": self._model, "temperature": 0.0, "max_tokens": self.max_tokens,
             "extra_body": extra_body or None,
@@ -236,13 +252,13 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
         if e.shape != "transcriber" or e.transport != "openai-compat":
             continue
         name = f"{safe_name(e.id)}__{suffix}"
-        binding = (e.base_url, e.model, e.api_key_env, e.provider_pin)
+        binding = (e.base_url, e.model, e.api_key_env, e.provider_pin, e.reasoning)
         if name in parser_registry:
             existing_binding = getattr(parser_registry.get(name), "_registry_binding", None)
             if existing_binding is not None and existing_binding != binding:
                 raise ValueError(
                     f"parser {name!r} is already registered for a different endpoint — "
-                    f"existing binding (base_url, model, api_key_env, provider_pin)="
+                    f"existing binding (base_url, model, api_key_env, provider_pin, reasoning)="
                     f"{existing_binding!r}, new binding from registry entry {e.id!r}="
                     f"{binding!r}. Refusing to silently reuse the stale registration.")
             names.append(name)          # idempotent re-import: same binding, safe to reuse
@@ -251,7 +267,8 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
         def _init(self, *, _e=e):
             OpenAICompatVisionParser.__init__(self, base_url=_e.base_url, model=_e.model,
                                               api_key_env=_e.api_key_env,
-                                              provider_pin=_e.provider_pin)
+                                              provider_pin=_e.provider_pin,
+                                              reasoning=_e.reasoning)
 
         cls = type(name, (OpenAICompatVisionParser,), {
             "__init__": _init,

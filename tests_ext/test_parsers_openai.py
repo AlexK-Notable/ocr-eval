@@ -144,12 +144,14 @@ def test_call_page_does_not_retry_permanent_400(tmp_path):
 
 def test_class_and_condition_pin_dpi_and_max_tokens():
     assert OpenAICompatVisionParser.dpi == 150
-    assert OpenAICompatVisionParser.max_tokens == 4096
+    assert OpenAICompatVisionParser.max_tokens == 32768
     assert TRANSCRIBER_CONDITION["render"]["dpi"] == 150
-    assert TRANSCRIBER_CONDITION["sampling"]["max_tokens"] == 4096
+    assert TRANSCRIBER_CONDITION["sampling"]["max_tokens"] == 32768
 
 
-# ── C1: max_tokens=4096 actually reaches the request (not upstream's inherited 12000) ──────────
+# ── C1: the pinned max_tokens actually reaches the request (not upstream's inherited 12000) ────
+# Raised 4096 -> 16384 on 2026-08-04: a thinking transcriber spent the smaller budget on reasoning
+# and emitted an empty transcript. Local vLLM must now be served at --max-model-len 32768.
 
 def test_call_page_sends_the_pinned_max_tokens(tmp_path):
     pdf = tmp_path / "d.pdf"
@@ -159,7 +161,7 @@ def test_call_page_sends_the_pinned_max_tokens(tmp_path):
     with MockOpenAI(reply_text="hello") as mock:
         p = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m")
         p.parse(pdf)
-    assert mock.requests[0]["max_tokens"] == 4096
+    assert mock.requests[0]["max_tokens"] == 32768
 
 
 # ── I3: stale-binding idempotency ───────────────────────────────────────────────────────────────
@@ -256,6 +258,68 @@ def test_register_openai_parsers_threads_provider_pin_into_built_parser(tmp_path
     from realdoc_bench.evaluate.parsers.base import build
     instance = build(names[0])
     assert instance._provider_pin == {"order": ["Alibaba"], "allow_fallbacks": False}
+
+
+# ── reasoning cap: a thinking transcriber must not spend the whole completion budget ───────────
+# Regression guard for the 2026-08-04 finding: uncapped, qwen3.5-9b returned a 9-byte transcript
+# ("## Page 1" and nothing else) on a dense page while transcribing a lighter one correctly.
+
+def test_call_page_sends_reasoning_cap_when_entry_sets_one(tmp_path):
+    pdf = tmp_path / "d.pdf"
+    doc = fitz.open()
+    doc.new_page(width=612, height=792)
+    doc.save(pdf)
+    with MockOpenAI(reply_text="hello") as mock:
+        p = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m",
+                                     reasoning={"max_tokens": 4096})
+        p.parse(pdf)
+    assert mock.requests[0]["reasoning"] == {"max_tokens": 4096}
+
+
+def test_call_page_omits_reasoning_when_entry_sets_none(tmp_path):
+    """Non-thinking endpoints must not receive the field at all — sending it to a provider that
+    does not advertise `reasoning` risks a 400."""
+    pdf = tmp_path / "d.pdf"
+    doc = fitz.open()
+    doc.new_page(width=612, height=792)
+    doc.save(pdf)
+    with MockOpenAI(reply_text="hello") as mock:
+        OpenAICompatVisionParser(base_url=mock.base_url, model="org/m").parse(pdf)
+    assert "reasoning" not in mock.requests[0]
+
+
+def test_register_openai_parsers_threads_reasoning_into_built_parser(tmp_path):
+    registry_path = tmp_path / "r.yaml"
+    _write_registry(registry_path, [{
+        "id": "thinker@openrouter", "shape": "transcriber", "transport": "openai-compat",
+        "base_url": "https://openrouter.ai/api/v1", "model": "org/thinker",
+        "reasoning": {"max_tokens": 4096},
+        "api_key_env": None, "precision": "provider-default", "weights_licence": "mit",
+        "provider_tos_commercial": "ok", "provenance": "X", "release_date": "2025-01-01",
+    }])
+    names = register_openai_parsers(registry_path)
+    from realdoc_bench.evaluate.parsers.base import build
+    assert build(names[0])._reasoning == {"max_tokens": 4096}
+
+
+def test_register_openai_parsers_raises_on_reasoning_only_mismatch(tmp_path):
+    """`reasoning` is part of the binding tuple: two registrations agreeing on everything else but
+    disagreeing on the reasoning cap must raise, not silently reuse the first-registered class —
+    that would send one entry's thinking budget to the other's endpoint."""
+    registry_a = tmp_path / "a.yaml"
+    registry_b = tmp_path / "b.yaml"
+    base = {
+        "id": "rmix@local", "shape": "transcriber", "transport": "openai-compat",
+        "base_url": "http://rmix.invalid/v1", "model": "org/rmix",
+        "api_key_env": None, "precision": "bf16", "weights_licence": "mit",
+        "provider_tos_commercial": "ok", "provenance": "X", "release_date": "2025-01-01",
+    }
+    _write_registry(registry_a, [{**base, "reasoning": {"max_tokens": 4096}}])
+    _write_registry(registry_b, [{**base, "reasoning": {"max_tokens": 512}}])
+
+    register_openai_parsers(registry_a)
+    with pytest.raises(ValueError, match="already registered"):
+        register_openai_parsers(registry_b)
 
 
 # ── M9: preflight's URL build must not double a slash when base_url already ends in one ────────

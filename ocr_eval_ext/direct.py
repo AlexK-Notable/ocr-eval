@@ -28,7 +28,19 @@ STAGE1_CONDITION = {
     "preprocess": "raw",
     "output_contract": "schema_prompted",
     "render": {"engine": "pymupdf", "dpi": 150},
-    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 1024, "seed": None},
+    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 32768, "seed": None},
+    # max_tokens 1024 -> 16384 -> 32768 (2026-08-04, user-decided; 32k is a BASELINE cap,
+# deliberately generous so nothing truncates while actual demand is measured). A REASONING model spends this budget
+    # before it writes any answer, so 1024 silently produced empty content: qwen3.5-9b came back
+    # `error_class: "empty"` on ~15% of its cells (19 empty + 23 empty answers in the first 153),
+    # against 3 parse_errors in qwen3-vl-8b's full 1,356 — the same failure the local ctx8k run
+    # hit, reproduced on a hosted provider. Costs nothing for non-reasoning models: max_tokens is
+    # a CAP, not a target, so a model that finishes in 200 tokens still bills 200. Entries that
+    # support a reasoning cap set `reasoning` in the registry (see RegistryEntry.reasoning) so
+    # thinking cannot consume the whole budget and starve the answer.
+    # NOTE this changes `condition_hash`, hence every `vlm__<id>__<hash>` parser key: rows scored
+    # under the old 1024-token condition remain in eval/cache as a DISTINCT row and are not
+    # overwritten. The report's F4 disambiguation renders both with distinguishable labels.
     "sample_index": 0,
     "no_image": False,     # in the dict from commit one — flipping a VALUE, never adding a key
 }
@@ -151,6 +163,8 @@ def _one(client: OpenAI, entry: RegistryEntry, item: dict, png: bytes | None,
     extra_body = {}
     if entry.provider_pin:
         extra_body["provider"] = entry.provider_pin
+    if entry.reasoning:                      # per-entry, exactly like provider_pin above
+        extra_body["reasoning"] = entry.reasoning
     sampling = condition["sampling"]
     kwargs: dict = {
         "model": entry.model,
