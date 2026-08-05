@@ -211,7 +211,71 @@ unmeasured. One hour on a $0.34/hr card settles it for about 34 cents.
 
 ---
 
-## 8. Open items
+## 8. What the corpus actually contains (measured 2026-08-05)
+
+A 93.0% checkbox score means little without knowing what a "checkbox" is here. Measured across
+all 581 documents, not sampled.
+
+### There are no native interactive checkboxes
+
+**Zero AcroForm CheckBox or RadioButton widgets in the entire corpus.** The axis is not
+"form widget vs scan".
+
+### How the checkbox reaches the model (459 checkbox-family questions, 33.8% of the bank)
+
+| presentation | questions | share |
+|---|---|---|
+| image only — the mark must be *seen* | 373 | **81.3%** |
+| **checkbox is a text glyph in the PDF** (`☑` as a font character) | 61 | **13.3%** |
+| text layer present, no checkbox glyph | 25 | 5.4% |
+
+The middle row is a **leakage finding**. On those pages the checkbox is literally a `☑`
+character in the PDF text layer (`finance_74` renders them as red ☑ glyphs, identical every
+time). Anything reading PDF text gets them free, doing no visual checkbox reading at all — which
+is exactly what a `pdf-direct` row like `mistral_ocr_4` does.
+
+**Corrects a repo figure.** The D5 caveat cited "2 of 16 sampled docs carry a text layer"
+(12.5%). Corpus-wide it is **30.1%** (23.1% text-only + 7.1% glyph-in-text) — the sample
+understated it ~2.4x. Corrected in `report_md.py`, `parsers/docstrange.py` and that adapter's
+test.
+
+### The imagery is rendered, not scanned
+
+For the 81.3% image-only group:
+
+- **84% of embedded images are PNG (lossless); only ~6% are JPEG.** Scanners emit JPEG; lossless
+  PNG is what exporting a rendered page produces.
+- Visual inspection (`finance_1`, `finance_108`, plus a 700-dpi crop): razor-sharp typography,
+  perfectly straight rules, no skew, no paper texture, no speckle, no JPEG ringing. Magnification
+  shows clean upsampling blur from a limited-resolution raster, not scanner artifacts.
+
+So these are **digitally-composed documents rasterised to images**, not photographs of paper a
+human filled in. "Image-only" means pixels must be read — but they are clean rendered pixels.
+
+By the bank's own labels hand-drawn marks are a minority anyway: `handdrawn_check` covers **127
+questions — 9.4% of the bank, 27.7% of checkbox questions**. Other mark tags are thin
+(`filled_bubble` 16, `circled_choice` 7, `ambiguous_mark` 6, `crossed_out` 1).
+
+### Limits of this characterisation
+
+- **3 documents inspected visually**, plus one zoom. The encoding and text-layer statistics are
+  corpus-wide and solid; "rendered, not scanned" rests on a small visual sample.
+- **The `handdrawn_check` tag was not validated** against what is actually on those pages.
+- **One metric failed and is not evidence:** background flatness (modal pixel mass, active gray
+  levels) suggested the image-only group was "scan-like", but it is confounded by anti-aliasing
+  on rendered text and by coloured stock (the cream ATO form). The encoding split is the
+  trustworthy signal. Recorded so nobody re-derives it and trusts it.
+
+### Consequence for the headline
+
+The 93.0% checkbox number is mostly measuring **clean rendered checkbox reading**, with ~13% of
+checkbox questions solvable with no vision at all and under a third involving anything
+hand-drawn. That is materially easier than "real scanned forms", and should be stated wherever
+the number is published.
+
+---
+
+## 9. Open items
 
 - `qwen3.5-9b` transcriber and vlm-chat rows: blocked on non-termination, plus a provider rate
   limit, plus no ToS-cleared alternative provider.

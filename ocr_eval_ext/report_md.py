@@ -1169,7 +1169,9 @@ def _build_section_b(section_b_groups: dict[str, _Group], section_b_data: dict[s
     if any_pdf_direct:
         lines += ["_pdf-direct rows upload the PDF to the provider directly (no rendered PNG "
                  "leg); such rows can free-ride on an embedded text layer already in the PDF "
-                 "(measured: 2 of 16 sampled docs carry one) — a pdf-direct score is not purely "
+                 "(measured corpus-wide: 30.1% of the 581 docs carry a text layer, and 7.1% carry an "
+                 "actual checkbox glyph in it that needs no vision at all — the earlier "
+                 "'2 of 16 sampled' estimate understated this by ~2.4x) — a pdf-direct score is not purely "
                  "an OCR/vision measurement._", ""]
     return lines
 

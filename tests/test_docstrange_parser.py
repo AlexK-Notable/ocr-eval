@@ -2,8 +2,8 @@
 
 The request assertions matter as much as the response ones: this provider would happily accept
 a PDF upload, and the whole point of the adapter is that it never sends one (divergence D5 —
-2 of 16 sampled corpus docs carry an embedded text layer a PDF-accepting parser would
-free-ride on).
+30.1% of corpus docs carry an embedded text layer a PDF-accepting parser would free-ride
+on, 7.1% of them holding a checkbox glyph readable without vision).
 """
 
 from __future__ import annotations
