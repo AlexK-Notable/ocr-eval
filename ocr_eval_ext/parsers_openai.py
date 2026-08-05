@@ -19,7 +19,7 @@ from realdoc_bench.evaluate.parsers.cloud_vlm import _MARKDOWN_PROMPT
 
 # The condition every openai-compat transcriber is scored under in Stage 1 — raw preprocessing,
 # pymupdf@150dpi renders (the same render leg as direct.py's STAGE1_CONDITION), temperature 0,
-# 32768-token completion budget (C1 — see OpenAICompatVisionParser.max_tokens below), single
+# 12288-token completion budget (C1 — see OpenAICompatVisionParser.max_tokens below), single
 # sample. Folded into the registered parser NAME itself (see `register_openai_parsers` below),
 # not just recorded as metadata: Stage 2's deskew preprocessing will register a NEW parser name
 # (different condition -> different hash) instead of silently overwriting these raw transcripts
@@ -28,11 +28,11 @@ from realdoc_bench.evaluate.parsers.cloud_vlm import _MARKDOWN_PROMPT
 TRANSCRIBER_CONDITION = {
     "preprocess": "raw",
     "render": {"engine": "pymupdf", "dpi": 150},
-    "sampling": {"temperature": 0.0, "max_tokens": 32768},
+    "sampling": {"temperature": 0.0, "max_tokens": 12288},
     "sample_index": 0,
 }
-# max_tokens 4096 -> 16384 -> 32768 (2026-08-04, user-decided; 32k is a BASELINE cap,
-# deliberately generous so nothing truncates while actual demand is measured). A thinking transcriber spends the budget
+# max_tokens 4096 -> 12288 (2026-08-04, user-decided, set FROM measurement — see direct.py's
+# STAGE1_CONDITION for the demand figures). A thinking transcriber spends the budget
 # on reasoning and emits nothing: qwen3.5-9b produced a 9-byte transcript ("## Page 1" and no
 # content) on the denser of two smoke pages while transcribing the other correctly at 3.9kB —
 # page-dependent, so it would have salted a full run with silent holes rather than failing
@@ -65,9 +65,9 @@ class OpenAICompatVisionParser(VisionParserBase):
     # 150dpi) plus upstream's inherited 12000-token completion budget blows through that window,
     # the server 400s, `_is_retryable` correctly classifies a 400 as permanent (not a transient
     # 408/429/5xx), and EVERY local page fails on its first attempt, never retried.
-    # The budget is now 32768 (see TRANSCRIBER_CONDITION), which does NOT fit inside 8192.
+    # The budget is now 12288 (see TRANSCRIBER_CONDITION), which does NOT fit inside 8192.
     # Local vLLM entries (glm-ocr, dots-ocr) must therefore be served with a larger
-    # `--max-model-len` — docs/local-serving.md now specifies 65536. Serving them at 8192 against
+    # `--max-model-len` — docs/local-serving.md now specifies 16384. Serving them at 8192 against
     # this condition reproduces exactly the failure described above, on every page.
 
     def __init__(self, *, base_url: str, model: str, api_key_env: str | None = None,

@@ -42,21 +42,21 @@ Registry entry: `glm-ocr@local-vllm` (`configs/registry.yaml`), model id `zai-or
 
 ```
 vllm serve zai-org/GLM-OCR --port 8000 --dtype bfloat16 \
-  --gpu-memory-utilization 0.85 --max-model-len 65536
+  --gpu-memory-utilization 0.85 --max-model-len 16384
 ```
 
 **Context budget:** `--max-model-len` must cover prompt + image + completion tokens combined. A
 rendered page at 150dpi costs roughly 1.3-1.9k image tokens; the markdown-extraction prompt text
-is a few hundred more. `OpenAICompatVisionParser.max_tokens` is pinned to **32768** (via
+is a few hundred more. `OpenAICompatVisionParser.max_tokens` is pinned to **12288** (via
 `TRANSCRIBER_CONDITION["sampling"]["max_tokens"]`, not upstream's inherited 12000-token default),
 so `~2k` prompt/image tokens `+ 16384` completion tokens needs a window of at least ~18.5k —
-hence **`--max-model-len 65536`** above, with headroom.
+hence **`--max-model-len 16384`** above, with headroom.
 
 > ⚠️ **Changed 2026-08-04 — do not serve these at the old `8192`.** The budget was 4096 while the
-> window was 8192. It was raised to 32768 because a *thinking* transcriber spends the completion
+> window was 8192. It was raised to 12288 because a *thinking* transcriber spends the completion
 > allowance on reasoning and emits nothing: qwen3.5-9b returned a 9-byte transcript (`## Page 1`
 > and no content) on a dense page while transcribing a lighter one correctly. Serving a local
-> model at `--max-model-len 8192` against the current 32768-token condition puts you straight
+> model at `--max-model-len 8192` against the current 12288-token condition puts you straight
 > back into the original failure: prompt + image + completion overflows the window, the server
 > 400s, `_is_retryable` correctly classifies a 400 as *permanent* rather than transient, and
 > **every** local page fails on its first attempt with no retry.
@@ -77,7 +77,7 @@ confirm at bring-up whether upstream branding should read `dots-studio` instead 
 
 ```
 vllm serve dots-studio/dots.ocr --port 8000 --dtype bfloat16 \
-  --gpu-memory-utilization 0.85 --max-model-len 65536 --trust-remote-code
+  --gpu-memory-utilization 0.85 --max-model-len 16384 --trust-remote-code
 ```
 
 ## Preflight (always, before any cells)

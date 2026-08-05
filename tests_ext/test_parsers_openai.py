@@ -144,9 +144,9 @@ def test_call_page_does_not_retry_permanent_400(tmp_path):
 
 def test_class_and_condition_pin_dpi_and_max_tokens():
     assert OpenAICompatVisionParser.dpi == 150
-    assert OpenAICompatVisionParser.max_tokens == 32768
+    assert OpenAICompatVisionParser.max_tokens == 12288
     assert TRANSCRIBER_CONDITION["render"]["dpi"] == 150
-    assert TRANSCRIBER_CONDITION["sampling"]["max_tokens"] == 32768
+    assert TRANSCRIBER_CONDITION["sampling"]["max_tokens"] == 12288
 
 
 # ── C1: the pinned max_tokens actually reaches the request (not upstream's inherited 12000) ────
@@ -161,7 +161,7 @@ def test_call_page_sends_the_pinned_max_tokens(tmp_path):
     with MockOpenAI(reply_text="hello") as mock:
         p = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m")
         p.parse(pdf)
-    assert mock.requests[0]["max_tokens"] == 32768
+    assert mock.requests[0]["max_tokens"] == 12288
 
 
 # ── I3: stale-binding idempotency ───────────────────────────────────────────────────────────────

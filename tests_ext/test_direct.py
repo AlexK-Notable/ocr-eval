@@ -129,10 +129,10 @@ def test_run_direct_omits_reasoning_when_entry_sets_none(tmp_path):
 
 
 def test_stage1_condition_completion_budget_is_pinned():
-    """Guards the budget against silent drift. 1024 -> 32768 on 2026-08-04 because a thinking
+    """Guards the budget against silent drift. 1024 -> 12288 on 2026-08-04 because a thinking
     model spends the allowance before writing an answer; raising it costs nothing for
     non-thinking models, since max_tokens is a cap rather than a target."""
-    assert STAGE1_CONDITION["sampling"]["max_tokens"] == 32768
+    assert STAGE1_CONDITION["sampling"]["max_tokens"] == 12288
 
 
 def test_condition_hash_stable_and_order_free():

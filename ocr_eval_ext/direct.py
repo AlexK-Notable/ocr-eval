@@ -28,19 +28,30 @@ STAGE1_CONDITION = {
     "preprocess": "raw",
     "output_contract": "schema_prompted",
     "render": {"engine": "pymupdf", "dpi": 150},
-    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 32768, "seed": None},
-    # max_tokens 1024 -> 16384 -> 32768 (2026-08-04, user-decided; 32k is a BASELINE cap,
-# deliberately generous so nothing truncates while actual demand is measured). A REASONING model spends this budget
-    # before it writes any answer, so 1024 silently produced empty content: qwen3.5-9b came back
-    # `error_class: "empty"` on ~15% of its cells (19 empty + 23 empty answers in the first 153),
-    # against 3 parse_errors in qwen3-vl-8b's full 1,356 — the same failure the local ctx8k run
-    # hit, reproduced on a hosted provider. Costs nothing for non-reasoning models: max_tokens is
-    # a CAP, not a target, so a model that finishes in 200 tokens still bills 200. Entries that
-    # support a reasoning cap set `reasoning` in the registry (see RegistryEntry.reasoning) so
-    # thinking cannot consume the whole budget and starve the answer.
+    "sampling": {"temperature": 0.0, "top_p": 1.0, "max_tokens": 12288, "seed": None},
+    # max_tokens 1024 -> 12288 (2026-08-04, user-decided). Set FROM measurement, not guessed.
+    #
+    # WHY IT WAS RAISED. A reasoning model spends this budget before it writes any answer, so
+    # 1024 silently produced empty content: qwen3.5-9b returned `error_class: "empty"` on ~15% of
+    # its cells (19 of its first 153), against 3 parse_errors across qwen3-vl-8b's full 1,356 —
+    # the local ctx8k failure, reproduced on a hosted provider. Raising the cap costs nothing for
+    # non-reasoning models: max_tokens is a CAP, not a target, so a model that finishes in 200
+    # tokens still bills 200.
+    #
+    # WHY 12288 AND NOT MORE. Measured demand on the four densest corpus pages: qwen3-vl-8b
+    # peaked at 3,599 completion tokens, qwen3-vl-32b at 3,117. The longest transcript any
+    # transcriber produced corpus-wide was 32,622 chars (~8k tokens) — the practical ceiling on
+    # legitimate output for one page. 12288 clears that with headroom while bounding what a
+    # NON-TERMINATING model can bill: at an intermediate 32k baseline, qwen3.5-9b consumed the
+    # entire budget on 2 of 4 dense pages and still returned a 9-byte transcript, so a bigger cap
+    # buys nothing except more expensive failures.
+    #
+    # Entries whose provider supports it also cap thinking via the registry's `reasoning` field,
+    # so reasoning cannot consume the whole allowance and starve the answer.
+    #
     # NOTE this changes `condition_hash`, hence every `vlm__<id>__<hash>` parser key: rows scored
-    # under the old 1024-token condition remain in eval/cache as a DISTINCT row and are not
-    # overwritten. The report's F4 disambiguation renders both with distinguishable labels.
+    # under a previous budget remain in eval/cache as a DISTINCT row and are not overwritten.
+    # The report's F4 disambiguation renders both with distinguishable labels.
     "sample_index": 0,
     "no_image": False,     # in the dict from commit one — flipping a VALUE, never adding a key
 }
