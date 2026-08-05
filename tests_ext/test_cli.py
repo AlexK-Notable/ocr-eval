@@ -438,7 +438,49 @@ def test_direct_rejects_wrong_shape_transport(tmp_path, monkeypatch):
     result = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
                                  "--registry", str(registry_yaml), "-m", "bad@transcriber"])
     assert result.exit_code == 1
-    assert "not vlm-chat/openai-compat" in result.output
+    assert "not a vlm-chat entry" in result.output
+    assert "bad@transcriber" in result.output
+
+
+def test_direct_accepts_bedrock_converse_transport(tmp_path, monkeypatch):
+    """The CLI gate must mirror `run_direct`'s transport precondition, not narrow it: a
+    `bedrock-converse` vlm-chat entry belongs on this leg. Regression for a real defect — the gate
+    hardcoded `openai-compat` after `run_direct` learned to drive Bedrock, so every Bedrock entry
+    was rejected at the CLI with "use ocr-eval parse for those" (which would have been actively
+    wrong advice — the parse leg cannot drive Bedrock at all).
+
+    Asserts on `run_direct`'s ARGUMENTS rather than letting the real one run: reaching it at all is
+    the whole claim, and stubbing keeps this test off the network.
+    """
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout = _make_rescore_run_dir(tmp_path)
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [{
+        "id": "haiku@bedrock", "shape": "vlm-chat", "transport": "bedrock-converse",
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0", "region": "us-east-1",
+        "precision": "provider-default", "weights_licence": "closed",
+        "provider_tos_commercial": "ok", "provenance": "Anthropic", "release_date": "2025-10-01",
+    }])
+    seen: dict = {}
+
+    def fake_run_direct(layout, chosen, **kw):
+        seen["ids"] = [e.id for e in chosen]
+        return {"cells": 0, "ok": 0, "error": 0, "cached": 0}
+
+    monkeypatch.setattr("ocr_eval_ext.direct.run_direct", fake_run_direct)
+    result = runner.invoke(app, ["direct", "--run-dir", str(layout.root),
+                                 "--registry", str(registry_yaml), "-m", "haiku@bedrock",
+                                 "--dry-run"])
+    assert result.exit_code == 0, result.output
+    assert seen["ids"] == ["haiku@bedrock"]   # got past the gate into run_direct
+
+
+def test_direct_gate_matches_run_direct_transports():
+    """Pins the two to ONE name. A future third vlm-chat transport added to `run_direct` alone
+    would otherwise reproduce exactly the drift this pair of tests exists to catch."""
+    from ocr_eval_ext.direct import DIRECT_TRANSPORTS
+
+    assert set(DIRECT_TRANSPORTS) == {"openai-compat", "bedrock-converse"}
 
 
 def _write_vlm_chat_registry(path: Path) -> None:
