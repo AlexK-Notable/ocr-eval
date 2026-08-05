@@ -116,6 +116,49 @@
   provenance: Alibaba
   release_date: "2025-10-11"           # HF createdAt (Qwen/Qwen3-VL-8B-Instruct)
 
+- id: qwen3-vl-32b@openrouter-transcriber  # same weights as qwen3-vl-32b@openrouter, other shape
+  shape: transcriber
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3-vl-32b-instruct
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["Alibaba"], allow_fallbacks: false}
+  pricing: {input_per_mtok: 0.104, output_per_mtok: 0.416}
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  provenance: Alibaba
+  release_date: "2025-10-19"           # HF createdAt (Qwen/Qwen3-VL-32B-Instruct)
+                                        # Verified 2026-08-04 via GET openrouter.ai/api/v1/models:
+                                        # input_modalities ['text','image'], no reasoning params —
+                                        # safe under TRANSCRIBER_CONDITION's 4096-token budget.
+
+- id: qwen3.5-9b@openrouter-transcriber
+  shape: transcriber
+  transport: openai-compat
+  base_url: https://openrouter.ai/api/v1
+  model: qwen/qwen3.5-9b
+  api_key_env: OPENROUTER_API_KEY
+  precision: provider-default
+  provider_pin: {order: ["DeepInfra"], allow_fallbacks: false}   # ToS grounds — see the
+                                        # qwen3.5-9b@openrouter entry above for the full rationale
+  pricing: {input_per_mtok: 0.100, output_per_mtok: 0.150}
+  weights_licence: apache-2.0
+  provider_tos_commercial: ok
+  tos_note: >-
+    pinned DeepInfra: cleanest commercial ToS in survey; SiliconFlow barred
+    (no commercial use), Together bars sensitive-data transmission
+  provenance: Alibaba
+  release_date: "2026-02-27"           # HF createdAt (Qwen/Qwen3.5-9B)
+  # ⚠ REASONING MODEL — smoke this one before committing to a full 581-page parse.
+  # Verified 2026-08-04 via GET openrouter.ai/api/v1/models: this is the ONLY one of the three
+  # Qwen entries exposing `reasoning`/`include_reasoning` (the two -instruct VL models expose
+  # neither). TRANSCRIBER_CONDITION pins max_tokens=4096, and a model that spends that budget on
+  # reasoning returns an empty or truncated transcript — the exact failure this repo already hit
+  # on the local ctx8k run (see docs/api.md, "Empty transcripts from thinking transcribers").
+  # `ocr-eval parse` DOES fail closed on it (the md_length <= 16 chars/page gate), but only after
+  # the pages are paid for. Parse with --limit first and read the transcripts.
+
 - id: gemini-3.5-flash@google-vlmchat     # frontier CEILING ANCHOR for Section A (vlm-chat)
   shape: vlm-chat
   transport: openai-compat

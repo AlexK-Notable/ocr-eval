@@ -38,7 +38,29 @@ from realdoc_bench.evaluate.runs import RunLayout
 
 
 # ── Constants — tunable scoring knobs ──────────────────────────────────────
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
+# FORK DIVERGENCE (D11, 2026-08-04) — upstream and this project's own spec both pin
+# `gemini-3-flash-preview` here, ratified "exactly as upstream — required for published-number
+# comparability" (specs/2026-08-01-ocr-eval-pipeline-design.md:79). Overridden by user decision
+# on two grounds:
+#   1. DURABILITY. The instrument must outlive the project. `gemini-3-flash-preview` is a PREVIEW
+#      endpoint; preview/older models get retired, demonstrated the same day when
+#      `gemini-2.0-flash-lite` returned HTTP 404 "no longer available". An extractor that
+#      disappears mid-project destroys reproducibility far more completely than a judge swap.
+#      `gemini-3.1-flash-lite` is GA.
+#   2. EQUIVALENCE IS MEASURED, NOT ASSUMED. Paired A/B over 300 real bank items on real
+#      DocStrange transcripts, identical items for every model (McNemar on discordant pairs):
+#        gemini-3.1-flash-lite   244/300 (81.3%)  +14/-11 vs incumbent, p=0.690
+#        gemini-3-flash-preview  241/300 (80.3%)  — incumbent
+#        gemini-3.5-flash-lite   240/300 (80.0%)  +13/-14, p=1.000
+#        gemini-2.5-flash        235/300 (78.3%)  +12/-18, p=0.362
+#      Nothing separates them. Cost falls $1.83 -> $0.91 per full-corpus transcriber row and
+#      per-call latency drops roughly an order of magnitude.
+# NOTE the 5-fixture `selftest --extractor` gate does NOT discriminate between these models
+# (all score 5/5) — it is a floor, not evidence of equivalence. The n=300 paired run is.
+# COST OF THE CHANGE: DoD #2 compares our absolute numbers against upstream's published Table 3,
+# which upstream produced with `gemini-3-flash-preview`. A repro gap now carries one extra
+# uncontrolled variable. Re-pin the constant above to reproduce upstream exactly.
 FUZZ_THRESHOLD = 92      # rapidfuzz ratio above which strings count as equal
 FUZZ_MIN_WORDS = 5       # min word count on EITHER side for fuzzy to apply
 

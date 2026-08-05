@@ -26,9 +26,31 @@ the *only* fields eligible for fuzzy comparison.
   `score.py`) — short strings (IDs, amounts) never get fuzzy tolerance, since a 90+ ratio would
   forgive a single wrong digit.
 
-For transcriber rows, the extractor is **`gemini-3-flash-preview`** (`score.py`'s `DEFAULT_MODEL`)
+For transcriber rows, the extractor is **`gemini-3.1-flash-lite`** (`score.py`'s `DEFAULT_MODEL`)
 — one call per (question, parser), reading the transcript markdown and the typed template, never
-outside knowledge. This is upstream's own construction; nothing about it is reimplemented.
+outside knowledge. The construction is upstream's; nothing about it is reimplemented.
+
+**Divergence D11 (2026-08-04, user-decided) — the extractor model itself.** Upstream and this
+project's own spec both pinned `gemini-3-flash-preview`, ratified "exactly as upstream — required
+for published-number comparability"
+(`specs/2026-08-01-ocr-eval-pipeline-design.md:79`). Overridden on two grounds:
+
+- **Durability.** The instrument has to outlive the project. `gemini-3-flash-preview` is a
+  *preview* endpoint, and preview/older models get retired — `gemini-2.0-flash-lite` returned
+  HTTP 404 "no longer available" the same day this was decided. An extractor that vanishes
+  mid-project destroys reproducibility more completely than a judge swap does.
+- **Measured equivalence.** Paired A/B over 300 real bank items on real DocStrange transcripts,
+  identical items per model, McNemar on discordant pairs: `gemini-3.1-flash-lite` 81.3%
+  (+14/−11 vs incumbent, p=0.690), `gemini-3-flash-preview` 80.3%, `gemini-3.5-flash-lite` 80.0%
+  (p=1.000), `gemini-2.5-flash` 78.3% (p=0.362). Nothing separates them. Cost per full-corpus
+  transcriber row falls $1.83 → $0.91.
+
+**What it costs us:** DoD #2 compares our absolute numbers against upstream's published Table 3,
+which upstream produced with `gemini-3-flash-preview` — so a reproduction gap now carries one
+extra uncontrolled variable. Re-pin `DEFAULT_MODEL` to reproduce upstream exactly.
+
+**Do not treat `selftest --extractor` as evidence here.** All four candidates score 5/5 on its
+fixtures; the gate is a floor, not a discriminator. The n=300 paired run is the evidence.
 
 ## Layer 2 — this fork's metrics (`metrics.py`)
 
