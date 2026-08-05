@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q10", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_4", "domain": "supply_chain", "answer": {"street": "2847 Vineyard Lane"}, "field_matches": {"street": true}, "match": true}
+{"qid": "supply_chain_q10", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_4", "domain": "supply_chain", "answer": {"street": "2847 Vineyard Lane"}, "field_matches": {"street": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

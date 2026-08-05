@@ -1,0 +1,1 @@
+{"qid": "mortgage_q282", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_124", "domain": "mortgage", "answer": {"Category I": "YES", "item c": "NO", "Name of Servicer": "LFUCG Division of Water Quality"}, "field_matches": {"Category I": false, "item c": true, "Name of Servicer": true}, "match": false}

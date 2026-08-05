@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q201", "parser": "docstrange_sync", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Cr?": "unchecked", "List Price": 4.87, "Disc": 13, "Unit Price": 4.2526}, "field_matches": {"Cr?": true, "List Price": true, "Disc": true, "Unit Price": true}, "match": true}

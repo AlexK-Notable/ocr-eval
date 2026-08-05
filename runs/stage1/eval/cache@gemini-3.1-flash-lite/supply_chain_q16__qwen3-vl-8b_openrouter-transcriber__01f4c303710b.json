@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q16", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_7", "domain": "supply_chain", "answer": {"total_pkgs": 1212.5, "terms_of_sale": "FOB Portland", "other_value": 0.0}, "field_matches": {"total_pkgs": true, "terms_of_sale": true, "other_value": true}, "match": true}

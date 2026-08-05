@@ -1,0 +1,1 @@
+{"qid": "finance_q329", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_159", "domain": "finance", "answer": {"line_41_total_income_loss": 3236764}, "field_matches": {"line_41_total_income_loss": true}, "match": true}

@@ -1,1 +1,1 @@
-{"qid": "finance_q206", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_97", "domain": "finance", "answer": {"labor_amount": 94.33}, "field_matches": {"labor_amount": false}, "match": false}
+{"qid": "finance_q206", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_97", "domain": "finance", "answer": {"labor_amount": 94.33}, "field_matches": {"labor_amount": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

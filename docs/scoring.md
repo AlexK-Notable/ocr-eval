@@ -26,9 +26,16 @@ the *only* fields eligible for fuzzy comparison.
   `score.py`) — short strings (IDs, amounts) never get fuzzy tolerance, since a 90+ ratio would
   forgive a single wrong digit.
 
-For transcriber rows, the extractor is **`gemini-3.1-flash-lite`** (`score.py`'s `DEFAULT_MODEL`)
+For transcriber rows, the extractor is **`gemini-3.5-flash-lite`** (`score.py`'s `DEFAULT_MODEL`)
 — one call per (question, parser), reading the transcript markdown and the typed template, never
 outside knowledge. The construction is upstream's; nothing about it is reimplemented.
+
+Every scored transcriber row records the extractor that produced it in an **`"extractor"`** field.
+Absence of that key means the row predates the stamp (added 2026-08-05), never that it was scored by
+whatever is currently pinned — the stamp is deliberately not backfilled on the cache-hit rescore
+path, since labelling an old row with today's pin would assert exactly the provenance the field
+exists to establish. Before it existed, the grader's identity lived only in `run_meta.json`, and a
+disagreement about which extractor had scored 4,068 rows could not be settled from the data.
 
 **Divergence D11 (2026-08-04, user-decided) — the extractor model itself.** Upstream and this
 project's own spec both pinned `gemini-3-flash-preview`, ratified "exactly as upstream — required
@@ -42,8 +49,26 @@ for published-number comparability"
 - **Measured equivalence.** Paired A/B over 300 real bank items on real DocStrange transcripts,
   identical items per model, McNemar on discordant pairs: `gemini-3.1-flash-lite` 81.3%
   (+14/−11 vs incumbent, p=0.690), `gemini-3-flash-preview` 80.3%, `gemini-3.5-flash-lite` 80.0%
-  (p=1.000), `gemini-2.5-flash` 78.3% (p=0.362). Nothing separates them. Cost per full-corpus
-  transcriber row falls $1.83 → $0.91.
+  (p=1.000), `gemini-2.5-flash` 78.3% (p=0.362). Nothing separates them *at n=300*. Cost per
+  full-corpus transcriber row falls $1.83 → $0.91.
+
+**D11 rev 2 (2026-08-05, user-decided).** The pin moved again, to `gemini-3.5-flash-lite` — newest
+GA flash-lite generation, fixed id rather than the `gemini-flash-lite-latest` alias (a floating
+alias silently changes the instrument between runs while stamping the same name). Re-scoring all
+4,068 transcriber rows then **contradicted the equivalence finding above**: pooled McNemar over
+4,068 cells gives b=108 / c=144, **p=0.027 in favour of the OLDER 3.1 extractor** — 36 fewer
+fully-correct cells (~0.9pp), with 93.8% verdict agreement. No individual leg reaches significance;
+only the pooled test does.
+
+The effect is real but small, and it reorders nothing — every Section B ranking and separability
+verdict survives. It is also not uniform across metrics: DocStrange's *checkbox* accuracy rose
+93.0% → 95.0% while its overall fully-correct count fell, so the losses sit on non-checkbox fields.
+Full table in [`results-stage1-2026-08-04.md`](results-stage1-2026-08-04.md#d11-rev-2-2026-08-05-repin-to-gemini-35-flash-lite-and-what-re-scoring-revealed).
+
+**The lesson worth carrying:** the n=300 A/B was underpowered to detect a ~1pp effect, and p=1.000
+was misread as evidence of interchangeability. A non-significant result at small n rejects a *large*
+difference; it does not establish equivalence. Quantify power before treating a null as a green
+light.
 
 **What it costs us:** DoD #2 compares our absolute numbers against upstream's published Table 3,
 which upstream produced with `gemini-3-flash-preview` — so a reproduction gap now carries one

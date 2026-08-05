@@ -1,1 +1,1 @@
-{"qid": "mortgage_q427", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_186", "domain": "mortgage", "answer": {"Text": null}, "field_matches": {"Text": false}, "match": false}
+{"qid": "mortgage_q427", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_186", "domain": "mortgage", "answer": {"Text": null}, "field_matches": {"Text": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

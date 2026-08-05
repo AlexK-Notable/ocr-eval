@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q175", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_72", "domain": "medical_healthcare", "answer": {"answer": ["18", "19", "20", "21", "22", "23", "24"]}, "field_matches": {"answer": false}, "match": false}

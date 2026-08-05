@@ -1,0 +1,1 @@
+{"qid": "finance_q324", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_157", "domain": "finance", "answer": {"line_28_net_refund": 98691}, "field_matches": {"line_28_net_refund": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "finance_q227", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_106", "domain": "finance", "answer": {"salaries_and_compensation": 3325.25, "dividends": 80.0}, "field_matches": {"salaries_and_compensation": false, "dividends": true}, "match": false}

@@ -1,1 +1,1 @@
-{"qid": "finance_q171", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_83", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field"}, "field_matches": {"occupation": true}, "match": true}
+{"qid": "finance_q171", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_83", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field"}, "field_matches": {"occupation": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

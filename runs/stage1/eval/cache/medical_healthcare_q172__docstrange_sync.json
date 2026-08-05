@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q172", "parser": "docstrange_sync", "source_file": "medical_healthcare_71", "domain": "medical_healthcare", "answer": {"8-2A": "IN", "8-2B": "IN", "9-2": "IN"}, "field_matches": {"8-2A": false, "8-2B": true, "9-2": false}, "match": false}
+{"qid": "medical_healthcare_q172", "parser": "docstrange_sync", "source_file": "medical_healthcare_71", "domain": "medical_healthcare", "answer": {"8-2A": null, "8-2B": null, "9-2": null}, "field_matches": {"8-2A": false, "8-2B": false, "9-2": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

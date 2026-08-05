@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q165", "parser": "docstrange_sync", "source_file": "supply_chain_54", "domain": "supply_chain", "answer": {"Time Period": "AM", "Highway Classification": "Public", "Video Taken": "Yes", "Video Used": "Yes"}, "field_matches": {"Time Period": false, "Highway Classification": true, "Video Taken": true, "Video Used": true}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "finance_q272", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_131", "domain": "finance", "answer": {"traditional_accounting_checkbox": true}, "field_matches": {"traditional_accounting_checkbox": true}, "match": true}

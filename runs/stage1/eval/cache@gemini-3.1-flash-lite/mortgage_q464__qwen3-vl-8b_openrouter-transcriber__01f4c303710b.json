@@ -1,0 +1,1 @@
+{"qid": "mortgage_q464", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_212", "domain": "mortgage", "answer": {"Section_VII_l": "Other Credits (explain)", "Section_VIII_l": "Do you intend to occupy the property as your primary residence?"}, "field_matches": {"Section_VII_l": true, "Section_VIII_l": true}, "match": true}

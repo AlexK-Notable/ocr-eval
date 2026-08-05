@@ -1,0 +1,1 @@
+{"qid": "mortgage_q16", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_6", "domain": "mortgage", "answer": {"mic_number": "123987"}, "field_matches": {"mic_number": true}, "match": true}

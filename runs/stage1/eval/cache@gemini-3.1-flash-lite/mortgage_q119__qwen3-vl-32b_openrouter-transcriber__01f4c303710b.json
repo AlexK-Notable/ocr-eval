@@ -1,0 +1,1 @@
+{"qid": "mortgage_q119", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_50", "domain": "mortgage", "answer": {"foundation_type_text": "Slab", "foundation_slab_checked": true}, "field_matches": {"foundation_type_text": true, "foundation_slab_checked": true}, "match": true}

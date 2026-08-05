@@ -1,0 +1,1 @@
+{"qid": "mortgage_q429", "parser": "docstrange_sync", "source_file": "mortgage_198", "domain": "mortgage", "answer": {"Amount Paid": "$0.00", "Debenture Interest": null}, "field_matches": {"Amount Paid": true, "Debenture Interest": true}, "match": true}

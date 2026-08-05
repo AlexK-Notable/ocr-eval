@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q124", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Meter Start": 512066, "Stop": 512092}, "field_matches": {"Meter Start": true, "Stop": true}, "match": true}
+{"qid": "supply_chain_q124", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Meter Start": 512066, "Stop": 512092}, "field_matches": {"Meter Start": true, "Stop": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

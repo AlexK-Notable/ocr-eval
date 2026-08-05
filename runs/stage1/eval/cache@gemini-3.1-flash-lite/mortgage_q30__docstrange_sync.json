@@ -1,0 +1,1 @@
+{"qid": "mortgage_q30", "parser": "docstrange_sync", "source_file": "mortgage_11", "domain": "mortgage", "answer": {"original_loan_amount": 185000}, "field_matches": {"original_loan_amount": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q425", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_196", "domain": "mortgage", "answer": {"K1": "204550", "K2": null, "K3": "25569", "K4": null, "K5": null, "K6": "85000"}, "field_matches": {"K1": true, "K2": true, "K3": true, "K4": true, "K5": true, "K6": true}, "match": true}

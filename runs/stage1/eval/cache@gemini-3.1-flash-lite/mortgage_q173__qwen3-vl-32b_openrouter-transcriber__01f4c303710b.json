@@ -1,0 +1,1 @@
+{"qid": "mortgage_q173", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_77", "domain": "mortgage", "answer": {"driveway_storage_info": "2, Asphalt"}, "field_matches": {"driveway_storage_info": true}, "match": true}

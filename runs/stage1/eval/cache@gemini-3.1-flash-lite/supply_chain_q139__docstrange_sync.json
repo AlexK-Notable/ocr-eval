@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q139", "parser": "docstrange_sync", "source_file": "supply_chain_47", "domain": "supply_chain", "answer": {"shipper_ref": "22519-SW", "bl": "MEDUOK022301", "booking": "EBKG10822506", "itn": "X20241121242893"}, "field_matches": {"shipper_ref": true, "bl": true, "booking": true, "itn": true}, "match": true}

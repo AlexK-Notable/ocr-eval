@@ -1,0 +1,1 @@
+{"qid": "finance_q285", "parser": "docstrange_sync", "source_file": "finance_137", "domain": "finance", "answer": {"rep_1_telephone_no": "(602) 555-0892", "rep_1_fax_no": "(602) 555-0893", "rep_3_notices_checked": false}, "field_matches": {"rep_1_telephone_no": true, "rep_1_fax_no": true, "rep_3_notices_checked": true}, "match": true}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q138", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_60", "domain": "mortgage", "answer": {"new_construction_yes_marked": true}, "field_matches": {"new_construction_yes_marked": true}, "match": true}
+{"qid": "mortgage_q138", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_60", "domain": "mortgage", "answer": {"new_construction_yes_marked": true}, "field_matches": {"new_construction_yes_marked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

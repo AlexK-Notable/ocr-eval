@@ -1,0 +1,1 @@
+{"qid": "mortgage_q475", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_205", "domain": "mortgage", "answer": {"Amount Paid": null, "Debenture Interest": null}, "field_matches": {"Amount Paid": false, "Debenture Interest": false}, "match": false}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q36", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"filed_for_bankruptcy_no": "No"}, "field_matches": {"filed_for_bankruptcy_no": false}, "match": false}
+{"qid": "mortgage_q36", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"filed_for_bankruptcy_no": "No"}, "field_matches": {"filed_for_bankruptcy_no": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

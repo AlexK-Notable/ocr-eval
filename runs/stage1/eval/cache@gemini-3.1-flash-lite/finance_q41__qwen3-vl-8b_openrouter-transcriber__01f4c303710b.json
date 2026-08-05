@@ -1,0 +1,1 @@
+{"qid": "finance_q41", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_15", "domain": "finance", "answer": {"type_of_business": "Limited Liability Company"}, "field_matches": {"type_of_business": true}, "match": true}

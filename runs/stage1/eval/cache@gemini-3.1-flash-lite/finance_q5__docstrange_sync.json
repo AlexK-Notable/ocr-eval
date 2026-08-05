@@ -1,0 +1,1 @@
+{"qid": "finance_q5", "parser": "docstrange_sync", "source_file": "finance_2", "domain": "finance", "answer": {"automobile_expiration_date": "New"}, "field_matches": {"automobile_expiration_date": true}, "match": true}

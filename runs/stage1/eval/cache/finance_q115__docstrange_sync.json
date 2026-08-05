@@ -1,1 +1,1 @@
-{"qid": "finance_q115", "parser": "docstrange_sync", "source_file": "finance_56", "domain": "finance", "answer": {"complainant_job_title": "Special Agent, TIGTA"}, "field_matches": {"complainant_job_title": true}, "match": true}
+{"qid": "finance_q115", "parser": "docstrange_sync", "source_file": "finance_56", "domain": "finance", "answer": {"complainant_job_title": "Special Agent, TIGTA"}, "field_matches": {"complainant_job_title": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

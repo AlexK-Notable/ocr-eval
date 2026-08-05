@@ -1,0 +1,1 @@
+{"qid": "finance_q130", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_64", "domain": "finance", "answer": {"complainant_signature": "Sarah Conlon", "attestation_date": "2021-03-16"}, "field_matches": {"complainant_signature": true, "attestation_date": true}, "match": true}

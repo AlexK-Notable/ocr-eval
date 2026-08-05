@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q6", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_3", "domain": "supply_chain", "answer": {"from_name": "Detroit Precision Components Manufacturing LLC", "from_street": "9500 Assembly Line F"}, "field_matches": {"from_name": false, "from_street": true}, "match": false}

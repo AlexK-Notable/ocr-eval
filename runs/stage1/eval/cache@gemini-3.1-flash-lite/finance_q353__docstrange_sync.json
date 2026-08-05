@@ -1,0 +1,1 @@
+{"qid": "finance_q353", "parser": "docstrange_sync", "source_file": "finance_24", "domain": "finance", "answer": {"home": true, "bus": true, "cell": false}, "field_matches": {"home": true, "bus": true, "cell": true}, "match": true}

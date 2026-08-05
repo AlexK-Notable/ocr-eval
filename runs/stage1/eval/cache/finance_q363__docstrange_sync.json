@@ -1,1 +1,1 @@
-{"qid": "finance_q363", "parser": "docstrange_sync", "source_file": "finance_23", "domain": "finance", "answer": {"chance_checkbox": true, "cancel_checkbox": true}, "field_matches": {"chance_checkbox": false, "cancel_checkbox": false}, "match": false}
+{"qid": "finance_q363", "parser": "docstrange_sync", "source_file": "finance_23", "domain": "finance", "answer": {"chance_checkbox": true, "cancel_checkbox": true}, "field_matches": {"chance_checkbox": false, "cancel_checkbox": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

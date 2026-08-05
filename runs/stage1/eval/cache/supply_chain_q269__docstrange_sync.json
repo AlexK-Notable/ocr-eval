@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q269", "parser": "docstrange_sync", "source_file": "supply_chain_90", "domain": "supply_chain", "answer": {"21": "A", "23": "A", "24": "M"}, "field_matches": {"21": true, "23": true, "24": true}, "match": true}
+{"qid": "supply_chain_q269", "parser": "docstrange_sync", "source_file": "supply_chain_90", "domain": "supply_chain", "answer": {"21": "A", "23": "A", "24": "M"}, "field_matches": {"21": true, "23": true, "24": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

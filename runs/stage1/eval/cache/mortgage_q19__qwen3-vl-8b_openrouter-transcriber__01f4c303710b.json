@@ -1,1 +1,1 @@
-{"qid": "mortgage_q19", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_7", "domain": "mortgage", "answer": {"lender_credits_paid_by_others": null}, "field_matches": {"lender_credits_paid_by_others": true}, "match": true}
+{"qid": "mortgage_q19", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_7", "domain": "mortgage", "answer": {"lender_credits_paid_by_others": null}, "field_matches": {"lender_credits_paid_by_others": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

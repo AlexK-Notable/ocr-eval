@@ -1,0 +1,1 @@
+{"qid": "mortgage_q227", "parser": "docstrange_sync", "source_file": "mortgage_99", "domain": "mortgage", "answer": {"Location": "Suburban", "Built-Up": "25-75%", "Property Values": "Stable", "Demand/Supply": "Shortage"}, "field_matches": {"Location": true, "Built-Up": true, "Property Values": true, "Demand/Supply": true}, "match": true}

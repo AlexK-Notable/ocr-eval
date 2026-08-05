@@ -1,0 +1,1 @@
+{"qid": "mortgage_q221", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_27", "domain": "mortgage", "answer": {"agent_portion": 594.75, "paid_to": "Covenant Real Estate Services, LLC"}, "field_matches": {"agent_portion": true, "paid_to": true}, "match": true}

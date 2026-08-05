@@ -1,9 +1,9 @@
 # Stage 1 OCR Evaluation Report
 
-Generated: 2026-08-05T16:39:03.377993+00:00
+Generated: 2026-08-05T18:32:01.063448+00:00
 Dataset revision: 906170ab201d7b8238a32a9115fc66b4b72e0710 (revision_source: hf_metadata)
 Harness commit: fb26a6876481de76dc293f722ab4efa71279904d
-Extractor: gemini-3.1-flash-lite
+Extractor: gemini-3.5-flash-lite
 Renders verified: True
 pymupdf version: 1.28.0
 Bank items in this report: 1356
@@ -88,7 +88,7 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 ## Cross-shape comparison note
 
-**Cross-shape comparability warning:** Section A (`vlm-chat`) rows answer the question directly from the rendered page image in one model call. Section B (transcribe-then-extract) rows first transcribe the page to markdown, then a SEPARATE `gemini-3.1-flash-lite` extractor call answers the question from that markdown. A Section B score reflects BOTH stages at once — a low score can come from a bad transcription OR a bad extraction — so a Section A and a Section B number for the "same" underlying model are not directly comparable rankings. Use the direct-vs-two-stage calibration pair (below, when both rows exist) to gauge how much of a two-stage gap is pipeline overhead versus genuine transcription quality.
+**Cross-shape comparability warning:** Section A (`vlm-chat`) rows answer the question directly from the rendered page image in one model call. Section B (transcribe-then-extract) rows first transcribe the page to markdown, then a SEPARATE `gemini-3.5-flash-lite` extractor call answers the question from that markdown. A Section B score reflects BOTH stages at once — a low score can come from a bad transcription OR a bad extraction — so a Section A and a Section B number for the "same" underlying model are not directly comparable rankings. Use the direct-vs-two-stage calibration pair (below, when both rows exist) to gauge how much of a two-stage gap is pipeline overhead versus genuine transcription quality.
 
 40 questions appear in both the checkbox and blank-field buckets (of 429 checkbox-bucket and 122 blank-field-bucket questions) — a field counted in both buckets contributes to both metrics independently.
 
@@ -109,15 +109,15 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 ## Section B — Transcribe-then-extract
 
-_Cost/latency below describe the TRANSCRIPTION LEG only — the extractor (`gemini-3.1-flash-lite`) call is a separate, shared cost not attributed per-row._
+_Cost/latency below describe the TRANSCRIPTION LEG only — the extractor (`gemini-3.5-flash-lite`) call is a separate, shared cost not attributed per-row._
 
 precision unasserted across all rows in this section
 
 | row | checkbox acc-over-all | blank/null acc-over-all | hallucination_rate | general/field | strict/question | transcript-recall | input | beats majority |
 |---|---|---|---|---|---|---|---|---|
-| docstrange@nanonets + extractor gemini-3.1-flash-lite | 93.0% [89.1%, 96.2%] (n_docs=123) | 93.6% [87.8%, 97.8%] (n_docs=94) | 6.4% (n_answered=188, error_rate=0.0%) | 89.6% | 82.1% | 97.6% | raster-png | yes |
-| qwen3-vl-32b@openrouter-transcriber + extractor gemini-3.1-flash-lite | 91.5% [87.2%, 95.1%] (n_docs=123) | 94.7% [90.9%, 97.6%] (n_docs=94) | 5.3% (n_answered=188, error_rate=0.0%) | 87.4% | 76.8% | 92.7% | raster-png | yes |
-| qwen3-vl-8b@openrouter-transcriber + extractor gemini-3.1-flash-lite | 80.6% [74.0%, 86.3%] (n_docs=123) | 95.2% [90.8%, 98.5%] (n_docs=94) | 4.8% (n_answered=188, error_rate=0.0%) | 82.3% | 70.1% | 94.3% | raster-png | yes |
+| docstrange@nanonets + extractor gemini-3.5-flash-lite | 95.0% [91.9%, 97.6%] (n_docs=123) | 95.2% [91.7%, 97.9%] (n_docs=94) | 4.8% (n_answered=188, error_rate=0.0%) | 88.7% | 80.9% | 97.6% | raster-png | yes |
+| qwen3-vl-32b@openrouter-transcriber + extractor gemini-3.5-flash-lite | 91.9% [87.7%, 95.5%] (n_docs=123) | 93.6% [89.8%, 96.7%] (n_docs=94) | 6.4% (n_answered=188, error_rate=0.0%) | 86.9% | 76.4% | 92.7% | raster-png | yes |
+| qwen3-vl-8b@openrouter-transcriber + extractor gemini-3.5-flash-lite | 81.0% [74.4%, 86.8%] (n_docs=123) | 93.1% [88.2%, 97.1%] (n_docs=94) | 6.9% (n_answered=188, error_rate=0.0%) | 81.2% | 69.0% | 94.3% | raster-png | yes |
 
 - **docstrange@nanonets** · precision: unknown (not asserted) · licence: closed · ToS: ok — NOT zero-retention: nanonets.com/terms 6.6 reserves the righ · contaminated: no · contract: not-promptable · provider: n/a (not persisted) · median latency: 30.31s · realized cost: $5.8100 · n: 1356/1356 · error classes: none=1356
 - **qwen3-vl-32b@openrouter-transcriber** · precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok · contaminated: no · contract: promptable · provider: n/a (not persisted) · median latency: 14.84s · realized cost: $0.0000 · n: 1356/1356 · error classes: none=1356
@@ -133,9 +133,9 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 | row | mortgage | finance | supply_chain | medical_healthcare |
 |---|---|---|---|---|
-| docstrange@nanonets | 96.2% [94.8%, 97.4%] (n=1502, d=222) | 84.5% [80.5%, 88.2%] (n=703, d=172) | 87.2% [82.6%, 91.4%] (n=1215, d=113) | 78.9% [70.4%, 86.6%] (n=322, d=74) |
-| qwen3-vl-32b@openrouter-transcriber | 91.8% [89.7%, 93.8%] (n=1502, d=222) | 79.4% [75.0%, 83.6%] (n=703, d=172) | 88.9% [85.0%, 92.2%] (n=1215, d=113) | 78.9% [71.7%, 85.8%] (n=322, d=74) |
-| qwen3-vl-8b@openrouter-transcriber | 88.5% [85.4%, 91.3%] (n=1502, d=222) | 72.5% [68.3%, 76.8%] (n=703, d=172) | 83.0% [79.1%, 87.0%] (n=1215, d=113) | 71.4% [62.5%, 80.0%] (n=322, d=74) |
+| docstrange@nanonets | 94.4% [92.6%, 96.0%] (n=1502, d=222) | 84.4% [80.5%, 88.0%] (n=703, d=172) | 87.4% [82.6%, 91.8%] (n=1215, d=113) | 76.7% [67.9%, 84.7%] (n=322, d=74) |
+| qwen3-vl-32b@openrouter-transcriber | 91.3% [89.1%, 93.4%] (n=1502, d=222) | 79.1% [74.5%, 83.6%] (n=703, d=172) | 88.4% [84.4%, 91.8%] (n=1215, d=113) | 77.3% [69.7%, 84.6%] (n=322, d=74) |
+| qwen3-vl-8b@openrouter-transcriber | 86.8% [83.3%, 89.8%] (n=1502, d=222) | 71.0% [66.6%, 75.5%] (n=703, d=172) | 82.5% [78.4%, 86.5%] (n=1215, d=113) | 72.4% [63.7%, 80.4%] (n=322, d=74) |
 
 ### Section B (transcribe-then-extract) — per-capability (general per-field)
 
@@ -149,9 +149,9 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 | row | field_value_pairing | checkbox_state | column_alignment | row_binding | table_structure | form_region | parallel_columns | line_binding | scanned_form | multi_column_grid | handdrawn_check | blank_field |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| docstrange@nanonets | 91.0% [88.5%, 93.2%] (n=1239, d=335) | 88.1% [83.7%, 91.9%] (n=1049, d=252) | 88.4% [84.1%, 92.3%] (n=768, d=250) | 89.6% [86.6%, 92.5%] (n=790, d=226) | 89.0% [84.9%, 92.7%] (n=993, d=190) | 86.4% [82.4%, 90.1%] (n=515, d=180) | 92.2% [88.9%, 95.4%] (n=451, d=157) | 87.2% [82.2%, 91.5%] (n=397, d=147) | 85.3% [80.1%, 90.0%] (n=408, d=121) | 91.1% [86.5%, 95.1%] (n=404, d=119) | 92.4% [88.3%, 96.0%] (n=238, d=83) | 87.0% [82.6%, 91.4%] (n=270, d=97) |
-| qwen3-vl-32b@openrouter-transcriber | 86.7% [83.6%, 89.6%] (n=1239, d=335) | 88.9% [85.6%, 91.8%] (n=1049, d=252) | 86.8% [83.0%, 90.4%] (n=768, d=250) | 85.2% [80.5%, 89.2%] (n=790, d=226) | 88.6% [84.8%, 92.0%] (n=993, d=190) | 86.0% [82.1%, 89.5%] (n=515, d=180) | 87.6% [83.3%, 91.3%] (n=451, d=157) | 84.9% [79.3%, 89.7%] (n=397, d=147) | 79.7% [72.9%, 85.7%] (n=408, d=121) | 90.6% [86.6%, 93.9%] (n=404, d=119) | 89.1% [82.1%, 94.9%] (n=238, d=83) | 78.1% [71.0%, 85.0%] (n=270, d=97) |
-| qwen3-vl-8b@openrouter-transcriber | 82.1% [78.7%, 85.3%] (n=1239, d=335) | 81.8% [77.5%, 85.6%] (n=1049, d=252) | 80.9% [76.0%, 85.4%] (n=768, d=250) | 84.3% [79.4%, 88.4%] (n=790, d=226) | 82.7% [77.8%, 87.2%] (n=993, d=190) | 80.8% [76.3%, 84.9%] (n=515, d=180) | 89.1% [85.3%, 92.7%] (n=451, d=157) | 80.1% [74.2%, 85.8%] (n=397, d=147) | 77.2% [70.7%, 83.7%] (n=408, d=121) | 82.2% [76.0%, 87.6%] (n=404, d=119) | 79.8% [72.9%, 86.3%] (n=238, d=83) | 78.5% [72.7%, 83.8%] (n=270, d=97) |
+| docstrange@nanonets | 89.7% [87.3%, 92.1%] (n=1239, d=335) | 89.0% [84.8%, 92.8%] (n=1049, d=252) | 87.2% [83.0%, 91.1%] (n=768, d=250) | 89.7% [86.8%, 92.8%] (n=790, d=226) | 89.6% [85.4%, 93.3%] (n=993, d=190) | 84.9% [80.6%, 88.7%] (n=515, d=180) | 90.0% [85.8%, 93.7%] (n=451, d=157) | 84.1% [79.2%, 89.1%] (n=397, d=147) | 85.0% [79.9%, 89.7%] (n=408, d=121) | 90.8% [86.0%, 95.0%] (n=404, d=119) | 92.9% [89.3%, 96.0%] (n=238, d=83) | 86.7% [81.7%, 91.5%] (n=270, d=97) |
+| qwen3-vl-32b@openrouter-transcriber | 85.8% [82.7%, 88.7%] (n=1239, d=335) | 88.7% [85.3%, 91.5%] (n=1049, d=252) | 86.1% [82.0%, 89.7%] (n=768, d=250) | 84.8% [80.2%, 88.8%] (n=790, d=226) | 88.3% [84.5%, 91.7%] (n=993, d=190) | 86.4% [82.6%, 90.0%] (n=515, d=180) | 87.6% [83.5%, 91.2%] (n=451, d=157) | 82.9% [77.3%, 87.8%] (n=397, d=147) | 78.9% [72.0%, 85.0%] (n=408, d=121) | 91.3% [87.5%, 94.7%] (n=404, d=119) | 87.8% [80.8%, 93.9%] (n=238, d=83) | 79.3% [72.0%, 86.1%] (n=270, d=97) |
+| qwen3-vl-8b@openrouter-transcriber | 81.8% [78.5%, 84.8%] (n=1239, d=335) | 80.0% [75.4%, 84.2%] (n=1049, d=252) | 79.6% [74.7%, 83.9%] (n=768, d=250) | 82.2% [77.5%, 86.3%] (n=790, d=226) | 81.9% [76.8%, 86.4%] (n=993, d=190) | 81.4% [76.9%, 85.3%] (n=515, d=180) | 87.1% [82.4%, 91.1%] (n=451, d=157) | 80.6% [74.7%, 85.9%] (n=397, d=147) | 77.2% [71.0%, 83.2%] (n=408, d=121) | 82.2% [76.3%, 87.4%] (n=404, d=119) | 78.6% [71.5%, 85.2%] (n=238, d=83) | 77.4% [71.6%, 83.1%] (n=270, d=97) |
 
 ## Reproduction gate (upstream construction)
 
@@ -159,9 +159,9 @@ _upstream construction — for the reproduction gate only; not the ranking key._
 
 | row | field% (upstream) | question% (upstream) | n (ok rows) |
 |---|---|---|---|
-| docstrange@nanonets | 89.6% | 82.1% | 1356 |
-| qwen3-vl-32b@openrouter-transcriber | 87.4% | 76.8% | 1356 |
-| qwen3-vl-8b@openrouter-transcriber | 82.3% | 70.1% | 1356 |
+| docstrange@nanonets | 88.7% | 80.9% | 1356 |
+| qwen3-vl-32b@openrouter-transcriber | 86.9% | 76.4% | 1356 |
+| qwen3-vl-8b@openrouter-transcriber | 81.2% | 69.0% | 1356 |
 
 ## Separability appendix
 
@@ -198,9 +198,9 @@ Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section o
 - vlm__qwen3-vl-8b@ollama-validation__42581bd83e8a (unregistered) [INCOMPLETE 60/1356] vs vlm__qwen3-vl-8b@ollama-validation__4caf39e9ac1f (unregistered) [INCOMPLETE 60/1356]: not separable — Δ CI [0.0pp, 4.5pp] spans 0
 
 ### Section B
-- docstrange@nanonets vs qwen3-vl-32b@openrouter-transcriber: not separable — Δ CI [-3.0pp, 6.1pp] spans 0
-- docstrange@nanonets vs qwen3-vl-8b@openrouter-transcriber: separable — docstrange@nanonets ahead, Δ=[6.1pp, 19.1pp]
-- qwen3-vl-32b@openrouter-transcriber vs qwen3-vl-8b@openrouter-transcriber: separable — qwen3-vl-32b@openrouter-transcriber ahead, Δ=[4.9pp, 17.1pp]
+- docstrange@nanonets vs qwen3-vl-32b@openrouter-transcriber: not separable — Δ CI [-1.2pp, 7.6pp] spans 0
+- docstrange@nanonets vs qwen3-vl-8b@openrouter-transcriber: separable — docstrange@nanonets ahead, Δ=[8.3pp, 20.4pp]
+- qwen3-vl-32b@openrouter-transcriber vs qwen3-vl-8b@openrouter-transcriber: separable — qwen3-vl-32b@openrouter-transcriber ahead, Δ=[4.6pp, 17.2pp]
 
 ## STALE-RENDER
 

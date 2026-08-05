@@ -1,0 +1,1 @@
+{"qid": "finance_q54", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_20", "domain": "finance", "answer": {"independent_contractors_marked": false, "premises_operations_marked": true}, "field_matches": {"independent_contractors_marked": true, "premises_operations_marked": true}, "match": true}

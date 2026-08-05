@@ -1,1 +1,1 @@
-{"qid": "finance_q225", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_105", "domain": "finance", "answer": {"class_of_tax": "1925 Income"}, "field_matches": {"class_of_tax": false}, "match": false}
+{"qid": "finance_q225", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_105", "domain": "finance", "answer": {"class_of_tax": "1925 Income"}, "field_matches": {"class_of_tax": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,1 +1,1 @@
-{"qid": "finance_q371", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_119", "domain": "finance", "answer": {"sub_header": "TCS of the current Fin. Year"}, "field_matches": {"sub_header": false}, "match": false}
+{"qid": "finance_q371", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_119", "domain": "finance", "answer": {"sub_header": "TCS of the current Fin. Year"}, "field_matches": {"sub_header": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

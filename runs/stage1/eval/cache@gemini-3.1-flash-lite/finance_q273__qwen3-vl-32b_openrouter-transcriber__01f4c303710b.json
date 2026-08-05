@@ -1,0 +1,1 @@
+{"qid": "finance_q273", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_132", "domain": "finance", "answer": {"adviser_address_line_1": "2150.00", "adviser_reference": "0"}, "field_matches": {"adviser_address_line_1": true, "adviser_reference": true}, "match": true}

@@ -1,1 +1,1 @@
-{"qid": "finance_q351", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_25", "domain": "finance", "answer": {"amount_paid": 18500}, "field_matches": {"amount_paid": true}, "match": true}
+{"qid": "finance_q351", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_25", "domain": "finance", "answer": {"amount_paid": 18500}, "field_matches": {"amount_paid": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,1 +1,1 @@
-{"qid": "finance_q302", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_145", "domain": "finance", "answer": {"region_1_names": "Paul Ford (A), Doug Wolcott (D, A)"}, "field_matches": {"region_1_names": true}, "match": true}
+{"qid": "finance_q302", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_145", "domain": "finance", "answer": {"region_1_names": "Paul Ford (A)\n  - Doug Wolcott (D, A)"}, "field_matches": {"region_1_names": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

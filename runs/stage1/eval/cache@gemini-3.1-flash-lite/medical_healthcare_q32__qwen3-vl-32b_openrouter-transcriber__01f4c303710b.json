@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q32", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_16", "domain": "medical_healthcare", "answer": {"employment_related_no_checked": "Yes"}, "field_matches": {"employment_related_no_checked": true}, "match": true}

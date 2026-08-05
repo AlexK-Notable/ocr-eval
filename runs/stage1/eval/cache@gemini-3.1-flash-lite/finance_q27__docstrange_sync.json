@@ -1,0 +1,1 @@
+{"qid": "finance_q27", "parser": "docstrange_sync", "source_file": "finance_10", "domain": "finance", "answer": {"applicant_signature": "David Thompson", "producer_name_printed": "Michael Johnson", "signature_date": "2024-05-15"}, "field_matches": {"applicant_signature": true, "producer_name_printed": true, "signature_date": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q80", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_32", "domain": "supply_chain", "answer": {"Form Template": "WorkOrderEstimate.rpt", "Form Version": "9703 v204", "Reference": 68}, "field_matches": {"Form Template": false, "Form Version": false, "Reference": true}, "match": false}

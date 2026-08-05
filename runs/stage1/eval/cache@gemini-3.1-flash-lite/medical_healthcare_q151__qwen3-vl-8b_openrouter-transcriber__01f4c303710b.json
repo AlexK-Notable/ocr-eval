@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q151", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_67", "domain": "medical_healthcare", "answer": {"air_pollutants_marked": false, "chemicals_marked": true}, "field_matches": {"air_pollutants_marked": false, "chemicals_marked": true}, "match": false}

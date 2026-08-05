@@ -1,1 +1,1 @@
-{"qid": "mortgage_q125", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_54", "domain": "mortgage", "answer": {"concrete_material_amenity": "Patio"}, "field_matches": {"concrete_material_amenity": true}, "match": true}
+{"qid": "mortgage_q125", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_54", "domain": "mortgage", "answer": {"concrete_material_amenity": null}, "field_matches": {"concrete_material_amenity": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

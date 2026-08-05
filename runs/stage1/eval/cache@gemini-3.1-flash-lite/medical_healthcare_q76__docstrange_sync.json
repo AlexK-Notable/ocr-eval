@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q76", "parser": "docstrange_sync", "source_file": "medical_healthcare_34", "domain": "medical_healthcare", "answer": {"specimen": "Blood, Femoral", "service": "Bases-LC/MS/MS", "analyst": "C. Castellino"}, "field_matches": {"specimen": true, "service": true, "analyst": true}, "match": true}

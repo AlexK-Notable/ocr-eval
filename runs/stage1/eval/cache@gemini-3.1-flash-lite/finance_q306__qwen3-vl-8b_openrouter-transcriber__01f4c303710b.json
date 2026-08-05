@@ -1,0 +1,1 @@
+{"qid": "finance_q306", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_147", "domain": "finance", "answer": {"agency_acronym": "FEMA"}, "field_matches": {"agency_acronym": true}, "match": true}

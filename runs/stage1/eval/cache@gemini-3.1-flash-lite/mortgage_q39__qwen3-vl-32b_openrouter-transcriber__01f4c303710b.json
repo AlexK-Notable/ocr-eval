@@ -1,0 +1,1 @@
+{"qid": "mortgage_q39", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_14", "domain": "mortgage", "answer": {"email_address": null}, "field_matches": {"email_address": false}, "match": false}

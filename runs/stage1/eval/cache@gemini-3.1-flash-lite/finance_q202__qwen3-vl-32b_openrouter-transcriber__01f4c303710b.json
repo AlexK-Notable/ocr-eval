@@ -1,0 +1,1 @@
+{"qid": "finance_q202", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_95", "domain": "finance", "answer": {"administrator_ein": "22-3456790"}, "field_matches": {"administrator_ein": true}, "match": true}

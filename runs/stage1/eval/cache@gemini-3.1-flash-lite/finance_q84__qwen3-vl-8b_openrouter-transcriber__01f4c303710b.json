@@ -1,0 +1,1 @@
+{"qid": "finance_q84", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_34", "domain": "finance", "answer": {"chart_title": null, "y_axis_label": null, "legend_firms": null}, "field_matches": {"chart_title": false, "y_axis_label": false, "legend_firms": false}, "match": false}

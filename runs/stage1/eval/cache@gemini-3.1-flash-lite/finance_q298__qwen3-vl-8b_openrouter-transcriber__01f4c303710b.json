@@ -1,0 +1,1 @@
+{"qid": "finance_q298", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_144", "domain": "finance", "answer": {"first_entity_type_footnote_4": "state"}, "field_matches": {"first_entity_type_footnote_4": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q3", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_2", "domain": "medical_healthcare", "answer": {"unknown_selection_status_and_mark_type": "⑦ = Unknown"}, "field_matches": {"unknown_selection_status_and_mark_type": false}, "match": false}

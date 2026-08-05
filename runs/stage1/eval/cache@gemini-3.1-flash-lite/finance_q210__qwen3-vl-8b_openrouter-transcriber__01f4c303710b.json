@@ -1,0 +1,1 @@
+{"qid": "finance_q210", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_99", "domain": "finance", "answer": {"taxpayer_name": "BURDETTE G. JOHNSON", "home_street_address": "712 AUDUBON DR."}, "field_matches": {"taxpayer_name": true, "home_street_address": true}, "match": true}

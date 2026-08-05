@@ -1,0 +1,1 @@
+{"qid": "finance_q350", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_15", "domain": "finance", "answer": {"applicant_name": "Margaret"}, "field_matches": {"applicant_name": true}, "match": true}

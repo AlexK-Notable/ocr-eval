@@ -1,0 +1,1 @@
+{"qid": "finance_q154", "parser": "docstrange_sync", "source_file": "finance_77", "domain": "finance", "answer": {"location": "Washington, United States", "methodology": "IFM on Non-Federal U.S. Forestlands"}, "field_matches": {"location": true, "methodology": true}, "match": true}

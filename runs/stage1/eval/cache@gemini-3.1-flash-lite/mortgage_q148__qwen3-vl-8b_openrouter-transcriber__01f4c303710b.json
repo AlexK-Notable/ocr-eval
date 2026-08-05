@@ -1,0 +1,1 @@
+{"qid": "mortgage_q148", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_64", "domain": "mortgage", "answer": {"property_data_report_used_in_lieu_of_inspection": "No"}, "field_matches": {"property_data_report_used_in_lieu_of_inspection": true}, "match": true}

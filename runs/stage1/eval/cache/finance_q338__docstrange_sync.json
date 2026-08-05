@@ -1,1 +1,1 @@
-{"qid": "finance_q338", "parser": "docstrange_sync", "source_file": "finance_166", "domain": "finance", "answer": {"chart_title": "TOTAL SHAREHOLDER RETURNS (\"TSR\")³"}, "field_matches": {"chart_title": true}, "match": true}
+{"qid": "finance_q338", "parser": "docstrange_sync", "source_file": "finance_166", "domain": "finance", "answer": {"chart_title": "TOTAL SHAREHOLDER RETURNS (\"TSR\")³"}, "field_matches": {"chart_title": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

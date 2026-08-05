@@ -1,1 +1,1 @@
-{"qid": "finance_q299", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_144", "domain": "finance", "answer": {"website_url": null, "page_number": 1}, "field_matches": {"website_url": false, "page_number": false}, "match": false}
+{"qid": "finance_q299", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_144", "domain": "finance", "answer": {"website_url": null, "page_number": null}, "field_matches": {"website_url": false, "page_number": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,1 +1,1 @@
-{"qid": "finance_q82", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"hawaii_punishment": "fines or imprisonment, or both"}, "field_matches": {"hawaii_punishment": true}, "match": true}
+{"qid": "finance_q82", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"hawaii_punishment": "fines or imprisonment, or both"}, "field_matches": {"hawaii_punishment": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

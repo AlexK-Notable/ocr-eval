@@ -1,0 +1,1 @@
+{"qid": "mortgage_q220", "parser": "docstrange_sync", "source_file": "mortgage_27", "domain": "mortgage", "answer": {"total_seller_charges": 9325.0}, "field_matches": {"total_seller_charges": true}, "match": true}

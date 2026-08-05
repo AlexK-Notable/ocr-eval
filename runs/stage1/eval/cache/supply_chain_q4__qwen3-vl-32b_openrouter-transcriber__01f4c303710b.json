@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q4", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"check_box_if_collect_status": false}, "field_matches": {"check_box_if_collect_status": true}, "match": true}
+{"qid": "supply_chain_q4", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"check_box_if_collect_status": false}, "field_matches": {"check_box_if_collect_status": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

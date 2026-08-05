@@ -1,1 +1,1 @@
-{"qid": "finance_q29", "parser": "docstrange_sync", "source_file": "finance_11", "domain": "finance", "answer": {"independent_contractors_checkbox_status": false}, "field_matches": {"independent_contractors_checkbox_status": true}, "match": true}
+{"qid": "finance_q29", "parser": "docstrange_sync", "source_file": "finance_11", "domain": "finance", "answer": {"independent_contractors_checkbox_status": false}, "field_matches": {"independent_contractors_checkbox_status": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

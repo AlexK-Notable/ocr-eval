@@ -1,1 +1,1 @@
-{"qid": "finance_q60", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_22", "domain": "finance", "answer": {"fraud_notice_states": "AL, AR, DC, LA, MD, NM, RI and WV"}, "field_matches": {"fraud_notice_states": true}, "match": true}
+{"qid": "finance_q60", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_22", "domain": "finance", "answer": {"fraud_notice_states": "AL, AR, DC, LA, MD, NM, RI and WV"}, "field_matches": {"fraud_notice_states": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q154", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_50", "domain": "supply_chain", "answer": {"13 Initials": "☒", "14 Initials": "☒", "15 Initials": "☒", "16 Initials": "☒"}, "field_matches": {"13 Initials": false, "14 Initials": false, "15 Initials": false, "16 Initials": false}, "match": false}

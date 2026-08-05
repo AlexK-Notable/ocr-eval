@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q55", "parser": "docstrange_sync", "source_file": "supply_chain_22", "domain": "supply_chain", "answer": {"signature_line_labels": "Your Signature, Street Address, Print Your Name, City, State, ZIP, Telephone"}, "field_matches": {"signature_line_labels": true}, "match": true}

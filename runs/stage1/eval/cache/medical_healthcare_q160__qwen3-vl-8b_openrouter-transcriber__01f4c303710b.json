@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q160", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_70", "domain": "medical_healthcare", "answer": {"patient_sex": "Female"}, "field_matches": {"patient_sex": true}, "match": true}
+{"qid": "medical_healthcare_q160", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_70", "domain": "medical_healthcare", "answer": {"patient_sex": "Female"}, "field_matches": {"patient_sex": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

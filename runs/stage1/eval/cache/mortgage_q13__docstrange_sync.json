@@ -1,1 +1,1 @@
-{"qid": "mortgage_q13", "parser": "docstrange_sync", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"closing_costs_right_column_text": "17,500.00"}, "field_matches": {"closing_costs_right_column_text": false}, "match": false}
+{"qid": "mortgage_q13", "parser": "docstrange_sync", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"closing_costs_right_column_text": "in Loan Costs +\nin Other Costs –"}, "field_matches": {"closing_costs_right_column_text": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

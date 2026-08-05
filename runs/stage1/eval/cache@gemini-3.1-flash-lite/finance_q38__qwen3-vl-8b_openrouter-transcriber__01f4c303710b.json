@@ -1,0 +1,1 @@
+{"qid": "finance_q38", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_14", "domain": "finance", "answer": {"other_premiums_value": 3500}, "field_matches": {"other_premiums_value": true}, "match": true}

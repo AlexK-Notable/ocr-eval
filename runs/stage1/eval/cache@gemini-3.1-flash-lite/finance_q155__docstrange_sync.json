@@ -1,0 +1,1 @@
+{"qid": "finance_q155", "parser": "docstrange_sync", "source_file": "finance_77", "domain": "finance", "answer": {"credits_retired_value": 8000}, "field_matches": {"credits_retired_value": true}, "match": true}

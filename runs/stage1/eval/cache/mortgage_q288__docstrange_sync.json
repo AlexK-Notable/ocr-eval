@@ -1,1 +1,1 @@
-{"qid": "mortgage_q288", "parser": "docstrange_sync", "source_file": "mortgage_128", "domain": "mortgage", "answer": {"e": "YES", "f": "YES", "g": "YES", "h": "NO", "13": "YES"}, "field_matches": {"e": true, "f": true, "g": true, "h": true, "13": true}, "match": true}
+{"qid": "mortgage_q288", "parser": "docstrange_sync", "source_file": "mortgage_128", "domain": "mortgage", "answer": {"e": "YES", "f": "YES", "g": "YES", "h": "NO", "13": "YES"}, "field_matches": {"e": true, "f": true, "g": true, "h": true, "13": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

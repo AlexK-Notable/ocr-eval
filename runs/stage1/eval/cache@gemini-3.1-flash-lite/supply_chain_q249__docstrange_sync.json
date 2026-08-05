@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q249", "parser": "docstrange_sync", "source_file": "supply_chain_80", "domain": "supply_chain", "answer": {"Rudder Type": "Spade", "Rudder Area": "32.62 m^2", "Midships to Hardover": "12 sec", "Bow Thruster": "1,300 kW"}, "field_matches": {"Rudder Type": true, "Rudder Area": true, "Midships to Hardover": true, "Bow Thruster": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "finance_q131", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_65", "domain": "finance", "answer": {"paragraph_65_line": "65", "first_tran_name_line": "68", "footnote_line": "1"}, "field_matches": {"paragraph_65_line": false, "first_tran_name_line": false, "footnote_line": false}, "match": false}

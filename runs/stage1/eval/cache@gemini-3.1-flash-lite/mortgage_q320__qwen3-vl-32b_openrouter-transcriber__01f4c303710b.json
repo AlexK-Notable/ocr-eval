@@ -1,0 +1,1 @@
+{"qid": "mortgage_q320", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_152", "domain": "mortgage", "answer": {"1": "unchecked", "2": "checked", "3": "unchecked"}, "field_matches": {"1": false, "2": false, "3": true}, "match": false}

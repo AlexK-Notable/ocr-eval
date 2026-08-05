@@ -1,0 +1,1 @@
+{"qid": "finance_q132", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_65", "domain": "finance", "answer": {"count_1_approx_date": "2020-05-01", "count_1_lender_number": "2"}, "field_matches": {"count_1_approx_date": true, "count_1_lender_number": true}, "match": true}

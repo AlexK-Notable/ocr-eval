@@ -1,0 +1,1 @@
+{"qid": "mortgage_q72", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_31", "domain": "mortgage", "answer": {"buyer_initials": "DB/VB", "revised_date": "7/2024"}, "field_matches": {"buyer_initials": true, "revised_date": true}, "match": true}

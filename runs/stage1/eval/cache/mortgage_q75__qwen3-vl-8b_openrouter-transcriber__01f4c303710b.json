@@ -1,1 +1,1 @@
-{"qid": "mortgage_q75", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_33", "domain": "mortgage", "answer": {"additional_earnest_money_amount": null}, "field_matches": {"additional_earnest_money_amount": false}, "match": false}
+{"qid": "mortgage_q75", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_33", "domain": "mortgage", "answer": {"additional_earnest_money_amount": null}, "field_matches": {"additional_earnest_money_amount": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

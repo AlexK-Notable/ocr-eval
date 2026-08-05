@@ -1,0 +1,1 @@
+{"qid": "mortgage_q88", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_39", "domain": "mortgage", "answer": {"section_4_2_other_checkbox_status": true, "section_4_3_c_other_checkbox_status": true}, "field_matches": {"section_4_2_other_checkbox_status": true, "section_4_3_c_other_checkbox_status": true}, "match": true}

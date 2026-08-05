@@ -1,0 +1,1 @@
+{"qid": "finance_q233", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_109", "domain": "finance", "answer": {"row_b_column_5_value": 50000, "row_c_column_2_value": 125000}, "field_matches": {"row_b_column_5_value": false, "row_c_column_2_value": true}, "match": false}

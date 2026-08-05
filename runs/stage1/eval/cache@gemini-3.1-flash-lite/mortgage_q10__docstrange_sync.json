@@ -1,0 +1,1 @@
+{"qid": "mortgage_q10", "parser": "docstrange_sync", "source_file": "mortgage_4", "domain": "mortgage", "answer": {"lender_address": "1200 Financial Center Blvd, Denver, CO 80203"}, "field_matches": {"lender_address": true}, "match": true}

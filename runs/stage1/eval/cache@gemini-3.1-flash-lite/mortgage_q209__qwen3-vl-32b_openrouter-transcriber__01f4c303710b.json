@@ -1,0 +1,1 @@
+{"qid": "mortgage_q209", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_95", "domain": "mortgage", "answer": {"comp1_exterior_quality_condition": "Quality: Q4, Condition: C3"}, "field_matches": {"comp1_exterior_quality_condition": false}, "match": false}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q107", "parser": "docstrange_sync", "source_file": "mortgage_45", "domain": "mortgage", "answer": {"buyer_initials_name": "Jennifer"}, "field_matches": {"buyer_initials_name": true}, "match": true}
+{"qid": "mortgage_q107", "parser": "docstrange_sync", "source_file": "mortgage_45", "domain": "mortgage", "answer": {"buyer_initials_name": "Jennifer"}, "field_matches": {"buyer_initials_name": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

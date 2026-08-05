@@ -1,0 +1,1 @@
+{"qid": "finance_q167", "parser": "docstrange_sync", "source_file": "finance_82", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field", "amount": 20.0, "date_of_receipt": "2026-01-25", "receipt_for_primary_marked": true}, "field_matches": {"occupation": true, "amount": true, "date_of_receipt": true, "receipt_for_primary_marked": true}, "match": true}

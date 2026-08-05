@@ -1,0 +1,1 @@
+{"qid": "mortgage_q109", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_46", "domain": "mortgage", "answer": {"appraisal_version": null}, "field_matches": {"appraisal_version": false}, "match": false}

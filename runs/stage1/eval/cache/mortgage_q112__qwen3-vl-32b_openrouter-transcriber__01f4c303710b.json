@@ -1,1 +1,1 @@
-{"qid": "mortgage_q112", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"year_built": "1985"}, "field_matches": {"year_built": true}, "match": true}
+{"qid": "mortgage_q112", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"year_built": "1985"}, "field_matches": {"year_built": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

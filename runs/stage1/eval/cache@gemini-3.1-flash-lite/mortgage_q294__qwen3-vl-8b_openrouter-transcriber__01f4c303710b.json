@@ -1,0 +1,1 @@
+{"qid": "mortgage_q294", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_132", "domain": "mortgage", "answer": {"face-to-face interview": "no", "by mail": "no", "by telephone": "yes"}, "field_matches": {"face-to-face interview": true, "by mail": true, "by telephone": true}, "match": true}

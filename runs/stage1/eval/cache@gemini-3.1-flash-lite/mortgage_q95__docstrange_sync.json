@@ -1,0 +1,1 @@
+{"qid": "mortgage_q95", "parser": "docstrange_sync", "source_file": "mortgage_42", "domain": "mortgage", "answer": {"no_financing_required": false}, "field_matches": {"no_financing_required": true}, "match": true}

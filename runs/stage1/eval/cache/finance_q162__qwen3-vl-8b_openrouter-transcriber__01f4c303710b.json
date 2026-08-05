@@ -1,1 +1,1 @@
-{"qid": "finance_q162", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_80", "domain": "finance", "answer": {"withdrawals_water_stress_selection": true}, "field_matches": {"withdrawals_water_stress_selection": true}, "match": true}
+{"qid": "finance_q162", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_80", "domain": "finance", "answer": {"withdrawals_water_stress_selection": true}, "field_matches": {"withdrawals_water_stress_selection": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

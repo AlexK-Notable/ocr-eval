@@ -1,1 +1,1 @@
-{"qid": "finance_q25", "parser": "docstrange_sync", "source_file": "finance_9", "domain": "finance", "answer": {"total_area_in_square_feet": 450000}, "field_matches": {"total_area_in_square_feet": true}, "match": true}
+{"qid": "finance_q25", "parser": "docstrange_sync", "source_file": "finance_9", "domain": "finance", "answer": {"total_area_in_square_feet": 450000}, "field_matches": {"total_area_in_square_feet": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

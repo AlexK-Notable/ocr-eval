@@ -1,0 +1,1 @@
+{"qid": "finance_q203", "parser": "docstrange_sync", "source_file": "finance_96", "domain": "finance", "answer": {"employer_identification_number": "25-6116398", "case_no": "1176-1970"}, "field_matches": {"employer_identification_number": true, "case_no": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q174", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_59", "domain": "supply_chain", "answer": {"Tank Car": "checked", "IBC": "unchecked", "RAM": "unchecked", "Type A": "unchecked"}, "field_matches": {"Tank Car": true, "IBC": true, "RAM": true, "Type A": true}, "match": true}

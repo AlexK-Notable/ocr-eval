@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q97", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_42", "domain": "medical_healthcare", "answer": {"reviewed_date_time": "10/29/2023 at 10:54:00"}, "field_matches": {"reviewed_date_time": true}, "match": true}

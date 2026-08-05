@@ -1,1 +1,1 @@
-{"qid": "mortgage_q85", "parser": "docstrange_sync", "source_file": "mortgage_37", "domain": "mortgage", "answer": {"seller_initials_footer": "Thomas"}, "field_matches": {"seller_initials_footer": true}, "match": true}
+{"qid": "mortgage_q85", "parser": "docstrange_sync", "source_file": "mortgage_37", "domain": "mortgage", "answer": {"seller_initials_footer": "Thomas"}, "field_matches": {"seller_initials_footer": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

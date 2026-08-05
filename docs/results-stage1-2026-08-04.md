@@ -10,14 +10,17 @@ assumption or remains unverified, it says so.
 
 ## 1. Section B — the three scored transcriber rows
 
+**Re-scored 2026-08-05** under D11-rev2's extractor (`gemini-3.5-flash-lite`). Numbers below are the
+current ones; the pre-rev2 figures and the old-vs-new comparison are in §3.
+
 | row | checkbox acc-over-all | blank/null | hallucination | general/field | strict/question | transcript-recall | median latency |
 |---|---|---|---|---|---|---|---|
-| `docstrange@nanonets` | **93.0%** [89.1, 96.2] | 93.6% | 6.4% | 89.6% | **82.1%** | **97.6%** | 30.3 s |
-| `qwen3-vl-32b@openrouter-transcriber` | 91.5% [87.2, 95.1] | 94.7% | 5.3% | 87.4% | 76.8% | 92.7% | 14.8 s |
-| `qwen3-vl-8b@openrouter-transcriber` | 80.6% [74.0, 86.3] | **95.2%** | **4.8%** | 82.3% | 70.1% | 94.3% | 8.0 s |
+| `docstrange@nanonets` | **95.0%** [91.9, 97.6] | 95.2% | 4.8% | 88.7% | **80.9%** | **97.6%** | 30.3 s |
+| `qwen3-vl-32b@openrouter-transcriber` | 91.9% [87.7, 95.5] | 93.6% | 6.4% | 86.9% | 76.4% | 92.7% | 14.8 s |
+| `qwen3-vl-8b@openrouter-transcriber` | 81.0% [74.4, 86.8] | 93.1% | 6.9% | 81.2% | 69.0% | 94.3% | 8.0 s |
 
-All three: extractor `gemini-3.1-flash-lite`, input `raster-png`, `beats majority: yes`,
-**0 errors** across 4,068 scored cells (1,356 × 3).
+All three: extractor `gemini-3.5-flash-lite`, input `raster-png`, `beats majority: yes`,
+**0 errors** across 4,068 scored cells (1,356 × 3) — on both the original and the re-scored pass.
 
 ### The headline is a tie, not a ranking
 
@@ -97,12 +100,48 @@ model, McNemar on discordant pairs:
 | `gemini-3.5-flash-lite` | 240/300 (80.0%) | +13/−14, p=1.000 | $1.12 |
 | `gemini-2.5-flash` | 235/300 (78.3%) | +12/−18, p=0.362 | $1.12 |
 
-Nothing separates them, so the choice fell to cost, speed and GA status. The full-corpus row later
-scored **82.0%**, closely matching the n=300 estimate.
+Nothing separates them at n=300, so the choice fell to cost, speed and GA status. The full-corpus row
+later scored **82.0%**, closely matching the n=300 estimate.
+
+### D11 rev 2 (2026-08-05) — repin to `gemini-3.5-flash-lite`, and what re-scoring revealed
+
+User decision: move the pin to the newest GA flash-lite generation. Deliberately the fixed id, not
+`gemini-flash-lite-latest` — a floating alias resolves to a different model over time while
+`run_meta.json` stamps the same name, which is the exact reproducibility failure the durability
+argument above exists to prevent.
+
+All 4,068 transcriber rows were archived to `eval/cache@gemini-3.1-flash-lite/` and re-scored
+(~$2.75). **The full-corpus result does not reproduce the n=300 finding of equivalence:**
+
+| leg | 3.1-flash-lite | 3.5-flash-lite | Δ fully-correct | verdict agreement | McNemar (b/c) |
+|---|---|---|---|---|---|
+| `docstrange_sync` | 1113 | 1097 | −16 | 93.1% | 39/55, p=0.121 |
+| `qwen3-vl-32b` | 1042 | 1036 | −6 | 94.0% | 38/44, p=0.581 |
+| `qwen3-vl-8b` | 950 | 936 | −14 | 94.4% | 31/45, p=0.135 |
+| **pooled** | 3105 | 3069 | **−36** | 93.8% | **108/144, p=0.027** |
+
+No single leg reaches significance, but **pooled over 4,068 cells the older extractor is
+significantly better (p=0.027)** — the n=300 A/B was simply underpowered to see a ~1pp effect. Two
+honest readings of the same table, both worth stating:
+
+- **It is a real regression in grading**, ~36 cells / ~0.9pp. The 3.1 extractor was the better
+  judge on this corpus.
+- **It is small and does not reorder anything.** Section B's ranking, every separability verdict, and
+  the "docstrange vs qwen3-vl-32b is a tie" conclusion all survive unchanged.
+
+Note the direction is NOT uniform across metrics: DocStrange's headline *checkbox* accuracy **rose**
+93.0% → 95.0% while its total fully-correct count fell, i.e. the losses land on non-checkbox fields.
+A single "which extractor is better" number would have hidden that.
+
+**Methodological lesson, recorded because it cost real money twice:** a same-day n=300 A/B is
+adequate to reject a *large* difference and inadequate to establish equivalence. The p=1.000 at
+n=300 was read as "these are interchangeable"; at n=4,068 the same comparison is p=0.027. Power, not
+significance, was the missing quantity.
 
 **Cost of the change:** DoD #2 compares our absolute numbers to upstream's published Table 3,
-produced with the old extractor, so a reproduction gap now carries one extra uncontrolled
-variable. Re-pin `DEFAULT_MODEL` to reproduce upstream exactly.
+produced with `gemini-3-flash-preview`, so a reproduction gap now carries one extra uncontrolled
+variable — and after rev 2 the extractor is two generations from upstream's, not one. Re-pin
+`DEFAULT_MODEL` to reproduce upstream exactly.
 
 > ⚠️ **`selftest --extractor` cannot adjudicate this.** All four candidates score 5/5 on its
 > fixtures. It is a floor, not a discriminator — passing it is not evidence of equivalence.

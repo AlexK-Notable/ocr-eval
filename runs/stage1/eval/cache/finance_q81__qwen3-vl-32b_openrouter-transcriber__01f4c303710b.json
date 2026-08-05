@@ -1,1 +1,1 @@
-{"qid": "finance_q81", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"ohio_crime_type": "insurance fraud"}, "field_matches": {"ohio_crime_type": true}, "match": true}
+{"qid": "finance_q81", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"ohio_crime_type": "insurance fraud"}, "field_matches": {"ohio_crime_type": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

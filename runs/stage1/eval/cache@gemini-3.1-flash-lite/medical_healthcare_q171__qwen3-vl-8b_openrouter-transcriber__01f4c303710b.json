@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q171", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_71", "domain": "medical_healthcare", "answer": {"5-1A": "OUT", "5-1B": "IN", "5-2": null}, "field_matches": {"5-1A": false, "5-1B": false, "5-2": false}, "match": false}

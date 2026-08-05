@@ -1,1 +1,1 @@
-{"qid": "mortgage_q31", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_12", "domain": "mortgage", "answer": {"current_interest_rate": 5.875}, "field_matches": {"current_interest_rate": true}, "match": true}
+{"qid": "mortgage_q31", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_12", "domain": "mortgage", "answer": {"current_interest_rate": 5.875}, "field_matches": {"current_interest_rate": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

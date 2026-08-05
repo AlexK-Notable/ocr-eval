@@ -1,0 +1,1 @@
+{"qid": "mortgage_q177", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_80", "domain": "mortgage", "answer": {"amc_reference_id": "543234", "appraisal_version": "4"}, "field_matches": {"amc_reference_id": true, "appraisal_version": true}, "match": true}

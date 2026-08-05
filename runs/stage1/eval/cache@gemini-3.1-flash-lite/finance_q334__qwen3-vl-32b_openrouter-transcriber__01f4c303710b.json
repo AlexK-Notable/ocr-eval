@@ -1,0 +1,1 @@
+{"qid": "finance_q334", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_164", "domain": "finance", "answer": {"bridger_underground_resolved": 1, "cordova_resolved": "—"}, "field_matches": {"bridger_underground_resolved": true, "cordova_resolved": false}, "match": false}

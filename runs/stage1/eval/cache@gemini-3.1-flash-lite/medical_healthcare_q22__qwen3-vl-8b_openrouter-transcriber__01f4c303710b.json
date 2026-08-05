@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q22", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_12", "domain": "medical_healthcare", "answer": {"died_yes": false}, "field_matches": {"died_yes": false}, "match": false}

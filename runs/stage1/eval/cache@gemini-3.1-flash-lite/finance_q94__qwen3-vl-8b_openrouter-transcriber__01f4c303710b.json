@@ -1,0 +1,1 @@
+{"qid": "finance_q94", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_43", "domain": "finance", "answer": {"figure_title": "Financial Statement Assertions and Procedures for Obtaining Audit Evidence", "bottom_border_label": null}, "field_matches": {"figure_title": true, "bottom_border_label": false}, "match": false}

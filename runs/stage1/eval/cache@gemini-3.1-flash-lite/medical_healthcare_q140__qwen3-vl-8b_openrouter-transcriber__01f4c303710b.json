@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q140", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_62", "domain": "medical_healthcare", "answer": {"heroin_status": false, "cocaine_status": false}, "field_matches": {"heroin_status": true, "cocaine_status": true}, "match": true}

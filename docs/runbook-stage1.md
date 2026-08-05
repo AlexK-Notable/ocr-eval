@@ -405,12 +405,18 @@ Ollama shim limits, both verified live:
   transcriber row costs **≈ $1.83**. Scale that by transcript length: cost is ~linear in
   markdown size, and 2.5k tokens/call reflects ~10k-char pages.
 
-  Do **not** reach for a Flash-Lite extractor to save money here — measured, it saves only
+  Do **not** swap the extractor to save money — measured, a Flash-Lite tier saves only
   $0.70–$0.92/row (`gemini-3.5-flash-lite` ≈ $1.13, `gemini-3.1-flash-lite` ≈ $0.91) in exchange
   for changing the measurement instrument on every transcriber row and confounding the DoD #2
   reproduction gate. Note also that the 5-fixture `selftest --extractor` gate does **not**
   discriminate between them — all three score 5/5 — so passing it is not evidence a cheaper
-  extractor is equivalent on the real bank. If extractor cost ever does bite, the lever is the
+  extractor is equivalent on the real bank. This was then demonstrated the hard way: the D11-rev2
+  repin (a decision taken on generation-currency grounds, not cost) re-scored all 4,068 rows and
+  found the *older* extractor significantly better pooled — b=108/c=144, p=0.027, ~0.9pp — after an
+  n=300 A/B had reported p=1.000. Small n rejects a large difference; it does not establish
+  equivalence. See [`scoring.md`](scoring.md) and
+  [`results-stage1-2026-08-04.md`](results-stage1-2026-08-04.md#d11-rev-2-2026-08-05-repin-to-gemini-35-flash-lite-and-what-re-scoring-revealed).
+  If extractor cost ever does bite, the lever is the
   **Batch tier at exactly half Standard** ($0.25 /M in, $1.50 /M out → ≈ $0.92/row) with no model
   change at all.
 

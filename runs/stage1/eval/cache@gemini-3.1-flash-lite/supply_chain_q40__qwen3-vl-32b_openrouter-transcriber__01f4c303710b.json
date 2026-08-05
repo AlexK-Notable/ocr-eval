@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q40", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_16", "domain": "supply_chain", "answer": {"payment_method_instruction": "Check if applicable"}, "field_matches": {"payment_method_instruction": true}, "match": true}

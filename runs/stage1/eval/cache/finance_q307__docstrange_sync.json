@@ -1,1 +1,1 @@
-{"qid": "finance_q307", "parser": "docstrange_sync", "source_file": "finance_147", "domain": "finance", "answer": {"page_number": "15"}, "field_matches": {"page_number": true}, "match": true}
+{"qid": "finance_q307", "parser": "docstrange_sync", "source_file": "finance_147", "domain": "finance", "answer": {"page_number": "15"}, "field_matches": {"page_number": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q30", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_11", "domain": "mortgage", "answer": {"original_loan_amount": 185000}, "field_matches": {"original_loan_amount": true}, "match": true}
+{"qid": "mortgage_q30", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_11", "domain": "mortgage", "answer": {"original_loan_amount": 185000}, "field_matches": {"original_loan_amount": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q107", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_47", "domain": "medical_healthcare", "answer": {"acupuncturist_name_and_date": "Jason P. Lee 05/22/2024"}, "field_matches": {"acupuncturist_name_and_date": true}, "match": true}

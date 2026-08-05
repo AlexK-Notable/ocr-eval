@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q93", "parser": "docstrange_sync", "source_file": "supply_chain_36", "domain": "supply_chain", "answer": {"Labor Total": null, "Parts Total": null, "Charge Total": "$0.00", "Outside Repair Total": "$0.00"}, "field_matches": {"Labor Total": true, "Parts Total": false, "Charge Total": true, "Outside Repair Total": true}, "match": false}

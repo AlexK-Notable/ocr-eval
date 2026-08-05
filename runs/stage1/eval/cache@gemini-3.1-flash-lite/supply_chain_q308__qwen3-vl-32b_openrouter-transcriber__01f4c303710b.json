@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q308", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_110", "domain": "supply_chain", "answer": {"Box 8": "N/A", "Box 9": "N/A", "Box 10": "N/A", "Box 11": "N/A"}, "field_matches": {"Box 8": true, "Box 9": true, "Box 10": true, "Box 11": true}, "match": true}

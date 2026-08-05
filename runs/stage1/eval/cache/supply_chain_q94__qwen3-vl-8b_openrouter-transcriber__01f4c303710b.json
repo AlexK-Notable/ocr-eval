@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q94", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_36", "domain": "supply_chain", "answer": {"Row 1 QTY": 33.9, "Row 2 QTY": 1.0}, "field_matches": {"Row 1 QTY": true, "Row 2 QTY": true}, "match": true}
+{"qid": "supply_chain_q94", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_36", "domain": "supply_chain", "answer": {"Row 1 QTY": 33.9, "Row 2 QTY": 1.0}, "field_matches": {"Row 1 QTY": true, "Row 2 QTY": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

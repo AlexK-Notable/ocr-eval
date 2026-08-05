@@ -1,0 +1,1 @@
+{"qid": "finance_q153", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_76", "domain": "finance", "answer": {"credits_retired_reporting_year": 27298}, "field_matches": {"credits_retired_reporting_year": true}, "match": true}

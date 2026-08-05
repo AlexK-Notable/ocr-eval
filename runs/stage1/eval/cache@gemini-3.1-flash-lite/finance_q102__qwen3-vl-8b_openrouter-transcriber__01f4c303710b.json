@@ -1,0 +1,1 @@
+{"qid": "finance_q102", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_50", "domain": "finance", "answer": {"unamortized_loss_on_refunding_of_debt": 417, "unamortized_gain_on_refunding_of_debt": 124}, "field_matches": {"unamortized_loss_on_refunding_of_debt": true, "unamortized_gain_on_refunding_of_debt": true}, "match": true}

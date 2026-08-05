@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q140", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_47", "domain": "supply_chain", "answer": {"carrier": "MSCU", "vessel": "MSC BOSPHORUS", "voyage": "FR447W", "lloyds": 9247742}, "field_matches": {"carrier": true, "vessel": true, "voyage": true, "lloyds": true}, "match": true}

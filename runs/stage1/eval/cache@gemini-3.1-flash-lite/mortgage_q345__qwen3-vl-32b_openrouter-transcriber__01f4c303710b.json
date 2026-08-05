@@ -1,0 +1,1 @@
+{"qid": "mortgage_q345", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_169", "domain": "mortgage", "answer": {"Borrower Self Employed": "no", "Co-Borrower Self Employed": "no", "Completed": "Jointly"}, "field_matches": {"Borrower Self Employed": false, "Co-Borrower Self Employed": false, "Completed": true}, "match": false}

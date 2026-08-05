@@ -1,0 +1,1 @@
+{"qid": "mortgage_q11", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"principal_interest_increase_after_closing": false}, "field_matches": {"principal_interest_increase_after_closing": true}, "match": true}

@@ -1,1 +1,1 @@
-{"qid": "finance_q155", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_77", "domain": "finance", "answer": {"credits_retired_value": 8000}, "field_matches": {"credits_retired_value": true}, "match": true}
+{"qid": "finance_q155", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_77", "domain": "finance", "answer": {"credits_retired_value": 8000}, "field_matches": {"credits_retired_value": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

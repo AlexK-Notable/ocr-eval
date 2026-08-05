@@ -1,0 +1,1 @@
+{"qid": "finance_q326", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_158", "domain": "finance", "answer": {"delaware_eitc_percentage": 0.2}, "field_matches": {"delaware_eitc_percentage": true}, "match": true}

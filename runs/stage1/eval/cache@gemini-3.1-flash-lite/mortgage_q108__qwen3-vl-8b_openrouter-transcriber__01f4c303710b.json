@@ -1,0 +1,1 @@
+{"qid": "mortgage_q108", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_46", "domain": "mortgage", "answer": {"map_title": "USGS Lava Flow Zone", "property_label": "subject property location", "body_of_water": null}, "field_matches": {"map_title": false, "property_label": false, "body_of_water": false}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q174", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_78", "domain": "mortgage", "answer": {"broadband_internet_available": "Yes", "gas_public_checkbox": false, "electricity_source": null}, "field_matches": {"broadband_internet_available": true, "gas_public_checkbox": false, "electricity_source": false}, "match": false}

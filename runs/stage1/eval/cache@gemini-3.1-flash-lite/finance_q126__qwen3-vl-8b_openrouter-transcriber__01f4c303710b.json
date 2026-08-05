@@ -1,0 +1,1 @@
+{"qid": "finance_q126", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_62", "domain": "finance", "answer": {"city_and_state": "Houston, Texas"}, "field_matches": {"city_and_state": true}, "match": true}

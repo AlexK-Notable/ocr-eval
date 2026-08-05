@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q29", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_15", "domain": "medical_healthcare", "answer": {"cfr_citation": "42 CFR 424.32"}, "field_matches": {"cfr_citation": true}, "match": true}

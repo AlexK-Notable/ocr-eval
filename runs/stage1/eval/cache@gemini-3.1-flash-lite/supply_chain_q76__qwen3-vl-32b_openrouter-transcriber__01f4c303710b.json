@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q76", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_16", "domain": "supply_chain", "answer": {"total_weight": 62.5}, "field_matches": {"total_weight": true}, "match": true}

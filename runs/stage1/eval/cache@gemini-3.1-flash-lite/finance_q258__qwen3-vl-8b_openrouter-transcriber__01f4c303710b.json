@@ -1,0 +1,1 @@
+{"qid": "finance_q258", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_122", "domain": "finance", "answer": {"bank_name_sl_i": "State Bank of India", "ifs_code_sl_i": "SBIN0001234", "bank_name_sl_ii": "HDFC Bank"}, "field_matches": {"bank_name_sl_i": true, "ifs_code_sl_i": true, "bank_name_sl_ii": true}, "match": true}

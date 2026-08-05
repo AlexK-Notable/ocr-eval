@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q289", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_101", "domain": "supply_chain", "answer": {"Primary BOL TYPE": "Master", "Second BOL TYPE": null}, "field_matches": {"Primary BOL TYPE": true, "Second BOL TYPE": false}, "match": false}

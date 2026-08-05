@@ -1,1 +1,1 @@
-{"qid": "mortgage_q473", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_192", "domain": "mortgage", "answer": {"text": "YES See Seller Credits in Section L"}, "field_matches": {"text": true}, "match": true}
+{"qid": "mortgage_q473", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_192", "domain": "mortgage", "answer": {"text": "YES See Seller Credits in Section L"}, "field_matches": {"text": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q87", "parser": "docstrange_sync", "source_file": "medical_healthcare_38", "domain": "medical_healthcare", "answer": {"k_reference_range": "3.5 — 4.900", "glu_reference_range": "70 — 105"}, "field_matches": {"k_reference_range": true, "glu_reference_range": true}, "match": true}

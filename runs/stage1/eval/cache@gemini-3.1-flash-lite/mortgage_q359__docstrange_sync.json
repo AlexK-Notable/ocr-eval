@@ -1,0 +1,1 @@
+{"qid": "mortgage_q359", "parser": "docstrange_sync", "source_file": "mortgage_180", "domain": "mortgage", "answer": {"Electricity": "yes", "Gas": "yes", "Street": "no"}, "field_matches": {"Electricity": true, "Gas": true, "Street": false}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q49", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_17", "domain": "mortgage", "answer": {"third_other_asset_amount": null}, "field_matches": {"third_other_asset_amount": false}, "match": false}

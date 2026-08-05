@@ -1,1 +1,1 @@
-{"qid": "mortgage_q117", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_50", "domain": "mortgage", "answer": {"location": "Suburban", "built_up": null}, "field_matches": {"location": true, "built_up": false}, "match": false}
+{"qid": "mortgage_q117", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_50", "domain": "mortgage", "answer": {"location": null, "built_up": null}, "field_matches": {"location": false, "built_up": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

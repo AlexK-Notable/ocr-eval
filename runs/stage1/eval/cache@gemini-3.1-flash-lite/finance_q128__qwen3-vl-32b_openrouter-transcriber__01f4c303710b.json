@@ -1,0 +1,1 @@
+{"qid": "finance_q128", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_64", "domain": "finance", "answer": {"plaintiff_name": "United States of America", "case_number": "21-6150-Hunt"}, "field_matches": {"plaintiff_name": true, "case_number": true}, "match": true}

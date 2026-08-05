@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q132", "parser": "docstrange_sync", "source_file": "medical_healthcare_59", "domain": "medical_healthcare", "answer": {"kidney_problem": "Yes", "gynecologic_problems": "No", "alcohol_drug_problem": false}, "field_matches": {"kidney_problem": true, "gynecologic_problems": true, "alcohol_drug_problem": true}, "match": true}

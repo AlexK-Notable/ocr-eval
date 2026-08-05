@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q38", "parser": "docstrange_sync", "source_file": "supply_chain_16", "domain": "supply_chain", "answer": {"consignee_info": "True", "importer_info": "Japan"}, "field_matches": {"consignee_info": true, "importer_info": true}, "match": true}

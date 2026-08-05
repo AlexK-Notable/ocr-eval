@@ -1,0 +1,1 @@
+{"qid": "finance_q193", "parser": "docstrange_sync", "source_file": "finance_91", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field", "fec_id_number": "C00401224", "memo_item_selected": true}, "field_matches": {"occupation": true, "fec_id_number": true, "memo_item_selected": true}, "match": true}

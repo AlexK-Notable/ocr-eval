@@ -1,0 +1,1 @@
+{"qid": "mortgage_q20", "parser": "docstrange_sync", "source_file": "mortgage_8", "domain": "mortgage", "answer": {"cash_to_close": 10850.0, "lender_credits": 0.0}, "field_matches": {"cash_to_close": true, "lender_credits": true}, "match": true}

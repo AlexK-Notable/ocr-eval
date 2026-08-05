@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q52", "parser": "docstrange_sync", "source_file": "supply_chain_21", "domain": "supply_chain", "answer": {"delivery_method": "Email", "zip_code": "07652"}, "field_matches": {"delivery_method": true, "zip_code": true}, "match": true}
+{"qid": "supply_chain_q52", "parser": "docstrange_sync", "source_file": "supply_chain_21", "domain": "supply_chain", "answer": {"delivery_method": "Email", "zip_code": "07652"}, "field_matches": {"delivery_method": true, "zip_code": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

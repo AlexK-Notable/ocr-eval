@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q18", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_10", "domain": "medical_healthcare", "answer": {"medical_relief_additional_category": "Business"}, "field_matches": {"medical_relief_additional_category": true}, "match": true}

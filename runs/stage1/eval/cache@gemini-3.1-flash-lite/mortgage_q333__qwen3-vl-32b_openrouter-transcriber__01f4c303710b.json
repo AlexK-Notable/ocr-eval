@@ -1,0 +1,1 @@
+{"qid": "mortgage_q333", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_160", "domain": "mortgage", "answer": {"Conventional": "checked", "FHA": "unchecked", "VA": "unchecked", "Fixed Rate": "checked", "GPM": "unchecked"}, "field_matches": {"Conventional": true, "FHA": true, "VA": true, "Fixed Rate": true, "GPM": true}, "match": true}

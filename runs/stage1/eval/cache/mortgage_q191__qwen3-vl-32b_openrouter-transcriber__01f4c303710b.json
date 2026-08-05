@@ -1,1 +1,1 @@
-{"qid": "mortgage_q191", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_87", "domain": "mortgage", "answer": {"appraiser_name": "Agatha Appraiser"}, "field_matches": {"appraiser_name": true}, "match": true}
+{"qid": "mortgage_q191", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_87", "domain": "mortgage", "answer": {"appraiser_name": "Agatha Appraiser"}, "field_matches": {"appraiser_name": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

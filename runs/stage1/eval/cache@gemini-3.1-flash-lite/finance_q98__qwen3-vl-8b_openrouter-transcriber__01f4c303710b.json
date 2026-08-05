@@ -1,0 +1,1 @@
+{"qid": "finance_q98", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_47", "domain": "finance", "answer": {"case_number": null, "doc_number": null, "filed_date": "2025-02-03"}, "field_matches": {"case_number": false, "doc_number": false, "filed_date": true}, "match": false}

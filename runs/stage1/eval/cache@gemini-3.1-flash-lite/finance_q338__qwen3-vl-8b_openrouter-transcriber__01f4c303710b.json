@@ -1,0 +1,1 @@
+{"qid": "finance_q338", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_166", "domain": "finance", "answer": {"chart_title": "TOTAL SHAREHOLDER RETURNS (“TSR”)³"}, "field_matches": {"chart_title": true}, "match": true}

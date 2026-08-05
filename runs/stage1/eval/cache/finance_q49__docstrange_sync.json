@@ -1,1 +1,1 @@
-{"qid": "finance_q49", "parser": "docstrange_sync", "source_file": "finance_18", "domain": "finance", "answer": {"install_service_demonstrate_products": "both"}, "field_matches": {"install_service_demonstrate_products": true}, "match": true}
+{"qid": "finance_q49", "parser": "docstrange_sync", "source_file": "finance_18", "domain": "finance", "answer": {"install_service_demonstrate_products": "both"}, "field_matches": {"install_service_demonstrate_products": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

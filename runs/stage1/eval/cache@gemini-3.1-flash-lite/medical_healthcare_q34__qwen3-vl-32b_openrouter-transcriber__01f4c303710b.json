@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q34", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_17", "domain": "medical_healthcare", "answer": {"telephone": "(813) 555-0421", "city_state": "Tampa, FL"}, "field_matches": {"telephone": true, "city_state": true}, "match": true}

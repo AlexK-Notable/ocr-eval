@@ -1,0 +1,1 @@
+{"qid": "mortgage_q97", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_42", "domain": "mortgage", "answer": {"company_selected_by": "both"}, "field_matches": {"company_selected_by": true}, "match": true}

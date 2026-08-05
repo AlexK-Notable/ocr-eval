@@ -1,0 +1,1 @@
+{"qid": "mortgage_q101", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"additional_earnest_money_amount": 5000}, "field_matches": {"additional_earnest_money_amount": true}, "match": true}

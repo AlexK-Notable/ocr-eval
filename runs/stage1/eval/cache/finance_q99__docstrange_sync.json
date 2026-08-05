@@ -1,1 +1,1 @@
-{"qid": "finance_q99", "parser": "docstrange_sync", "source_file": "finance_47", "domain": "finance", "answer": {"dated_label_date": "February 3rd, 2025"}, "field_matches": {"dated_label_date": true}, "match": true}
+{"qid": "finance_q99", "parser": "docstrange_sync", "source_file": "finance_47", "domain": "finance", "answer": {"dated_label_date": "February 3rd, 2025"}, "field_matches": {"dated_label_date": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

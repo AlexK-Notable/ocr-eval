@@ -1,0 +1,1 @@
+{"qid": "mortgage_q34", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"is_primary_residence": true}, "field_matches": {"is_primary_residence": true}, "match": true}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q103", "parser": "docstrange_sync", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"paid_by_at_settlement": "Buyer Seller"}, "field_matches": {"paid_by_at_settlement": true}, "match": true}
+{"qid": "mortgage_q103", "parser": "docstrange_sync", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"paid_by_at_settlement": "☑ Buyer ☑ Seller"}, "field_matches": {"paid_by_at_settlement": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

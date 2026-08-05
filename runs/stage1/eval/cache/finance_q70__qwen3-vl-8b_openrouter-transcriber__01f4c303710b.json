@@ -1,1 +1,1 @@
-{"qid": "finance_q70", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_26", "domain": "finance", "answer": {"marked_checkbox": null}, "field_matches": {"marked_checkbox": false}, "match": false}
+{"qid": "finance_q70", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_26", "domain": "finance", "answer": {"marked_checkbox": null}, "field_matches": {"marked_checkbox": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

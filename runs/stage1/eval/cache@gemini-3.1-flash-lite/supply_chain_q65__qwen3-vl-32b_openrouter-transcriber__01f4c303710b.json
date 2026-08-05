@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q65", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_27", "domain": "supply_chain", "answer": {"zip_code": "94621", "email_radio_status": true}, "field_matches": {"zip_code": true, "email_radio_status": true}, "match": true}

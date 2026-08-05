@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q161", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"BOV gasket replaced?": null, "Manway gasket replaced?": null}, "field_matches": {"BOV gasket replaced?": false, "Manway gasket replaced?": false}, "match": false}

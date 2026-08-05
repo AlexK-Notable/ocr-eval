@@ -1,1 +1,1 @@
-{"qid": "finance_q80", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"nevada_guilty_of": "a felony"}, "field_matches": {"nevada_guilty_of": true}, "match": true}
+{"qid": "finance_q80", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_32", "domain": "finance", "answer": {"nevada_guilty_of": "a felony"}, "field_matches": {"nevada_guilty_of": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

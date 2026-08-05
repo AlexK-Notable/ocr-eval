@@ -1,0 +1,1 @@
+{"qid": "mortgage_q262", "parser": "docstrange_sync", "source_file": "mortgage_107", "domain": "mortgage", "answer": {"Proposed_Maturity_Yrs": 30, "Proposed_Maturity_Mos": 0, "Monthly_Payment": 2525.0}, "field_matches": {"Proposed_Maturity_Yrs": true, "Proposed_Maturity_Mos": true, "Monthly_Payment": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q110", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"heating_detail": "None Typical for Market"}, "field_matches": {"heating_detail": false}, "match": false}
