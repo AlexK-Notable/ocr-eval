@@ -9,8 +9,11 @@ guide to this API surface.
 
 **Raster-only (divergence D5).** Every page is sent as a 150-dpi PNG rendered by
 ``VisionParserBase``/pymupdf — never the source PDF — even though the endpoint would happily
-accept a PDF upload. 2 of 16 sampled corpus docs carry an embedded text layer that a
-PDF-accepting parser would free-ride on, so a PDF upload here would not be measuring OCR.
+accept a PDF upload. 30.1% of the 581 corpus docs carry an embedded text layer that a
+PDF-accepting parser would free-ride on — and 7.1% carry a checkbox GLYPH in that text
+layer, readable with no vision at all (measured corpus-wide 2026-08-05; an earlier
+"2 of 16 sampled" estimate understated it ~2.4x). A PDF upload here would not be
+measuring OCR.
 D5 makes raster-only binding for every parser this fork implements.
 
 **Why this provider is interesting.** Nanonets' OCR model prompt is the only surveyed one that
