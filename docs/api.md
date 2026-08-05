@@ -354,12 +354,46 @@ exposed in a prior session transcript.
 Environment-only. Every registry entry with a key requirement names the variable via
 `api_key_env` (e.g. `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
 `DOCSTRANGE_API_KEY`); the value itself
-never appears in any config file. Keys are exported in the operator's shell profile — the variable
+never appears in any config file. The variable
 must be present in the real process environment before the command runs. No secrets-manager
 wrapper is assumed or required: `bws`/`bitwarden` appear in **zero lines of code** in this
 repository (verified by grep over `ocr_eval_ext/`, `realdoc_bench/`, `configs/`, `tests/`,
 `tests_ext/`); every key is read through a plain `os.environ.get()`, so any injection mechanism
 that populates the environment works identically.
+
+### On-demand injection, not a profile export (host convention, adopted 2026-08-05)
+
+Because the harness only requires "present in the environment", the mechanism is the operator's
+choice. The convention on the current host deliberately is **not** a `~/.zshrc` export:
+
+```sh
+gemkey                                    # loads keys into THIS shell only
+uv run ocr-eval score --run-dir runs/stage1 -p <parser>
+```
+
+`gemkey` is a one-line `~/.zshrc` function that sources `~/bin/ocr-eval-keys.sh`, which reads
+`~/.config/ocr-eval/secrets.env` (mode `0600`, inside a `0700` directory). The secret is in exactly
+one file; the dotfile holds only the variable *name*.
+
+Why not a plain profile export, given the runbook long described one:
+
+- A profile export is cleartext in a file that gets backed up, synced to dotfile repos, and copied
+  between machines. This is not hypothetical here — a key survived in `~/.zshrc.bak` *after* the key
+  itself had been rotated, so the backup outlived the rotation that was supposed to retire it.
+- It loads into **every** shell, so unrelated processes inherit it, including tools whose crash
+  handlers dump the environment.
+- Shell history is synced on this host (`atuin`), which is a further reason never to pass a key as a
+  command argument. `secrets.env` is written with `umask 077` and a redirect, so the value never
+  reaches `argv` or history.
+
+The loader **refuses** to source a `secrets.env` whose mode is not `600`/`400`, printing the `chmod`
+to run. It does not silently fix the permissions: a silent fix would conceal that the secret had
+already been world-readable for some window. It prints `<VAR>: loaded` per key found and never
+echoes a value.
+
+For a stronger at-rest posture, `gnome-keyring` is running on this host and `secret-tool`
+(`apt install libsecret-tools`) would let `secrets.env` be replaced by a keyring lookup, encrypting
+the value at rest instead of relying on file mode alone. Nothing in the harness changes either way.
 
 ### `.env` does not reach the `ocr-eval` CLI
 

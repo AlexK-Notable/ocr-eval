@@ -84,7 +84,15 @@ revision", never as "matches the pin".
 
 ## Keys
 
-See [`api.md`](api.md#keys) for the full semantics. Probe what the environment actually has:
+See [`api.md`](api.md#keys) for the full semantics. **This host loads keys on demand** — run
+`gemkey` first (`~/.zshrc` function → `~/bin/ocr-eval-keys.sh` → `0600`
+`~/.config/ocr-eval/secrets.env`), which populates the current shell only. A reference copy of the
+loader lives at [`scripts/ocr-eval-keys.sh`](../scripts/ocr-eval-keys.sh) so it can be reinstalled
+if `~/bin` is lost; the secrets file itself is never in the repo. Rationale for on-demand over a
+profile export is in
+[`api.md`](api.md#on-demand-injection-not-a-profile-export-host-convention-adopted-2026-08-05).
+
+Probe what the environment actually has:
 
 ```bash
 for v in GEMINI_API_KEY GOOGLE_API_KEY OPENROUTER_API_KEY MISTRAL_API_KEY; do
@@ -92,12 +100,15 @@ for v in GEMINI_API_KEY GOOGLE_API_KEY OPENROUTER_API_KEY MISTRAL_API_KEY; do
 done                                            # run under bash, not zsh (${!v} indirection)
 ```
 
-Confirm the Google key reaches Gemini and that both pinned model ids exist — the extractor pins
-`gemini-3-flash-preview` (`realdoc_bench/evaluate/score.py:41`) and the anchors use
-`gemini-3.5-flash`:
+Confirm the Google key reaches Gemini and that the pinned model ids exist — the extractor pins
+`realdoc_bench/evaluate/score.py`'s `DEFAULT_MODEL` and the anchors use `gemini-3.5-flash`.
+**Send the key as a header, never a URL query parameter** — a URL reaches shell history, proxy logs,
+and any error message that echoes the request URL, which is precisely the leak removed from
+`score.py`:
 
 ```bash
-curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+curl -s -H "x-goog-api-key: $GEMINI_API_KEY" \
+  "https://generativelanguage.googleapis.com/v1beta/models" \
   | grep -o 'gemini-3[^"]*' | sort -u
 ```
 

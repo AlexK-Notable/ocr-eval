@@ -6,6 +6,13 @@ venv/
 .env
 .env.local
 
+# Belt-and-braces: the real secrets file lives OUTSIDE the repo
+# (~/.config/ocr-eval/secrets.env, mode 0600). These patterns exist so a stray copy made inside
+# the working tree cannot be committed by an untargeted `git add`.
+secrets.env
+*.secrets.env
+secrets.local.*
+
 # Build artifacts
 build/
 dist/

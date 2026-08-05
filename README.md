@@ -149,10 +149,16 @@ ocr-eval/
 
 ## Keys policy
 
-Environment-only — never a config file, never committed. Keys are exported in the operator's shell
-profile; every registry entry naming a key requirement declares the variable via `api_key_env`, and
+Environment-only — never a config file, never committed. Every registry entry naming a key
+requirement declares the variable via `api_key_env`, and
 the variable must be present in the real process environment before the command runs. The full
 Stage 1 variable list is in [`docs/runbook-stage1.md`](docs/runbook-stage1.md)'s prerequisites.
+
+Injection is **on demand, not a profile export**: `gemkey` loads a `0600`
+`~/.config/ocr-eval/secrets.env` into the current shell only, so a fresh terminal starts clean and
+no secret sits in a dotfile that gets backed up or synced. The harness reads `os.environ.get()`, so
+any mechanism that populates the environment works identically — see
+[`docs/api.md`](docs/api.md#on-demand-injection-not-a-profile-export-host-convention-adopted-2026-08-05).
 
 Two things that bite in practice, both documented in [`docs/api.md`](docs/api.md#keys):
 

@@ -16,8 +16,13 @@ file's gate rule before step 4 or step 6 below. Registry entries referenced by i
 - `MISTRAL_API_KEY` is also required (step 5, `mistral_ocr_4`) — no prior-exposure flag on this
   one, but it gets the same environment-only handling as the rotated keys, never a config file or
   `.env` (upstream `.env` loading is disabled — Task 1).
-- **Keys are exported in the operator's shell profile.** Every `uv run ocr-eval ...` invocation
-  below inherits them from the environment; no wrapper command is assumed. The Stage 1 variable
+- **Keys are loaded on demand, not exported in the shell profile** (host convention since
+  2026-08-05 — see [`api.md`](api.md#on-demand-injection-not-a-profile-export-host-convention-adopted-2026-08-05)).
+  Run `gemkey` once per shell before the first key-needing step; it sources
+  `~/bin/ocr-eval-keys.sh`, which reads a `0600` `~/.config/ocr-eval/secrets.env` into **that shell
+  only**. A fresh terminal starts clean, so a long-running session that only builds reports never
+  carries a key at all. The harness itself is indifferent — it reads `os.environ.get()`, so any
+  mechanism that populates the environment works. The Stage 1 variable
   list, and which step first needs each one:
   | Variable | First needed | Used by |
   |---|---|---|
