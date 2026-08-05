@@ -228,10 +228,84 @@ def require_api_key() -> str:
     return k
 
 
+# Retry policy for the scoring leg (fork addition — see `gemini_extract`'s docstring). Kept
+# deliberately small and local rather than importing `ocr_eval_ext.direct`: upstream modules must
+# not depend on the fork's package (the dependency runs one way only, see architecture.md's fork
+# boundaries), and httpx exceptions need different handling from the openai client's anyway.
+_EXTRACT_MAX_ATTEMPTS = 4
+_EXTRACT_BACKOFF_BASE_SEC = 2.0
+_EXTRACT_MAX_WAIT_SEC = 60.0
+
+
+def _extract_retry_wait(resp: httpx.Response | None, attempt: int) -> float:
+    """`Retry-After` (numeric seconds only — Gemini sends seconds, and an HTTP-date here would be
+    honoured as a fallback rather than misparsed) clamped to [0, 60]. A hostile or buggy header can
+    never cost more than a minute of wall-clock per attempt."""
+    fallback = _EXTRACT_BACKOFF_BASE_SEC * (2 ** attempt)
+    wait = fallback
+    if resp is not None:
+        raw = resp.headers.get("retry-after")
+        if raw is not None:
+            try:
+                wait = float(raw)
+            except (TypeError, ValueError):
+                wait = fallback
+    return max(0.0, min(_EXTRACT_MAX_WAIT_SEC, wait))
+
+
+def _post_with_retry(c: httpx.Client, url: str, body: dict, headers: dict) -> dict:
+    """POST with bounded retry on 408/429/5xx and connection-level failures.
+
+    Raises the last error once the budget is exhausted — a genuinely unavailable extractor must
+    still fail the run (the gate is fail-closed by design), just not on the first transient blip.
+    `httpx.HTTPStatusError` messages are safe to propagate now that the key travels in a header
+    rather than the URL.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(_EXTRACT_MAX_ATTEMPTS):
+        try:
+            r = c.post(url, json=body, headers=headers)
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError as e:
+            code = e.response.status_code
+            retryable = code in (408, 429) or 500 <= code < 600
+            if not retryable or attempt == _EXTRACT_MAX_ATTEMPTS - 1:
+                raise
+            last_exc = e
+            time.sleep(_extract_retry_wait(e.response, attempt))
+        except (httpx.TransportError, httpx.StreamError) as e:
+            # No HTTP response obtained (DNS, refused connection, read timeout) — nothing has been
+            # established about permanence, so this is retryable for the same reason a 5xx is.
+            if attempt == _EXTRACT_MAX_ATTEMPTS - 1:
+                raise
+            last_exc = e
+            time.sleep(_extract_retry_wait(None, attempt))
+    raise last_exc or RuntimeError("unreachable")   # loop always returns or raises
+
+
 def gemini_extract(question: str, template: str, markdown: str,
                    *, model: str = DEFAULT_MODEL,
                    client: httpx.Client | None = None) -> Any:
-    """One Gemini call. Returns the parsed JSON answer or None on failure."""
+    """One Gemini call. Returns the parsed JSON answer or None on failure.
+
+    FORK CHANGE (2026-08-04) — two upstream behaviours corrected here:
+
+    1. **The API key is sent as an `x-goog-api-key` HEADER, never a URL query parameter.**
+       Upstream passed `params={"key": ...}`, which puts the secret in the request URL — and httpx
+       embeds the full URL in `HTTPStatusError`, so any non-2xx response prints the live key into
+       the traceback (observed for real: a transient 503 leaked a working key into a session
+       transcript). URLs also reach proxy and server access logs. Headers do neither.
+
+    2. **Transient failures are retried.** Upstream called `raise_for_status()` once, so a single
+       503 aborted the whole extractor gate (and, mid-run, `ocr-eval score`) with an
+       `HTTPStatusError` that is neither a `PreconditionError` nor the `RuntimeError` the callers
+       expect. 429/5xx/408 and connection-level failures now get bounded exponential backoff,
+       honouring `Retry-After` when present. Permanent failures (400/401/403/404/...) still fail on
+       the first attempt — retrying a bad key or a malformed request is pure waste. This mirrors
+       the retry discipline `ocr_eval_ext/direct.py` already owns for the candidate legs; the
+       scoring leg previously had none.
+    """
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
            f"{model}:generateContent")
     prompt = (f"Question:\n{question}\n\n"
@@ -244,12 +318,11 @@ def gemini_extract(question: str, template: str, markdown: str,
         "generationConfig": {"temperature": 0, "maxOutputTokens": 8192,
                              "responseMimeType": "application/json"},
     }
+    headers = {"x-goog-api-key": require_api_key()}
     own_client = client is None
     c = client or httpx.Client(timeout=300)
     try:
-        r = c.post(url, params={"key": require_api_key()}, json=body)
-        r.raise_for_status()
-        raw = r.json()
+        raw = _post_with_retry(c, url, body, headers)
     finally:
         if own_client:
             c.close()

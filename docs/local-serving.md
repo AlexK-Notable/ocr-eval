@@ -1,5 +1,10 @@
 # Local serving (RTX 4070 Ti SUPER, 16 GB, CUDA)
 
+> **Host requirement:** everything in this file assumes a CUDA GPU with ~16 GB VRAM and a `vllm`
+> install in its own serving environment. Neither is present on the host probed 2026-08-03 — see
+> [`host-setup.md`](host-setup.md#vllm--cuda-gpu--the-local-bf16-specialists) for what that blocks
+> (runbook step 6, DoD #2's `dots.ocr` reproduction check, DoD #3's local-specialist row).
+
 Pin and record: `uv run python -c "import vllm; print(vllm.__version__)"` per run — vLLM runs in
 its own serving environment, not this repo's `uv` env, so its version is never captured by
 `run_meta.json`; this file is the operative record for local rows.

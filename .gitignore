@@ -31,6 +31,10 @@ runs/stage1/*
 !runs/stage1/report.md
 !runs/stage1/.gitkeep
 
+# Console captures from backgrounded runs (mostly tqdm carriage-return spam; the durable
+# artifacts are the run dir and the committed measurement JSONs, not these)
+scripts/*.log
+
 # IDE
 .idea/
 .vscode/

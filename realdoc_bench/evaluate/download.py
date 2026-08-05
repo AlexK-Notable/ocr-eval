@@ -56,7 +56,7 @@ def download_dataset(layout: RunLayout, *,
         hf_hub_download(
             repo_id=repo_id, repo_type="dataset", filename="qa_bank.json",
             revision=revision,
-            local_dir=str(layout.root), local_dir_use_symlinks=False,
+            local_dir=str(layout.root),
         )
         bank = json.loads(layout.bank_path.read_text())
         refs = docs_for_items(bank["items"][:limit])
@@ -64,12 +64,15 @@ def download_dataset(layout: RunLayout, *,
     else:
         patterns = ["qa_bank.json", "docs/**"]
 
+    # NB: `local_dir_use_symlinks=False` was dropped here — huggingface_hub 1.x REMOVED the
+    # parameter from both download functions (it warns and ignores it), and `local_dir=` already
+    # implies real files rather than symlinks into the shared cache, which is the behaviour
+    # `_observed_dataset_revision` and the run-dir contract depend on.
     snap = Path(snapshot_download(
         repo_id=repo_id, repo_type="dataset",
         revision=revision,
         allow_patterns=patterns,
         local_dir=str(layout.root),
-        local_dir_use_symlinks=False,
     ))
 
     # snapshot_download with local_dir places files under `local_dir`, so the

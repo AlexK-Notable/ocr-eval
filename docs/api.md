@@ -8,12 +8,15 @@ flags that trigger these calls, see [`cli.md`](cli.md); for local vLLM launch co
 
 ## Provider contract
 
-**OpenAI-compatible chat completions is the only transport this fork implements** — both the
+**OpenAI-compatible chat completions is the primary transport** — both the
 vlm-chat runner (`direct.py`) and the transcriber adapter (`parsers_openai.py`) go through the
 `openai` Python client's `chat.completions.create`, so any provider (OpenRouter, a local vLLM
 server, Ollama, Google's OpenAI-compat endpoint) is the same code path with a different `base_url`.
 Upstream's own non-OpenAI-compat adapters (Gemini via its native API, Mistral's PDF-upload
 endpoint) are used as-is, unmodified, via `transport: upstream-parser` registry entries.
+**AWS Bedrock is a third transport** (`transport: bedrock-converse`, `ocr_eval_ext/bedrock.py`) —
+see [its own section](#aws-bedrock-transport-bedrock-converse) for why it cannot be an
+openai-compat entry.
 
 **What we send:**
 - **Messages:** a `system` message (vlm-chat only — the transcriber sends a single `user` message)
@@ -34,7 +37,18 @@ attaches to the response body, recorded per row as `resolved_provider`.
 
 ## Retry policy
 
-Owned entirely by this module, not the SDK: every `OpenAI(...)` client is constructed with
+Three legs, three implementations — the candidate legs (`direct.py`, shared by
+`parsers_openai.py`), the Bedrock leg (`bedrock.py`, delegated to from `direct.py`), and the
+**scoring leg** (`score.py`'s `_post_with_retry`, added 2026-08-04 — upstream had no retry at all,
+so one transient 503 aborted the whole extractor gate). All three use 4 attempts, honour
+`Retry-After`, clamp the wait to `[0, 60]`s, and treat 408/429/5xx plus connection-level failures as
+retryable and everything else as permanent. They are deliberately separate implementations rather
+than one shared helper: upstream modules must not import the fork's package (see
+[`architecture.md`](architecture.md#fork-boundaries)), and httpx, `openai` and botocore surface
+status codes and headers in three incompatible ways.
+
+The candidate-leg policy, in detail — owned entirely by this module, not the SDK: every
+`OpenAI(...)` client is constructed with
 **`max_retries=0`** (both `direct.py` and `parsers_openai.py`) — leaving the SDK's own default
 retry-on-408/429/5xx enabled would nest under this module's retries, observed as up to
 `MAX_RETRIES` outer attempts × the SDK's own retries each (up to 12 real HTTP attempts for what
@@ -181,6 +195,145 @@ should be at most 4).
   - The pip `docstrange` SDK is **not** used and is not a guide to this endpoint: it still calls
     a legacy `/extract` route with `output_type` rather than v1's `output_format`.
 
+## AWS Bedrock transport (`bedrock-converse`)
+
+`ocr_eval_ext/bedrock.py`. A `vlm-chat` transport alongside `openai-compat`; the transcriber
+(`parse`/`score`) leg is **not** wired to Bedrock — see the limitations at the end of this section.
+
+### Why it isn't just another `base_url`
+
+Bedrock exposes no OpenAI-compatible endpoint reachable from the probed account (2026-08-04):
+`/openai/v1/models` returns `404 UnknownOperationException`; `bedrock-runtime` advertises only
+`Converse`/`ConverseStream`/`InvokeModel`/… with no chat-completions operation;
+`bedrock-runtime get-api-key` is not permitted for the calling role; and an unauthenticated POST
+returns `403` — every request must be SigV4-signed. The `openai` client therefore cannot reach
+Bedrock at all.
+
+`BedrockConverseClient` is deliberately **not** an `openai.OpenAI` look-alike. Faking
+`chat.completions.create` and a `model_dump()` shape would make two genuinely different wire
+protocols look interchangeable at the call site; `_one` branches on `entry.transport` explicitly
+instead. Everything *after* the call is shared, so a Bedrock cache row has the same shape as an
+openai-compat row — `condition_hash`, `parser_key`, `score_typed`, `track()` and every
+`report_md.py` gate are untouched.
+
+### Registry entry
+
+```yaml
+- id: nova-lite@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: amazon.nova-lite-v1:0     # the Bedrock modelId (or inference-profile id)
+  region: us-east-1                # REQUIRED — never inherited from AWS_REGION
+  precision: provider-default      # Bedrock does not document serving precision
+```
+
+`RegistryEntry`'s validator **rejects** `api_key_env`, `base_url`, and `provider_pin` on a
+bedrock entry (auth is SigV4, the endpoint is derived from region, and `provider_pin` is an
+OpenRouter routing concept), and requires `region` explicitly rather than defaulting it: region is
+part of the serving identity recorded on every row (`resolved_provider: "bedrock:<region>"`), and
+an ambient env var would let one registry id silently produce rows from two serving stacks.
+`report_md.py`'s D4 gate hard-fails a parser key whose rows span more than one provider, so a run
+accidentally split across regions is caught rather than averaged.
+
+Committed entries live in [`configs/registry-bedrock.yaml`](../configs/registry-bedrock.yaml).
+
+### Model access is per-role, and listing is not availability
+
+On the probed account, **119 vision-capable models are listed and 7 are invokable** by the calling
+role. `AccessDeniedException` on invoke is the normal state for a listed-but-not-enabled model, so
+a control-plane `ListFoundationModels` check answers the wrong question. Two identity traps:
+
+- Models with `inferenceTypesSupported: ON_DEMAND` take the bare id (`amazon.nova-lite-v1:0`).
+- Models marked `INFERENCE_PROFILE` are **not** invokable by their bare id and need the geo-prefixed
+  cross-region profile id (`us.anthropic.claude-haiku-4-5-20251001-v1:0`). The bare Anthropic id
+  fails with `ValidationException`.
+
+`ocr-eval preflight <id>` sends one real minimal Converse call (a few tokens) and reports the
+concrete error code — run it before spending a bank against any Bedrock entry.
+
+### Anthropic-on-Bedrock rejects `temperature` + `top_p` together
+
+Verified live across all six invokable models: **only** the Anthropic one raises
+`ValidationException: `temperature` and `top_p` cannot both be specified for this model`. Nova
+Lite/Pro, Gemma 3 27B, Mistral Large 3 and Kimi K2.5 all accept both.
+
+`STAGE1_CONDITION` pins `top_p: 1.0`, which is the **identity** value (consider the full
+distribution), so for that value omitting it is provably a no-op.
+`narrow_sampling_for_model` drops `top_p` only when it is exactly `1.0` and **raises** for any
+other value rather than silently altering what the condition claims to pin. When the narrowing
+happens the row records `usage.sampling_note`, so a row stays honest about what actually went on
+the wire instead of implying the condition was honored verbatim.
+
+### No `seed`
+
+Converse's `inferenceConfig` exposes `temperature`/`topP`/`maxTokens`/`stopSequences` only.
+`run_direct` **refuses** a Bedrock entry under a condition whose `sampling.seed` is set, rather than
+dropping it — a silently-dropped seed would let the condition hash assert a reproducibility
+guarantee the wire never provided. Stage 1's default (`seed: None`) is unaffected.
+
+### Retries and cost
+
+botocore raises `ClientError` with a string error code and no `.status_code`, so `_is_retryable`
+delegates botocore exceptions to `is_retryable_bedrock`. `ThrottlingException`,
+`ServiceUnavailableException`, `ModelTimeoutException`, `ModelNotReadyException` and friends are
+retryable; `AccessDeniedException`, `ValidationException` and friends are permanent (one attempt).
+**An unrecognised code is treated as permanent** — the deliberate direction, since an unenumerated
+transient code costs one honest error row, whereas an unknown permanent code treated as retryable
+would quadruple a misconfigured full-bank run's wall-clock and spend. `retry_after_bedrock` reads
+`ResponseMetadata.HTTPHeaders` (botocore's `.response` is a dict, so `_retry_wait`'s `.headers`
+probe finds nothing), still clamped to `[0, 60]`. The botocore client is built with
+`retries={"max_attempts": 1}` — the same no-nested-retries discipline as `OpenAI(max_retries=0)`.
+
+**Bedrock returns token counts but no cost field**, and `pricing:GetProducts` is denied to this
+role, so per-token rates cannot be verified from inside this environment. The committed entries are
+therefore **unpriced**, with two honest consequences: `--dry-run` counts their cells as
+`unpriced_cells` and excludes them from `estimated_usd`, and `--max-spend` **fails closed** on them
+(`track()` raises rather than treating an unknowable cost as free). Add a verified
+`pricing: {input_per_mtok, output_per_mtok}` with its retrieval date to use a spend cap.
+
+### The 5 MB image cap counts BASE64, not raw bytes (measured 2026-08-04)
+
+Converse takes the PNG as **raw bytes** (`{"image": {"source": {"bytes": png}}}` — botocore does the
+base64 encoding), but the service's documented 5 MB per-image limit is enforced against the
+**encoded** payload. So the effective ceiling on what this harness may hand it is
+`5 MiB × 3/4 ≈ 3.75 MiB` of raw PNG, not 5 MB. Exceeding it is a `ValidationException` — classified
+permanent, so it costs one attempt per cell, not four.
+
+Measured on the full 1,356-cell bank at `render.dpi: 150`:
+
+| | raw bytes | implied base64 |
+|---|---|---|
+| largest **succeeding** image | 3,776,968 | 5,035,957 |
+| smallest **failing** image | 3,933,782 | 5,245,042 |
+| the limit | — | 5,242,880 (5 MiB) |
+
+Rows above `5 MiB × 3/4` numbered exactly 20 — precisely the run's 20 `api_error` rows, across 10
+dense documents. The error text quotes the *encoded* size ("6164064 bytes > 5242880 bytes") against a
+raw image of 4.6 MB, which is what makes this confusing to diagnose from one row.
+
+Consequences to plan around, none of them currently automated:
+
+- There is **no preflight size check** — an oversize cell fails at the wire, honestly (an
+  `api_error` row with the service's message), but only after it is dispatched.
+- **Downscaling is not a free fix.** Lowering `render.dpi`, or capping bytes, is a change to the
+  condition dict, so it produces a different `condition_hash` and therefore a *different row* — by
+  design (see [`architecture.md`](architecture.md#the-condition-dict)). It cannot be applied to
+  patch up part of an existing run's matrix without splitting that matrix across two conditions.
+- The affected documents are correlated with page density, so the loss is **not** random with
+  respect to difficulty — treat a run with oversize failures as missing its hardest pages, and read
+  the report's `error classes:` tally rather than assuming the denominator is uniform.
+
+### Current limitations
+
+- **vlm-chat only.** `parsers_openai.py`'s transcriber adapter is built on the `openai` client, so
+  Bedrock cannot yet serve a `transcriber`-shape row. A Bedrock transcriber would need a
+  `VisionParserBase` subclass calling Converse per page.
+- **Comparability.** `precision: provider-default` renders as "unknown (not asserted)" —
+  Bedrock does not document these checkpoints' serving precision. Treat a Bedrock row as a
+  serving-stack measurement, not a clean weights comparison against a locally-served BF16 row.
+- **The scoring leg still needs Gemini.** Bedrock covers the *candidate* side only; every
+  transcriber row's extraction still goes through `GEMINI_API_KEY` (next section).
+
 ## The Gemini extractor dependency
 
 `gemini-3-flash-preview` (`realdoc_bench/evaluate/score.py`'s `DEFAULT_MODEL`) is required in two
@@ -201,11 +354,55 @@ exposed in a prior session transcript.
 Environment-only. Every registry entry with a key requirement names the variable via
 `api_key_env` (e.g. `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
 `DOCSTRANGE_API_KEY`); the value itself
-never appears in any config file. The standard invocation pattern is `bws run --project-id <id> --
-<cmd>` (Bitwarden Secrets Manager injection — see the runbook's prerequisites). Upstream's
-`.env`/`.env.local` loading is disabled by default and only re-enabled by setting
+never appears in any config file. Keys are exported in the operator's shell profile — the variable
+must be present in the real process environment before the command runs. No secrets-manager
+wrapper is assumed or required: `bws`/`bitwarden` appear in **zero lines of code** in this
+repository (verified by grep over `ocr_eval_ext/`, `realdoc_bench/`, `configs/`, `tests/`,
+`tests_ext/`); every key is read through a plain `os.environ.get()`, so any injection mechanism
+that populates the environment works identically.
+
+### `.env` does not reach the `ocr-eval` CLI
+
+Upstream's `.env`/`.env.local` loading is disabled by default and only re-enabled by setting
 `RDB_ALLOW_DOTENV=1` (the one upstream modification — see
-[`architecture.md`](architecture.md#fork-boundaries)).
+[`architecture.md`](architecture.md#fork-boundaries)). **That flag only gates `_env()` in
+`realdoc_bench/cli.py`, which `ocr_eval_ext/` never calls** — there is no `load_dotenv` reference
+anywhere in this fork's own modules, including the code path where `ocr-eval score` imports
+upstream's scorer in-process. So `RDB_ALLOW_DOTENV=1` + a `.env` file reaches `realdoc-bench`
+commands only, and the sole `realdoc-bench` command Stage 1 actually uses
+(`evaluate download`) needs no key at all. Do not rely on `.env` for any `ocr-eval` invocation.
+
+### Credential hygiene in the scoring leg (fixed 2026-08-04)
+
+`gemini_extract` sends the key as an **`x-goog-api-key` header**. Upstream sent it as a URL query
+parameter (`params={"key": ...}`), which leaked a live key into a session transcript when a
+transient 503 raised an `httpx.HTTPStatusError` — httpx embeds the full request URL in the exception
+message, and URLs additionally reach proxy and server access logs. Two consequences worth knowing:
+
+- **Do not reintroduce a URL-param credential** anywhere in this codebase.
+  `tests_ext/test_score_credentials.py` asserts the key is absent from both the URL and the
+  exception message, using a canary value — that test failing means a secret is leaking again.
+- **Beware shell idioms that print values.** `${VAR:+SET}` expands to the *value*, not the literal
+  `SET`. To check presence without printing, use
+  `[ -n "$VAR" ] && echo set || echo unset`, or compare a hash.
+
+Any key that has appeared in a transcript must be **revoked at the issuing provider**, not merely
+unset — unsetting removes local access, it does not invalidate the credential.
+
+### `GEMINI_API_KEY` vs `GOOGLE_API_KEY` — not interchangeable everywhere
+
+Upstream's `require_api_key()` (`realdoc_bench/evaluate/score.py:203`) and its Gemini vision
+adapter both accept `GEMINI_API_KEY` **or** `GOOGLE_API_KEY`, so the extractor gate
+(`ocr-eval selftest --extractor`) and the whole transcriber `score` leg work off either name.
+
+But `direct.py`'s `run_direct` resolves `os.environ.get(e.api_key_env)` **by exact name with no
+fallback** and raises `env var GEMINI_API_KEY not set` otherwise. The affected entry is
+`gemini-3.5-flash@google-vlmchat` — Section A's frontier ceiling anchor — which therefore fails on
+a `GOOGLE_API_KEY`-only environment even though the transcriber entry `gemini-3.5-flash@google`
+succeeds in the same shell. Export `GEMINI_API_KEY` under that exact name. The asymmetry is
+deliberate at the registry layer (an entry declares the one variable it wants, so a shared alias
+can never silently reroute a row to different credentials) — it is a configuration requirement,
+not a bug to route around.
 
 ## Known provider-behavior caveats from validation
 

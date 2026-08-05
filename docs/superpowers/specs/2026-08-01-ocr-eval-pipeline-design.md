@@ -114,7 +114,7 @@ Any model in the headline table appears at **one precision throughout**. ≤4B s
 - `--dry-run` prices **both legs** (transcription + extraction) per cell; `--max-spend` aborts a live run that overshoots.
 
 ### Keys and secrets
-Environment only (`bws run … --`), never config files or JSONL. Upstream `.env` loading disabled. **Prerequisites before first hosted run:** rotate the OpenRouter key and the `gemini-paid` key (both exposed in a prior session transcript; the extractor makes Google a required dependency).
+Environment only (`bws run … --`), never config files or JSONL. Upstream `.env` loading disabled. **Prerequisites before first hosted run:** rotate the OpenRouter key and the `gemini-paid` key (both exposed in a prior session transcript; the extractor makes Google a required dependency). **[Superseded 2026-08-03 — injection mechanism only:** the current host exports keys in the shell profile rather than via Bitwarden Secrets Manager. *Environment only* is unchanged, and was never implemented in code (`bws` appears in zero lines of code), so no spec requirement is affected. Operative doc: [`docs/api.md`](../../api.md#keys).**]
 
 ---
 

@@ -348,16 +348,22 @@ def direct(
              "and record partial_corpus: true in run_meta.json. Default stays fail-closed."),
 ) -> None:
     from ocr_eval_ext.config import get_entry
-    from ocr_eval_ext.direct import run_direct
+    from ocr_eval_ext.direct import DIRECT_TRANSPORTS, run_direct
 
     layout = RunLayout.at(run_dir)
     _preflight(layout, allow_partial_corpus=allow_partial_corpus)   # cardinalities + pins +
                                                                       # scorer self-test, fail-closed
     entries = load_registry(registry)
     chosen = [get_entry(entries, m) for m in model]
-    bad_shape = [e.id for e in chosen if e.shape != "vlm-chat" or e.transport != "openai-compat"]
+    # Mirrors `run_direct`'s own transport precondition rather than narrowing it: both of the
+    # vlm-chat transports belong on this leg. (This check predated `bedrock-converse` and still
+    # said `openai-compat` only, which rejected every Bedrock entry at the CLI even though
+    # `run_direct` drives them — caught running the runbook's Bedrock path 2026-08-04.)
+    bad_shape = [e.id for e in chosen
+                 if e.shape != "vlm-chat" or e.transport not in DIRECT_TRANSPORTS]
     if bad_shape:
-        console.print(f"[red]not vlm-chat/openai-compat: {bad_shape} — use ocr-eval parse for those[/red]")
+        console.print(f"[red]not a vlm-chat entry on {'/'.join(sorted(DIRECT_TRANSPORTS))}: "
+                      f"{bad_shape} — use ocr-eval parse for those[/red]")
         raise typer.Exit(1)
     summary = run_direct(layout, chosen, dry_run=dry_run, max_spend_usd=max_spend,
                          limit=limit, no_image=no_image, workers=workers, force=force)
@@ -424,27 +430,37 @@ def preflight(
     entry_id: str = typer.Argument(..., help="Registry id, e.g. glm-ocr@local-vllm"),
     registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
 ) -> None:
-    """GET {base_url}/models and confirm the entry's `model` is actually being served. Run this
-    before any local vLLM spend (`direct`/`parse`/`score` against a `local: true` entry) — a
-    served-model mismatch (wrong checkpoint resident, server not restarted after a config change)
-    is caught here rather than silently transcribing pages against the wrong weights. Only
-    applies to openai-compat entries — upstream-parser entries (Gemini, Mistral) have no local
-    server to preflight."""
+    """Confirm the entry's `model` is actually reachable and serving before any spend.
+
+    - **openai-compat:** `GET {base_url}/models` and check the entry's `model` is in the served
+      list. Run before any local vLLM spend (`direct`/`parse`/`score` against a `local: true`
+      entry) — a served-model mismatch (wrong checkpoint resident, server not restarted after a
+      config change) is caught here rather than silently transcribing against the wrong weights.
+    - **bedrock-converse:** one minimal real `Converse` call (a few tokens). Bedrock has no
+      served-model listing that answers the question that matters: on a probed account 119 models
+      were listed and only 7 were invokable by the calling role, so `AccessDeniedException` on
+      invoke is the normal state for a listed-but-not-enabled model. Only an actual call
+      distinguishes them.
+
+    upstream-parser entries (Gemini, Mistral) have no server to preflight."""
+    from ocr_eval_ext.bedrock import preflight_bedrock
     from ocr_eval_ext.config import get_entry
     from ocr_eval_ext.parsers_openai import preflight as _served_model
 
     entries = load_registry(registry)
     entry = get_entry(entries, entry_id)
-    if entry.transport != "openai-compat":
+    if entry.transport not in ("openai-compat", "bedrock-converse"):
         console.print(f"[red]{entry_id}: transport={entry.transport!r} — preflight only applies "
-                      f"to openai-compat entries[/red]")
+                      f"to openai-compat and bedrock-converse entries[/red]")
         raise typer.Exit(1)
     try:
-        served = _served_model(entry)
+        served = (preflight_bedrock(entry) if entry.transport == "bedrock-converse"
+                  else _served_model(entry))
     except Exception as e:
         console.print(f"[red]preflight FAILED for {entry_id}: {e}[/red]")
         raise typer.Exit(1) from e
-    console.print(f"[green]preflight PASS[/green] — {entry.base_url} serves {served}")
+    target = f"bedrock:{entry.region}" if entry.transport == "bedrock-converse" else entry.base_url
+    console.print(f"[green]preflight PASS[/green] — {target} serves {served}")
 
 
 def _default_parse_workers(registry_path: Path, requested: list[str]) -> int:

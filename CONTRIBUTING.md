@@ -10,7 +10,10 @@ uv run pytest
 uv run ruff check
 ```
 
-Secrets live in `.env` (or `.env.local`, gitignored). Only the parsers/processors you exercise need credentials.
+**Fork note on secrets** (upstream's original text said `.env`): this fork is environment-only.
+Export keys in your shell; `.env`/`.env.local` loading is disabled by default and, even with
+`RDB_ALLOW_DOTENV=1`, only ever reaches `realdoc-bench` commands — never the `ocr-eval` CLI. See
+[`docs/api.md`](docs/api.md#keys). Only the parsers/processors you exercise need credentials.
 
 ## Adding a layout processor
 

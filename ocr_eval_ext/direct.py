@@ -18,6 +18,7 @@ from pathlib import Path
 from openai import APIConnectionError, APIStatusError, OpenAI
 from PIL import Image
 
+from ocr_eval_ext import bedrock as _bedrock
 from ocr_eval_ext.config import RegistryEntry
 from ocr_eval_ext.preconditions import assert_single_page, ink_coverage
 from realdoc_bench.evaluate.parsers._vision_base import _render_pdf_pages
@@ -68,6 +69,12 @@ MAX_RETRIES = 4
 BACKOFF_BASE_SEC = 2.0
 MAX_RETRY_WAIT_SEC = 60.0
 
+# The transports this leg drives. Exported so `cli.py`'s `direct` gate mirrors `run_direct`'s own
+# precondition instead of restating it — they were allowed to drift once (the CLI kept rejecting
+# every `bedrock-converse` entry after `run_direct` learned to drive them) and one name is cheaper
+# than the next divergence.
+DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse"})
+
 
 def condition_hash(condition: dict) -> str:
     return hashlib.sha256(json.dumps(condition, sort_keys=True).encode()).hexdigest()[:12]
@@ -117,12 +124,18 @@ def _is_retryable(exc: Exception) -> bool:
 
     Cost note: retrying re-bills the request, and a slow thinking model can take minutes per
     attempt, so MAX_RETRIES attempts of a 335s call is bounded but not cheap. Failing the document
-    outright wastes the same spend AND loses the page, so retrying is still the better trade."""
+    outright wastes the same spend AND loses the page, so retrying is still the better trade.
+
+    Bedrock: botocore raises `ClientError` with a string error code and no `.status_code`, so
+    neither branch below can classify it — `bedrock.is_retryable_bedrock` owns that taxonomy and is
+    delegated to here so both transports share one retry loop rather than growing a second."""
     if isinstance(exc, APIConnectionError):     # covers APITimeoutError (subclass)
         return True
     if isinstance(exc, APIStatusError):
         return exc.status_code == 408 or exc.status_code == 429 or 500 <= exc.status_code < 600
-    return isinstance(exc, json.JSONDecodeError)
+    if _bedrock.is_botocore_error(exc):        # botocore: no .status_code, own taxonomy
+        return _bedrock.is_retryable_bedrock(exc)
+    return isinstance(exc, json.JSONDecodeError)   # truncated body — see docstring
 
 
 def _retry_wait(exc: Exception, attempt: int) -> float:
@@ -132,6 +145,12 @@ def _retry_wait(exc: Exception, attempt: int) -> float:
     cost more than a minute of real wall-clock time per attempt."""
     fallback = BACKOFF_BASE_SEC * (2 ** attempt)
     try:
+        if _bedrock.is_botocore_error(exc):
+            # botocore's `.response` is a dict, so the `.headers` attribute probe below finds
+            # nothing; retry-after lives under ResponseMetadata.HTTPHeaders instead.
+            suggested = _bedrock.retry_after_bedrock(exc)
+            return max(0.0, min(MAX_RETRY_WAIT_SEC,
+                                fallback if suggested is None else suggested))
         headers = getattr(getattr(exc, "response", None), "headers", None)
         value = headers.get("retry-after") if headers else None
         if value is None:
@@ -179,22 +198,22 @@ def _render_page(layout: RunLayout, stem: str, condition: dict, png_cache: Path)
     return pages[0]
 
 
-def _one(client: OpenAI, entry: RegistryEntry, item: dict, png: bytes | None,
-         condition: dict, base: dict, prompt: str) -> dict:
-    """`base` already carries qid/parser/source_file/domain/condition/retrieved_at/prompt_sha
-    and the image_sha/image_px/image_bytes fields (null unless a render already succeeded) — see
-    `do()` in `run_direct`. This function only adds the outcome (success or one of the
-    error_class buckets)."""
+def _openai_call(client: OpenAI, entry: RegistryEntry, prompt: str, png: bytes | None,
+                 sampling: dict) -> tuple[str, dict, str]:
+    """The openai-compat leg of `_one`, factored out so both transports are single expressions at
+    the call site and neither branch's request-building leaks into the other's scope. Returns the
+    same `(text, usage, provider)` triple `BedrockConverseClient.converse` does. `png=None` means
+    no image part is sent at all (the `no_image` language-prior control)."""
     content: list[dict] = [{"type": "text", "text": prompt}]
-    if not condition.get("no_image"):
+    if png is not None:
         b64 = base64.b64encode(png).decode()
-        content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
+        content.append({"type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{b64}"}})
     extra_body = {}
     if entry.provider_pin:
         extra_body["provider"] = entry.provider_pin
     if entry.reasoning:                      # per-entry, exactly like provider_pin above
         extra_body["reasoning"] = entry.reasoning
-    sampling = condition["sampling"]
     kwargs: dict = {
         "model": entry.model,
         "messages": [{"role": "system", "content": SYSTEM},
@@ -204,23 +223,55 @@ def _one(client: OpenAI, entry: RegistryEntry, item: dict, png: bytes | None,
         "max_tokens": sampling["max_tokens"],
         "extra_body": extra_body or None,
     }
-    if sampling.get("seed") is not None:          # Stage 1 default (None) stays unsent on the wire
+    if sampling.get("seed") is not None:      # Stage 1 default (None) stays unsent on the wire
         kwargs["seed"] = sampling["seed"]
+    resp = client.chat.completions.create(**kwargs)
+    raw = resp.model_dump()
+    return (resp.choices[0].message.content or "",
+            raw.get("usage") or {},           # OpenRouter always includes usage (incl. cost)
+            raw.get("provider") or "")
+
+
+def _one(client, entry: RegistryEntry, item: dict, png: bytes | None,
+         condition: dict, base: dict, prompt: str) -> dict:
+    """`base` already carries qid/parser/source_file/domain/condition/retrieved_at/prompt_sha
+    and the image_sha/image_px/image_bytes fields (null unless a render already succeeded) — see
+    `do()` in `run_direct`. This function only adds the outcome (success or one of the
+    error_class buckets).
+
+    `client` is an `openai.OpenAI` for `transport: openai-compat` entries and a
+    `bedrock.BedrockConverseClient` for `transport: bedrock-converse` ones. The two wire protocols
+    are branched explicitly rather than hidden behind a shared fake interface (see
+    `bedrock.BedrockConverseClient`'s docstring) — but everything AFTER the call is deliberately
+    identical, so both transports produce byte-identical cache-row shapes."""
+    sampling = condition["sampling"]
+    is_bedrock = entry.transport == "bedrock-converse"
+    send_image = not condition.get("no_image")
+
     t0 = time.perf_counter()
-    resp = None
+    text = usage = provider = None
     for attempt in range(MAX_RETRIES):
         try:
-            resp = client.chat.completions.create(**kwargs)
+            if is_bedrock:
+                # NB: `seed` has no Converse equivalent — inferenceConfig exposes temperature/topP/
+                # maxTokens/stopSequences only. STAGE1_CONDITION's default seed is None (unsent on
+                # the openai path too), so Stage 1 is unaffected; a condition that actually SETS a
+                # seed is rejected in `run_direct`'s preconditions rather than silently dropped.
+                text, usage, provider = client.converse(
+                    system=SYSTEM, prompt=prompt, png=png if send_image else None,
+                    temperature=sampling["temperature"], top_p=sampling["top_p"],
+                    max_tokens=sampling["max_tokens"])
+            else:
+                text, usage, provider = _openai_call(
+                    client, entry, prompt, png if send_image else None, sampling)
             break
         except Exception as e:  # classified by _is_retryable; per-cell isolation either way
             if not _is_retryable(e) or attempt == MAX_RETRIES - 1:
                 return {**base, "error": str(e)[:300], "error_class": "api_error"}
             time.sleep(_retry_wait(e, attempt))
-    raw = resp.model_dump()
-    text = (resp.choices[0].message.content or "").strip()
-    usage = raw.get("usage") or {}    # OpenRouter now always includes usage details (incl. cost)
-    common = {**base, "raw_response": text, "usage": usage,
-              "resolved_provider": raw.get("provider") or "",
+    text = (text or "").strip()
+    common = {**base, "raw_response": text, "usage": usage or {},
+              "resolved_provider": provider or "",
               "latency_sec": time.perf_counter() - t0}
     if not text:
         return {**common, "error": "empty response", "error_class": "empty"}
@@ -243,12 +294,28 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                dry_run: bool = False, max_spend_usd: float | None = None,
                limit: int | None = None, no_image: bool = False) -> dict:
     for e in entries:
-        if e.shape != "vlm-chat" or e.transport != "openai-compat" or not e.base_url:
+        if e.shape != "vlm-chat":
+            raise ValueError(f"{e.id}: run_direct requires shape='vlm-chat' (got {e.shape!r})")
+        if e.transport == "openai-compat":
+            if not e.base_url:
+                raise ValueError(
+                    f"{e.id}: transport='openai-compat' requires a base_url — "
+                    f"OpenAI(base_url=None) would silently target api.openai.com")
+        elif e.transport == "bedrock-converse":
+            # Bedrock has no `seed` parameter (inferenceConfig exposes temperature/topP/maxTokens/
+            # stopSequences only). Rather than silently dropping a seed the condition dict claims
+            # to pin — which would make the condition hash assert reproducibility the wire never
+            # provided — refuse the combination outright.
+            if condition["sampling"].get("seed") is not None:
+                raise ValueError(
+                    f"{e.id}: transport='bedrock-converse' cannot honor sampling.seed="
+                    f"{condition['sampling']['seed']!r} (Bedrock Converse has no seed parameter). "
+                    f"Silently dropping it would make the condition hash overstate "
+                    f"reproducibility; use a seed-free condition for Bedrock entries.")
+        else:
             raise ValueError(
-                f"{e.id}: run_direct requires shape='vlm-chat', transport='openai-compat', and a "
-                f"base_url (got shape={e.shape!r}, transport={e.transport!r}, "
-                f"base_url={e.base_url!r}) — OpenAI(base_url=None) would silently target "
-                f"api.openai.com")
+                f"{e.id}: run_direct supports transport='openai-compat' or 'bedrock-converse' "
+                f"(got {e.transport!r})")
 
     bank = json.loads((bank_path or layout.bank_path).read_text())
     items = bank["items"][:limit] if limit else bank["items"]
@@ -312,6 +379,16 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
     spend = 0.0
     clients = {}
     for e in entries:
+        if e.transport == "bedrock-converse":
+            # No api_key_env by schema (rejected in config.py) — auth is the AWS credential chain,
+            # so there is no key to check for presence here. A missing/expired credential surfaces
+            # as a botocore error on the first call and is classified permanent (see
+            # bedrock.PERMANENT_ERROR_CODES), not retried 4x per cell.
+            # `region`/`model` are guaranteed non-None by RegistryEntry's validator; asserted so
+            # the types are visible here rather than inferred as optional.
+            assert e.region and e.model
+            clients[e.id] = _bedrock.BedrockConverseClient(region=e.region, model_id=e.model)
+            continue
         key = os.environ.get(e.api_key_env) if e.api_key_env else "local"
         if e.api_key_env and not key:
             raise RuntimeError(f"{e.id}: env var {e.api_key_env} not set")

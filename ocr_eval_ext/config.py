@@ -17,11 +17,12 @@ class RegistryEntry(BaseModel):
 
     id: str
     shape: Literal["vlm-chat", "transcriber"]
-    transport: Literal["openai-compat", "upstream-parser"]
+    transport: Literal["openai-compat", "upstream-parser", "bedrock-converse"]
     base_url: str | None = None
     model: str | None = None
     upstream_parser: str | None = None
     api_key_env: str | None = None
+    region: str | None = None      # bedrock-converse only: part of serving identity, not optional there
     precision: Literal["bf16", "fp8-vllm", "q8-gguf", "provider-default"]
     weights_licence: str
     provider_tos_commercial: Literal["ok", "blocked", "conditional"]
@@ -55,6 +56,29 @@ class RegistryEntry(BaseModel):
             raise ValueError(f"{self.id}: openai-compat requires base_url and model")
         if self.transport == "upstream-parser" and not self.upstream_parser:
             raise ValueError(f"{self.id}: upstream-parser transport requires upstream_parser name")
+        if self.transport == "bedrock-converse":
+            # `model` is the Bedrock modelId (or inference-profile id); `region` is REQUIRED rather
+            # than defaulted from AWS_REGION/AWS_DEFAULT_REGION on purpose: region is part of the
+            # serving identity stamped on every row, and an ambient env var would let the same
+            # registry id silently produce rows from two different serving stacks across machines.
+            if not self.model:
+                raise ValueError(f"{self.id}: bedrock-converse requires model (the Bedrock modelId)")
+            if not self.region:
+                raise ValueError(
+                    f"{self.id}: bedrock-converse requires an explicit region — it is part of the "
+                    f"recorded serving identity and must never be inherited from the environment")
+            if self.base_url:
+                raise ValueError(
+                    f"{self.id}: bedrock-converse takes no base_url (endpoint is derived from "
+                    f"region by boto3); got {self.base_url!r}")
+            if self.api_key_env:
+                raise ValueError(
+                    f"{self.id}: bedrock-converse authenticates via the AWS credential chain "
+                    f"(SigV4), not an API-key env var; got api_key_env={self.api_key_env!r}")
+            if self.provider_pin:
+                raise ValueError(
+                    f"{self.id}: provider_pin is an OpenRouter routing concept and has no meaning "
+                    f"on Bedrock — serving identity is (modelId, region)")
         return self
 
     @property
