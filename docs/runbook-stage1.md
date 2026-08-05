@@ -14,15 +14,25 @@ file's gate rule before step 4 or step 6 below. Registry entries referenced by i
   were both exposed in a prior session transcript — rotation is **mandatory** before step 4 below
   makes the first real hosted call. Do not proceed past step 3 on un-rotated keys.
 - `MISTRAL_API_KEY` is also required (step 5, `mistral_ocr_4`) — no prior-exposure flag on this
-  one, but it goes through the same secrets-manager handling as the rotated keys, never a config
-  file or `.env` (upstream `.env` loading is disabled — Task 1).
-- **All commands that touch a key run through `bws` injection**, project id
-  `18f14ed9-8ba5-4cc6-bbd4-b45b01534270`:
-  ```
-  bws run --project-id 18f14ed9-8ba5-4cc6-bbd4-b45b01534270 -- <cmd>
-  ```
-  Every `uv run ocr-eval ...` / `uv run realdoc-bench ...` invocation below that needs a key is
-  assumed wrapped this way; it's omitted from the individual command lines for readability.
+  one, but it gets the same environment-only handling as the rotated keys, never a config file or
+  `.env` (upstream `.env` loading is disabled — Task 1).
+- **Keys are exported in the operator's shell profile.** Every `uv run ocr-eval ...` invocation
+  below inherits them from the environment; no wrapper command is assumed. The Stage 1 variable
+  list, and which step first needs each one:
+  | Variable | First needed | Used by |
+  |---|---|---|
+  | `GEMINI_API_KEY` | step 1 | extractor gate, every transcriber `score`, and the Section A frontier anchor |
+  | `OPENROUTER_API_KEY` | step 7 | the 3 hosted VLM rows + the transcriber calibration pair |
+  | `MISTRAL_API_KEY` | step 5 | `mistral_ocr_4` hosted OCR endpoint |
+
+  **Export `GEMINI_API_KEY` under that exact name**, not just `GOOGLE_API_KEY`: upstream's scorer
+  accepts either alias, but `direct.py` resolves `api_key_env` by exact name with no fallback, so
+  `gemini-3.5-flash@google-vlmchat` (step 7) fails on the Google alias alone while the step-4
+  transcriber entry succeeds in the same shell. See [`api.md`](api.md#keys).
+
+  **`.env` does not work for `ocr-eval`** — `RDB_ALLOW_DOTENV=1` gates only upstream
+  `realdoc_bench/cli.py`'s `_env()`, which `ocr_eval_ext/` never calls. Keys must be in the real
+  process environment.
 - `uv sync` completed. Working tree at or descended from `configs/pins.yaml`'s `harness_commit`
   (`fb26a6876481de76dc293f722ab4efa71279904d`) — `_preflight`'s `git merge-base` ancestry check
   (every run-dir-scoped command below: `verify`/`direct`/`rescore`/`parse`/`score`/`report` — NOT
@@ -96,6 +106,13 @@ uv run ocr-eval score --run-dir runs/stage1 -p mistral_ocr_4
 
 **6. Local specialists** (see [`docs/local-serving.md`](local-serving.md); one model resident at a
 time — 16 GB VRAM). Start the server in its own terminal, preflight, then parse+score:
+
+> **Requires a CUDA GPU — absent on the current host (probed 2026-08-03, see
+> [`host-setup.md`](host-setup.md#vllm--cuda-gpu--the-local-bf16-specialists)).** This step and both
+> of its DoD consequences — DoD #2's `dots.ocr` open-weight reproduction check and DoD #3's
+> "≥1 local specialist (BF16)" row — are **blocked**, not merely unrun, until a GPU host is
+> available or the legs are re-pinned/descoped by an explicit decision. Do not mark either DoD item
+> green from a run made on this host.
 ```
 vllm serve zai-org/GLM-OCR --port 8000 --dtype bfloat16 \
   --gpu-memory-utilization 0.85 --max-model-len 8192
@@ -178,6 +195,56 @@ cells.append(...)`) excludes a cell from the dispatch list entirely whenever its
 already exists — `--force` overrides that and includes it unconditionally regardless of cache
 state, so a plain rerun with no `--force` never reaches `do()`/the HTTP client for a cached cell
 at all.
+
+## Bedrock path (no API keys — AWS credential chain)
+
+An alternative source of `vlm-chat` candidate rows when `OPENROUTER_API_KEY` is unavailable.
+Semantics, constraints and caveats: [`api.md`](api.md#aws-bedrock-transport-bedrock-converse);
+access probing: [`host-setup.md`](host-setup.md#aws-bedrock).
+
+Substitutes for **step 7's direct-QA candidates only**. It does *not* replace step 4/5 (both are
+transcriber rows) and does *not* remove the `GEMINI_API_KEY` requirement — the extractor is
+Gemini-pinned, so any transcriber scoring still needs it.
+
+```bash
+# 1. Confirm the role can actually invoke each entry (one tiny real call each; listing is NOT
+#    availability — 119 models listed vs 7 invokable on the probed account).
+for m in nova-lite@bedrock nova-pro@bedrock claude-haiku-4.5@bedrock gemma-3-27b@bedrock; do
+  uv run ocr-eval preflight "$m" --registry configs/registry-bedrock.yaml
+done
+
+# 2. Cell count, no spend.
+uv run ocr-eval direct --run-dir runs/stage1 --registry configs/registry-bedrock.yaml \
+  -m nova-lite@bedrock -m claude-haiku-4.5@bedrock --dry-run
+
+# 3. Real run. NB --max-spend FAILS CLOSED on these entries (unpriced by design — Converse returns
+#    no cost field and pricing:GetProducts is denied to this role). Either add verified pricing to
+#    the registry entry, or run uncapped and rely on --limit for a bounded smoke.
+uv run ocr-eval direct --run-dir runs/stage1 --registry configs/registry-bedrock.yaml \
+  -m nova-lite@bedrock -m claude-haiku-4.5@bedrock --limit 20
+
+# 4. Report (registry flag so report_md.py can resolve the entries' stamp columns).
+uv run ocr-eval report --run-dir runs/stage1 --registry configs/registry-bedrock.yaml
+```
+
+Three things to expect in the output rather than treat as faults:
+
+- **~20 `api_error` rows from oversize page images.** Bedrock enforces its 5 MB per-image limit
+  against the **base64-encoded** payload, so the real ceiling is ~3.75 MiB of raw PNG. At
+  `render.dpi: 150` this hits 20 of 1,356 cells across 10 dense documents (measured 2026-08-04 —
+  see [`api.md`](api.md#the-5-mb-image-cap-counts-base64-not-raw-bytes-measured-2026-08-04)). They
+  are honest permanent failures (one attempt each, not four), and `direct` exits 2 because of them,
+  which is the fail-visible contract working, not a broken run. Lowering dpi to fit would create a
+  different `condition_hash` — i.e. a separate row, not a repair of this one.
+- **`usage.sampling_note` on Anthropic rows.** Anthropic-on-Bedrock rejects `temperature` and
+  `top_p` in one request; `top_p=1.0` is the identity value so it is omitted, and the row says so.
+  A non-identity `top_p` raises instead of being dropped.
+- **`precision: provider-default`** renders as "unknown (not asserted)" — Bedrock documents no
+  serving precision. A Bedrock row is a serving-stack measurement, not a clean weights comparison
+  against a locally-served BF16 row.
+
+SSO sessions expire; a stale one fails fast as `ExpiredTokenException` (classified permanent, so it
+does not burn 4 retries per cell). Refresh with `aws sso login`.
 
 ## Local-validation path (no keys needed)
 
@@ -406,9 +473,15 @@ that this plain rerun never re-attempted; `direct` now exits 2 in that case with
 rerun with `--force` to re-attempt them).
 
 **6. Keys were rotated before first hosted call.**
-```
-bws secret list --project-id 18f14ed9-8ba5-4cc6-bbd4-b45b01534270
-```
-Manual sign-off, not a code-checkable gate: confirm `OPENROUTER_API_KEY` and `GEMINI_API_KEY`'s
-rotation timestamp in the secrets manager postdates the prior-exposure incident and predates step
-4's first hosted call. Record the confirmation (who/when) alongside the run's `report.md`.
+
+Manual sign-off, not a code-checkable gate — and not checkable from this repo at all, since keys
+live only in the environment. Confirm at the **issuing provider's own console** that the
+`OPENROUTER_API_KEY` and `GEMINI_API_KEY` currently exported were created *after* the
+prior-exposure incident and *before* step 4's first hosted call:
+
+- OpenRouter → Keys page (each key shows its creation date)
+- Google AI Studio → API keys (creation date per key)
+
+Record the confirmation (who, when, and each key's creation date) alongside the run's `report.md`.
+Rotating means **creating a new key and revoking the old one** — not just re-exporting the same
+value into a new shell.

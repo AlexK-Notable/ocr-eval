@@ -12,7 +12,7 @@
 
 - Spec: `docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md` (rev 2). On conflict, the spec wins; flag the conflict.
 - Pins: `harness_commit: fb26a6876481de76dc293f722ab4efa71279904d` · `dataset_revision: 906170ab201d7b8238a32a9115fc66b4b72e0710` (HF `Extend-AI/RealDoc-Bench`).
-- API keys via environment only (`bws run` injection). Never in configs, code, JSONL, or git. Upstream `.env` loading must be disabled (Task 1).
+- API keys via environment only (`bws run` injection). Never in configs, code, JSONL, or git. Upstream `.env` loading must be disabled (Task 1). **[Superseded 2026-08-03 — injection mechanism only:** this plan was authored against a host with Bitwarden Secrets Manager; the current host exports keys in the shell profile instead. The *environment-only* constraint is unchanged and was never implemented in code (`bws` appears in zero lines of code — every key is a plain `os.environ.get()`), so no task output is affected. Operative doc: [`docs/api.md`](../../api.md#keys).**]
 - Rendering: pymupdf @ 150 DPI (upstream `DEFAULT_DPI`), PNG, raster-only to every model we control. **Exception (ratified divergence D5):** upstream adapters that upload the PDF (`mistral_ocr_4`) run as-is and are labelled `input: pdf-direct` in the report.
 - Stage 1 sampling: `temperature 0.0, top_p 1.0, max_tokens 1024, sample_index 0` for all **vlm-chat** cells. Transcription cells use upstream's `VisionParserBase.max_tokens = 12000` (a full page of markdown does not fit in 1024 — divergence D2).
 - Stage 1 output contract: the bank's typed template via `build_template` in the prompt; **no** provider-native structured-output params (mechanism = `schema_prompted`, uniform across providers; `schema_native` is Stage 2).
@@ -1957,6 +1957,13 @@ assert "transcript-recall" in md.lower()
 - [ ] **Step 2: Snapshot the reproduction targets** — `docs/superpowers/specs/table3-snapshot.md`: copy the paper's Table 3 open-weight rows (dots.ocr 70.6±3.6 / 61.4±3.5 · olmOCR-2 79.5±2.6 / 67.9±3.0 · PaddleOCR-VL 59.6±4.0 / 48.5±3.6) and the README leaderboard as of `fb26a687` (Gemini 3.5 Flash 89.3 / 82.2), each with source (paper table vs README) and retrieval date. These are the numbers the reproduction gate compares against; the README will drift, this file must not.
 
 - [ ] **Step 3: Write `docs/runbook-stage1.md`** — the exact operational sequence:
+
+> **The sketch below is the plan's original draft, not the operative procedure.**
+> [`docs/runbook-stage1.md`](../../runbook-stage1.md) is what actually ran and is authoritative
+> where the two differ. Two known divergences: the `bws` wrapper lines are superseded
+> (shell-profile exports — see the Global Constraints note above), and the rotation sign-off moved
+> from `bws secret list` to the issuing providers' own consoles, since keys live only in the
+> environment on the current host.
 
 ```markdown
 # Stage 1 run procedure

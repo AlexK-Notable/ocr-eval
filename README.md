@@ -38,10 +38,33 @@ all — that's a different measurement than a VLM reading the page directly, so 
 share a leaderboard table. See [`docs/architecture.md`](docs/architecture.md) and
 [`docs/scoring.md`](docs/scoring.md) for the full rationale.
 
+## Host prerequisites
+
+Verified on the current host 2026-08-03 — what runs as-is, and what needs installing first. See
+[`docs/host-setup.md`](docs/host-setup.md) for the probe commands behind each row.
+
+| Requirement | Needed for | Status on this host |
+|---|---|---|
+| `uv sync --extra dev`, `pytest`, `ocr-eval selftest` | everything offline | **Working** (282 tests pass; offline scorer gate green) |
+| Pinned dataset revision reachable (581 docs, 538 MB) | steps 2–3 | **Working** (public; sha matches `pins.yaml`; `check_bank` passes on the real bank) |
+| `GEMINI_API_KEY` exported | extractor gate, all `score`, Section A anchor | **Working** — `selftest --extractor` passes `5/5`. NB export the exact name, not only `GOOGLE_API_KEY` |
+| `OPENROUTER_API_KEY` / `MISTRAL_API_KEY` exported | hosted rows (steps 5, 7) | **Not set** — hosted legs blocked until exported |
+| AWS credentials + Bedrock model access | `vlm-chat` rows with no API key ([`registry-bedrock.yaml`](configs/registry-bedrock.yaml)) | **Working** — 7 models invokable, live-validated end-to-end |
+| Ollama on `localhost:11434` | the keyless quickstart below | **Not installed** — quickstart cannot run as written |
+| CUDA GPU + `vllm` (16 GB) | local BF16 specialists (step 6) | **Absent** — no GPU on this host; see below |
+
+**No GPU means two DoD items are currently unsatisfiable.** `glm-ocr@local-vllm` and
+`dots-ocr@local-vllm` cannot be served here, which blocks DoD #2's open-weight reproduction check
+(`dots.ocr` vs the paper's 70.6±3.6 / 61.4±3.5) and DoD #3's "≥1 local specialist (BF16)" row. This
+is recorded rather than routed around, per the repo's fail-closed convention — nothing unrunnable
+should read as a pass. Resolution (rent a GPU, re-pin to hosted serving with an honest precision
+stamp, or formally descope both items) is an open decision, not yet made.
+
 ## Quickstart — keyless local validation
 
-No API keys required. Exercises render → cache → report end-to-end against a local
-OpenAI-compatible endpoint (Ollama). Full details, caveats, and the thinking-model empty-response
+**Requires a local Ollama install** (not present on this host — see Host prerequisites above). No
+API keys required. Exercises render → cache → report end-to-end against a local
+OpenAI-compatible endpoint. Full details, caveats, and the thinking-model empty-response
 gotcha are in [`docs/runbook-stage1.md`](docs/runbook-stage1.md#local-validation-path-no-keys-needed).
 
 ```bash
@@ -64,16 +87,18 @@ uv run ocr-eval report --run-dir runs/stage1 \
 | Keyless local direct-QA smoke (Ollama vlm-chat → cache → `report.md`) | Implemented, live-validated |
 | Condition-hash disambiguation (same registry id, two condition hashes) | Implemented, live-validated |
 | Hosted `vlm-chat` candidates (OpenRouter Qwen3-VL/Qwen3.5) | Implemented; needs `OPENROUTER_API_KEY`, unrun |
-| Gemini extractor validation gate + scoring leg | Implemented; needs `GEMINI_API_KEY`, unrun |
+| Bedrock `vlm-chat` candidates (`transport: bedrock-converse`) | Implemented, live-validated (no API key — SigV4); transcriber leg not wired |
+| Gemini extractor validation gate + scoring leg | Implemented; gate live-validated on this host (`5/5`) — scoring leg unrun |
 | Hosted transcriber (Mistral OCR 4) | Implemented; needs `MISTRAL_API_KEY`, unrun |
-| Local vLLM specialists (GLM-OCR, dots.ocr) | Implemented ([local-serving.md](docs/local-serving.md)); unrun |
-| Reproduction gate (DoD #2) | Implemented; needs a scored transcriber row to evaluate |
+| Local vLLM specialists (GLM-OCR, dots.ocr) | Implemented ([local-serving.md](docs/local-serving.md)); **blocked on this host — no GPU** |
+| Reproduction gate (DoD #2) | Implemented; Gemini leg needs a scored transcriber row; `dots.ocr` leg blocked (no GPU) |
 | Stage 2 (conditions, classical engines) / Stage 3 (CheckboxQA, HITL) | Not started — see [roadmap](docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md) |
 
 ## Doc map
 
 | Doc | Covers |
 |---|---|
+| [`docs/host-setup.md`](docs/host-setup.md) | Host prerequisites with the probe command behind each claim — toolchain, dataset, keys, local serving |
 | [`docs/architecture.md`](docs/architecture.md) | Module map, run-dir anatomy, condition dict, cache semantics, fork boundaries, fail-closed gate inventory |
 | [`docs/cli.md`](docs/cli.md) | Every `ocr-eval` command, upstream commands used/avoided, a worked keyless example |
 | [`docs/scoring.md`](docs/scoring.md) | The scoring rubric — upstream scorer, our metrics layer, baselines, uncertainty, reproduction gate |
@@ -99,10 +124,11 @@ ocr-eval/
     stats.py               document-clustered bootstrap CIs, paired deltas, separability
     direct.py              vlm-chat runner (run_direct) — image + question -> typed JSON answer
     parsers_openai.py      openai-compat transcriber adapter, registered into upstream's parser registry
+    bedrock.py             AWS Bedrock vlm-chat transport (SigV4 Converse; no OpenAI-compat endpoint exists)
     selftest.py            scorer + extractor fail-closed self-tests
     report_md.py           shape-segregated markdown report builder
     cli.py                 the `ocr-eval` CLI (verify/selftest/direct/parse/score/rescore/report)
-  configs/                pins.yaml, registry.yaml, registry-local-validation.yaml
+  configs/                pins.yaml, registry.yaml, registry-local-validation.yaml, registry-bedrock.yaml
   docs/                   this documentation suite + runbook + superpowers/ provenance chain
   tests_ext/, tests/      this fork's tests + upstream's own test suite
 ```
@@ -119,8 +145,18 @@ ocr-eval/
 
 ## Keys policy
 
-Environment-only. Keys are injected via `bws run --project-id <id> -- <cmd>`
-([`docs/runbook-stage1.md`](docs/runbook-stage1.md) prerequisites) — never a config file, never
-committed. Upstream's `.env`/`.env.local` loading is disabled by default; the one upstream file
-this fork modifies (`realdoc_bench/cli.py`'s `_env()`) makes it opt-in only via
-`RDB_ALLOW_DOTENV=1`.
+Environment-only — never a config file, never committed. Keys are exported in the operator's shell
+profile; every registry entry naming a key requirement declares the variable via `api_key_env`, and
+the variable must be present in the real process environment before the command runs. The full
+Stage 1 variable list is in [`docs/runbook-stage1.md`](docs/runbook-stage1.md)'s prerequisites.
+
+Two things that bite in practice, both documented in [`docs/api.md`](docs/api.md#keys):
+
+- **`.env` does not reach the `ocr-eval` CLI.** Upstream's `.env`/`.env.local` loading is disabled
+  by default and re-enabled only by `RDB_ALLOW_DOTENV=1` — but that flag gates `_env()` in
+  `realdoc_bench/cli.py` (the one upstream file this fork modifies), and `ocr_eval_ext/` never
+  calls it, not even where `ocr-eval score` imports upstream's scorer in-process. `.env` therefore
+  only ever reaches `realdoc-bench` commands, none of which need a key.
+- **Export `GEMINI_API_KEY` under that exact name.** Upstream's scorer accepts
+  `GEMINI_API_KEY` *or* `GOOGLE_API_KEY`, but the `vlm-chat` runner reads `api_key_env` by exact
+  name with no fallback — so the Section A frontier anchor fails on the Google alias alone.

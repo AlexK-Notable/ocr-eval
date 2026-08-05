@@ -11,12 +11,13 @@ or deciding whether a new Stage 2 axis needs a new cache key. For day-to-day com
 
 | Module | Responsibility | Key interfaces |
 |---|---|---|
-| `config.py` | Registry schema + loader. One entry per (model, serving) pair. | `RegistryEntry` (pydantic; `shape: Literal["vlm-chat","transcriber"]`, `transport: Literal["openai-compat","upstream-parser"]`, `.contaminated` property); `load_registry(path) -> list[RegistryEntry]`; `get_entry(entries, id) -> RegistryEntry`; `CONTAMINATION_CUTOFF` |
+| `config.py` | Registry schema + loader. One entry per (model, serving) pair. | `RegistryEntry` (pydantic; `shape: Literal["vlm-chat","transcriber"]`, `transport: Literal["openai-compat","upstream-parser","bedrock-converse"]`, `region` for bedrock entries, `.contaminated` property); `load_registry(path) -> list[RegistryEntry]`; `get_entry(entries, id) -> RegistryEntry`; `CONTAMINATION_CUTOFF` |
 | `preconditions.py` | Fail-closed gates: bucket cardinality, single-page, non-blank render. | `check_bank(items) -> dict` (raises `PreconditionError`); `assert_single_page(pdf_path) -> int`; `ink_coverage(png_bytes) -> float`; `items_with_tags`/`boolean_fields`/`null_fields`; `CHECKBOX_TAGS`, `BLANK_TAGS`, `EXPECTED` |
 | `metrics.py` | Boolean/null-restricted per-field outcomes and baselines. | `FieldOutcome` (dataclass: qid/key/doc/gold/status); `field_outcomes(records, fields) -> list[FieldOutcome]`; `checkbox_metrics(outcomes) -> dict`; `null_metrics(outcomes) -> dict`; `baseline_rows(fields) -> dict` |
 | `stats.py` | Document-clustered bootstrap. | `cluster_bootstrap_ci(outcomes, iters=2000, seed=0, alpha=0.05) -> (lo, hi)`; `paired_delta_ci(a, b, ...) -> (lo, hi)`; `separable(delta_ci) -> bool` |
 | `direct.py` | The `vlm-chat` runner: page image + question → typed JSON answer. | `STAGE1_CONDITION`; `condition_hash(condition) -> str`; `parser_key(entry_id, condition) -> str`; `run_direct(layout, entries, *, condition=STAGE1_CONDITION, workers=8, dry_run=False, max_spend_usd=None, ...) -> dict` (summary); retry helpers `_is_retryable`/`_retry_wait` (reused by `parsers_openai.py`) |
 | `parsers_openai.py` | Bridges the registry model into upstream's `ParseProvider` machinery for OpenAI-compatible transcribers. | `TRANSCRIBER_CONDITION`; `OpenAICompatVisionParser` (subclassed per registry entry); `safe_name(entry_id) -> str`; `register_openai_parsers(registry_path) -> list[str]`; `preflight(entry) -> str` |
+| `bedrock.py` | AWS Bedrock `vlm-chat` transport (`transport: bedrock-converse`). Bedrock has no OpenAI-compatible endpoint, so this is a separate wire protocol, not another `base_url` — see [`api.md`](api.md#aws-bedrock-transport-bedrock-converse). | `BedrockConverseClient` (`.converse(...) -> (text, usage, provider)`); `is_retryable_bedrock`/`retry_after_bedrock`/`is_botocore_error` (consulted by `direct.py`'s retry helpers); `narrow_sampling_for_model` (Anthropic temperature/top_p exclusivity); `preflight_bedrock(entry) -> str`; `probe_invokable(region, ids) -> dict` |
 | `selftest.py` | Fail-closed self-tests for the scorer and the Gemini extractor. | `FIXTURES`, `EXTRACTOR_FIXTURES`; `run_offline() -> list[str]` (failures); `run_extractor() -> list[str]` |
 | `cli.py` | The `ocr-eval` CLI: `verify`/`selftest`/`direct`/`rescore`/`preflight`/`parse`/`score`/`report`. | `_preflight(layout, *, allow_partial_corpus=False, skip_corpus_check=False)` — the gate every spending/reporting command calls first |
 | `report_md.py` | Pure-function, shape-segregated markdown report builder. | `build_markdown_report(layout, entries, *, allow_stale_render=False, iters=2000) -> str`; `ReportError`, `StaleRenderError`, `ServingIdentityError` |
@@ -110,11 +111,36 @@ explicitly for both shapes at once.
 
 ## Fork boundaries
 
-**The only upstream file modified is `realdoc_bench/cli.py`**, and the only change is to its
-`_env()` helper: upstream unconditionally loads `.env.local`/`.env`; this fork gates that behind
-`RDB_ALLOW_DOTENV=1` (unset by default), matching the project's environment-only keys policy.
-Verified against `git diff upstream/main -- realdoc_bench/cli.py` — a four-line diff, nothing else
-in `realdoc_bench/` touched.
+**Two upstream files are modified**, both minimally:
+
+1. **`realdoc_bench/cli.py`** — its `_env()` helper only. Upstream unconditionally loads
+   `.env.local`/`.env`; this fork gates that behind `RDB_ALLOW_DOTENV=1` (unset by default),
+   matching the project's environment-only keys policy. A four-line diff. Note the resulting
+   asymmetry, documented in [`api.md`](api.md#keys): `ocr_eval_ext/` never calls `_env()`, so even
+   with the flag set, `.env` reaches `realdoc-bench` commands only — never `ocr-eval`.
+2. **`realdoc_bench/evaluate/download.py`** (added 2026-08-03) — dropped the
+   `local_dir_use_symlinks=False` argument from both `hf_hub_download` and `snapshot_download`
+   calls. huggingface_hub 1.x removed the parameter outright (it warns and ignores it); `local_dir=`
+   already gives the real-files-in-run-dir behaviour that `_observed_dataset_revision` depends on.
+   Behaviour-preserving on both old and new huggingface_hub.
+3. **`realdoc_bench/evaluate/score.py`** (added 2026-08-04) — two changes to `gemini_extract`,
+   both prompted by a real incident:
+   - **The API key moved from a URL query parameter to an `x-goog-api-key` header.** Upstream's
+     `params={"key": ...}` put the secret in the request URL, and httpx embeds the full URL in
+     `HTTPStatusError` — a transient 503 printed a live key into a session transcript. URLs also
+     reach proxy/server access logs; headers do neither. Pinned by
+     `tests_ext/test_score_credentials.py`, which fails if the key ever returns to the URL.
+   - **Bounded retry** (`_post_with_retry`/`_extract_retry_wait`, new module-private helpers):
+     408/429/5xx and connection-level failures get exponential backoff honouring `Retry-After`,
+     clamped to `[0, 60]`s, 4 attempts. Upstream called `raise_for_status()` once, so a single 503
+     aborted the whole extractor gate. Permanent statuses still fail on the first attempt. The gate
+     stays fail-closed — an extractor that is genuinely down still fails the run.
+     These helpers are intentionally local rather than importing `ocr_eval_ext.direct`'s
+     equivalents: the dependency direction is one-way (upstream must not import the fork's
+     package), and httpx exceptions need different handling from the `openai` client's anyway.
+
+Confirm the boundary with `git diff upstream/main -- realdoc_bench/` — nothing else in
+`realdoc_bench/` is touched.
 
 Everything else new lives additively in `ocr_eval_ext/`. Two pins gate every run:
 `harness_commit` and `dataset_revision` in `configs/pins.yaml`. `cli.py`'s `_preflight()` asserts
