@@ -1,0 +1,36 @@
+{
+  "measured_at": "2026-08-04",
+  "entry_id": "claude-haiku-4.5@bedrock",
+  "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "region": "us-east-1",
+  "condition_hash": "4caf39e9ac1f",
+  "cells": 1356,
+  "error_classes": {
+    "none": 1331,
+    "api_error": 20,
+    "parse_error": 5
+  },
+  "tokens": {
+    "prompt_total": 2252308,
+    "completion_total": 71464,
+    "prompt_median": 1679.5,
+    "completion_median": 45.0
+  },
+  "cost_usd_at_anthropic_first_party_rates": {
+    "note": "Bedrock Converse returns NO cost field and pricing:GetProducts is IAM-denied to this role, so this is DERIVED from Anthropic first-party Haiku 4.5 rates ($1/$5 per Mtok), NOT a verified Bedrock price. Registry entries stay unpriced for this reason.",
+    "input": 2.2523,
+    "output": 0.3573,
+    "total": 2.6096
+  },
+  "latency_sec": {
+    "median": 1.544,
+    "max": 5.448
+  },
+  "image_bytes": {
+    "max_raw": 5293235,
+    "base64_limit": 5242880,
+    "implied_raw_ceiling": 3932160,
+    "rows_over_ceiling": 20,
+    "note": "rows_over_ceiling equals the api_error count exactly \u2014 the 5 MB cap is enforced on the BASE64 payload, so the raw-PNG ceiling is ~3.75 MiB."
+  }
+}

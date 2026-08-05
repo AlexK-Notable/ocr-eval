@@ -19,6 +19,10 @@ dist/
 # Run outputs (gitignored, regenerated per invocation)
 runs/
 
+# Console captures from backgrounded runs (mostly tqdm carriage-return spam; the durable
+# artifacts are the run dir and the committed measurement JSONs, not these)
+scripts/*.log
+
 # IDE
 .idea/
 .vscode/
