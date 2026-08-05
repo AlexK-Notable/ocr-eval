@@ -93,6 +93,12 @@ def _reserve_page_budget() -> None:
 
     Checked *before* the request so the cap prevents spend rather than reporting it after the
     fact. Each sync call bills at least one page, so "already at the cap" is enough to refuse.
+
+    **Overshoot bound:** the cap is approximate to within `--workers` pages. `run_parse` fans
+    documents across a thread pool, so up to `workers` threads can pass this check on the same
+    pre-cap count before any of them records a page. Same semantics as `--max-spend`'s
+    documented overshoot bound in direct.py — at $0.01/page, a default 8-worker run can exceed
+    the cap by at most $0.07. Set the cap as a budget guardrail, not as an exact quota.
     """
     raw = os.environ.get(MAX_PAGES_ENV)
     if not raw:

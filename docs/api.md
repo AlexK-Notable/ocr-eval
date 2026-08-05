@@ -129,7 +129,10 @@ should be at most 4).
     rendered, so a billing surprise lands in the artifact instead of being papered over — but
     see the next bullet for how reliable that number is. Set `DOCSTRANGE_MAX_PAGES=<n>` to
     refuse further billable calls once `n` pages have been billed in the process (unset = no
-    cap); already-written transcripts are cached and are never re-billed on resume.
+    cap); already-written transcripts are cached and are never re-billed on resume. The cap is
+    a guardrail, not an exact quota: it is checked before each call, so up to `--workers`
+    threads can pass the same pre-cap count, overshooting by at most `workers` pages ($0.08 at
+    the default 8). Same semantics as `--max-spend`'s documented overshoot bound above.
   - **Two live deviations from the published OpenAPI schema** (verified 2026-08-04, both handled
     by the adapter — do not "fix" them back toward the schema without re-checking):
     1. `result.markdown` is an **object** `{"content": "<markdown>", "metadata": {...}}`, not the
@@ -140,10 +143,21 @@ should be at most 4).
        to say, the adapter bills one page per request and records
        `billed_pages_source: "assumed-1-per-request"` in the parse metadata, so a spend audit
        never has to guess which number it is reading.
-  - **~55 s per page** end-to-end on a real corpus page (52.9 s measured, `processing_time`
-    59.9 s on another). That sets the wall-clock: 581 pages is ~9 h strictly sequential, or
-    roughly an hour at the default `--workers 8` cross-document concurrency. There is no
-    documented concurrency cap; start conservative and watch for 429s.
+  - **~55 s per page**, and **`--workers 8` is already the throughput ceiling** — measured
+    2026-08-04 against distinct corpus docs (repeating one page would risk server-side caching
+    flattering the numbers):
+
+    | workers | wall | median per-call | throughput | 581 pages |
+    |---|---|---|---|---|
+    | 1 | 52.9 s | 52.9 s | 1.1 pages/min | ~9 h |
+    | 8 | 67.8 s / 8 pages | 54.9 s | **7.1 pages/min** | **~82 min** |
+    | 16 | 141.5 s / 16 pages | 68.2 s (max 141.5 s) | 6.8 pages/min | ~86 min |
+
+    At 8, median per-call latency is indistinguishable from a lone call — nothing is queuing.
+    At 16 it climbs to 68 s with a 141 s tail while throughput does *not* improve, which is the
+    signature of a server-side concurrency ceiling around 8. Raising `--workers` past the
+    default buys nothing and lengthens the tail. No 429s and no empty transcripts at either
+    level, so the ceiling is enforced by queuing rather than by rejection.
   - **A 429 whose body reads as exhausted credits fails immediately** rather than being retried
     as rate limiting — otherwise the run burns four attempts per page and buries the real reason
     it stopped. Transient 408/429/5xx and connection errors retry with backoff (`Retry-After`
