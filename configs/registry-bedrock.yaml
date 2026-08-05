@@ -1,0 +1,98 @@
+# AWS Bedrock registry (transport: bedrock-converse).
+#
+# Auth is the AWS credential chain (SigV4) — there is no api_key_env, and entries that declare one
+# are REJECTED by RegistryEntry's validator. Bedrock exposes no OpenAI-compatible endpoint
+# reachable from this account (probed 2026-08-04: /openai/v1/models -> 404 UnknownOperationException,
+# bedrock-runtime advertises no chat-completions op, get-api-key not permitted, unauthenticated
+# POST -> 403), so these cannot be openai-compat entries pointed at a different base_url.
+#
+# `region` is REQUIRED and never inherited from AWS_REGION: it is part of the serving identity
+# stamped on every row (resolved_provider = "bedrock:<region>"), and report_md.py's D4 gate
+# hard-fails a parser key whose rows span more than one provider — so a run accidentally split
+# across regions is caught rather than silently averaged.
+#
+# ── modelId vs inference profile ─────────────────────────────────────────────────────────────
+# Bedrock has two invocation identities and `list-foundation-models` does not tell you which to
+# use directly. Models whose inferenceTypesSupported is ON_DEMAND take the bare modelId
+# (`amazon.nova-lite-v1:0`); models marked INFERENCE_PROFILE are NOT invokable by their bare id
+# and require the geo-prefixed cross-region profile id (`us.anthropic.claude-haiku-...`). Getting
+# this wrong surfaces as ValidationException or AccessDeniedException, not as a helpful hint —
+# always `ocr-eval preflight <id>` before spending.
+#
+# ── ACCESS IS PER-ROLE, NOT PER-ACCOUNT ──────────────────────────────────────────────────────
+# Verified live 2026-08-04 on account 381492199098 as AWSReservedSSO_Developer: 119 vision-capable
+# models are LISTED, only 7 are INVOKABLE by this role. Every entry below was confirmed invokable
+# AND confirmed to read checkbox polarity correctly on a synthetic form (checked box -> true,
+# empty box -> false, name transcribed). Models denied to this role at that time — do not add
+# without re-probing: all bare `anthropic.*` ids, `us.amazon.nova-2-lite-v1:0`,
+# `us.amazon.nova-premier-v1:0`, `us.meta.llama4-*`, `us.mistral.pixtral-large-*`.
+#
+# ── PRICING IS DELIBERATELY ABSENT ───────────────────────────────────────────────────────────
+# No `pricing:` key on any entry. Bedrock's Converse response carries token counts but NO cost
+# field (unlike OpenRouter's usage.cost), and `pricing:GetProducts` is denied to this role, so
+# per-token rates cannot be verified from inside this environment. This repo's convention is that
+# unverified numbers do not get committed — so rather than paste rates from memory, these entries
+# are left unpriced, which has two honest consequences:
+#   * `direct --dry-run` counts their cells under `unpriced_cells` and EXCLUDES them from
+#     `estimated_usd` (never folded in as $0).
+#   * `direct --max-spend N` FAILS CLOSED on them (run_direct's track() raises rather than
+#     treating an unknowable cost as free).
+# To use --max-spend with these entries, add a verified `pricing: {input_per_mtok, output_per_mtok}`
+# per entry from the AWS Bedrock pricing page, with the retrieval date, as registry.yaml does.
+#
+# ── COMPARABILITY ────────────────────────────────────────────────────────────────────────────
+# `precision: provider-default` on every entry: Bedrock does not document the serving precision of
+# these checkpoints, so this is a declaration of "not asserted" (renders as such in report.md),
+# never a claim of bf16. Per the spec's precision policy, treat a Bedrock row as a serving-stack
+# measurement, not a clean weights comparison against a locally-served BF16 row.
+
+- id: nova-lite@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: amazon.nova-lite-v1:0        # ON_DEMAND — bare modelId is correct, no us. prefix
+  region: us-east-1
+  precision: provider-default        # Bedrock does not document serving precision
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "AWS Bedrock: no training on customer inputs by default (AWS service terms)"
+  provenance: Amazon
+  release_date: "2024-12-03"         # Nova family GA, re:Invent 2024 — pre-dataset
+
+- id: nova-pro@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: amazon.nova-pro-v1:0        # ON_DEMAND
+  region: us-east-1
+  precision: provider-default
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "AWS Bedrock: no training on customer inputs by default (AWS service terms)"
+  provenance: Amazon
+  release_date: "2024-12-03"
+
+# INFERENCE_PROFILE model: the bare `anthropic.claude-haiku-4-5-...` id is NOT invokable — the
+# `us.` cross-region profile prefix is required. Confirmed invokable by this role 2026-08-04.
+- id: claude-haiku-4.5@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: us.anthropic.claude-haiku-4-5-20251001-v1:0
+  region: us-east-1
+  precision: provider-default
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "AWS Bedrock: no training on customer inputs by default (AWS service terms)"
+  provenance: Anthropic
+  release_date: "2025-10-01"         # from the model id's own date component
+
+- id: gemma-3-27b@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: google.gemma-3-27b-it       # ON_DEMAND
+  region: us-east-1
+  precision: provider-default
+  weights_licence: gemma             # Gemma Terms of Use — NOT OSI open source; review before
+                                      # treating this as an open-weight candidate row
+  provider_tos_commercial: conditional
+  tos_note: "Gemma Terms of Use apply to outputs/derivatives; review before commercial reporting"
+  provenance: Google
+  release_date: "2025-03-12"         # Gemma 3 launch — pre-dataset

@@ -221,13 +221,38 @@ def test_max_spend_bounds_overshoot_to_window_size(tmp_path):
     assert len(mock.requests) < n
 
 
-def test_run_direct_rejects_entry_missing_base_url(tmp_path):
-    """I8: OpenAI(base_url=None) would silently target api.openai.com — must never reach that
-    constructor call for a misconfigured entry."""
+def test_run_direct_rejects_unsupported_transport(tmp_path):
+    """`run_direct` drives the two vlm-chat transports (openai-compat, bedrock-converse); an
+    upstream-parser entry belongs to the parse/score legs and must be refused here.
+
+    (Previously this fixture was also how the I8 base_url invariant was exercised — it built an
+    upstream-parser entry, which since the bedrock-converse transport landed is caught by the
+    transport check first. I8 now has its own test below, against the case it actually describes.)
+    """
     layout = make_run_dir(tmp_path)
     bad = RegistryEntry(
-        id="m1@nobaseurl", shape="vlm-chat", transport="upstream-parser",
+        id="m1@upstream", shape="vlm-chat", transport="upstream-parser",
         upstream_parser="whatever", api_key_env=None,
+        precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+        provenance="Test", release_date="2025-01-01",
+    )
+    with pytest.raises(ValueError, match="supports transport="):
+        run_direct(layout, [bad])
+
+
+def test_run_direct_rejects_openai_compat_entry_missing_base_url(tmp_path):
+    """I8: OpenAI(base_url=None) would silently target api.openai.com — must never reach that
+    constructor call for a misconfigured entry.
+
+    `RegistryEntry`'s validator already rejects this combination, so the only way to reach
+    `run_direct` with it is to bypass validation — which is exactly what `model_construct` does
+    here. That makes this a genuine defense-in-depth check rather than dead code: the guard exists
+    for a hand-built or future-programmatically-constructed entry, not for anything `load_registry`
+    can produce."""
+    layout = make_run_dir(tmp_path)
+    bad = RegistryEntry.model_construct(
+        id="m1@nobaseurl", shape="vlm-chat", transport="openai-compat",
+        base_url=None, model="m", api_key_env=None,
         precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
         provenance="Test", release_date="2025-01-01",
     )
