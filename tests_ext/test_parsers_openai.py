@@ -260,6 +260,26 @@ def test_register_openai_parsers_threads_provider_pin_into_built_parser(tmp_path
     assert instance._provider_pin == {"order": ["Alibaba"], "allow_fallbacks": False}
 
 
+# ── truncated response bodies are retried on the TRANSCRIBER leg too ──────────────────────────
+# This is the path that actually failed in production: a qwen3.5-9b page died with
+# `JSONDecodeError: Expecting value: line 1595 column 1 (char 8767)` after 335s, was classified
+# permanent, and took the whole document with it after ONE attempt — while the identical request
+# succeeded in 145s when re-issued by hand. `_call_page` reuses direct.py's `_is_retryable`, so
+# the classifier fix has to reach here as well.
+
+def test_call_page_retries_a_truncated_body_and_then_succeeds(tmp_path):
+    pdf = tmp_path / "d.pdf"
+    doc = fitz.open()
+    doc.new_page(width=612, height=792)
+    doc.save(pdf)
+    truncated = '{"id":"cmpl-1","choices":[{"message":{"role":"assistant","content":"partial'
+    responses = [{"raw": truncated}, {"status": 200, "content": "# Recovered page"}]
+    with MockOpenAI(responses=responses) as mock:
+        result = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m").parse(pdf)
+    assert len(mock.requests) == 2                     # retried, not failed after one attempt
+    assert "# Recovered page" in result.markdown
+
+
 # ── reasoning cap: a thinking transcriber must not spend the whole completion budget ───────────
 # Regression guard for the 2026-08-04 finding: uncapped, qwen3.5-9b returned a 9-byte transcript
 # ("## Page 1" and nothing else) on a dense page while transcribing a lighter one correctly.

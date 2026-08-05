@@ -64,6 +64,47 @@ def entry(base_url: str) -> RegistryEntry:
     )
 
 
+# ── truncated response bodies are transient, not permanent ────────────────────────────────────
+# A body cut off mid-stream reaches us as a bare json.JSONDecodeError: the SDK wraps transport
+# failures during the REQUEST into APIConnectionError, but a body that arrives and then stops is
+# parsed outside that wrapping. It used to be classified permanent, so one truncated body burned
+# the whole document after a single attempt — measured live 2026-08-04 on a qwen3.5-9b page that
+# died after 335s and then succeeded in 145s when re-issued by hand.
+
+_TRUNCATED = '{"id":"cmpl-1","choices":[{"message":{"role":"assistant","content":"partial'
+
+
+def test_is_retryable_treats_truncated_body_as_transient():
+    from ocr_eval_ext.direct import _is_retryable
+    try:
+        json.loads(_TRUNCATED)
+    except json.JSONDecodeError as e:
+        assert _is_retryable(e) is True
+    else:
+        pytest.fail("fixture is supposed to be malformed JSON")
+
+
+def test_is_retryable_stays_narrow_and_ignores_plain_value_errors():
+    """JSONDecodeError subclasses ValueError. Retrying every ValueError would silently retry
+    ordinary programming errors, so the check must be on the concrete type."""
+    from ocr_eval_ext.direct import _is_retryable
+    assert _is_retryable(ValueError("not a transport symptom")) is False
+    assert _is_retryable(RuntimeError("nope")) is False
+
+
+def test_run_direct_retries_a_truncated_body_and_then_succeeds(tmp_path):
+    layout = make_run_dir(tmp_path)
+    responses = [{"raw": _TRUNCATED}, {"status": 200, "content": '{"a": true}'}]
+    with MockOpenAI(responses=responses) as mock:
+        summary = run_direct(layout, [entry(mock.base_url)])
+    assert len(mock.requests) == 2      # retried rather than failing the cell outright
+    assert summary["ok"] == 1
+    pk = parser_key("m1@mock", STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "none"
+    assert rec["answer"] == {"a": True}
+
+
 # ── reasoning cap reaches the wire on the direct leg too ───────────────────────────────────────
 # The 2026-08-04 finding was not transcriber-only: uncapped thinking made ~15% of qwen3.5-9b's
 # direct cells come back error_class "empty" against 3 parse_errors across qwen3-vl-8b's full

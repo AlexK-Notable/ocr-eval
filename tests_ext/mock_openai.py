@@ -16,6 +16,8 @@ class MockOpenAI:
         subsequent call gets a 200). Each spec is a dict:
           - "status": int, default 200.
           - "headers": dict[str, str] of extra response headers (e.g. Retry-After), default {}.
+          - "raw": verbatim response bytes/str, bypassing JSON encoding — use to emit a
+            truncated body (a mid-stream transport cut as seen by the client).
           - "body": full response JSON body, if given, used verbatim (lets a test control
             `usage.cost`, `provider`, etc. exactly).
           - "content": for status == 200 with no explicit "body" — the assistant message content
@@ -41,6 +43,19 @@ class MockOpenAI:
                 spec = handler_self._spec_for(len(handler_self.requests) - 1)
                 status = spec.get("status", 200)
                 headers = spec.get("headers") or {}
+                if "raw" in spec:
+                    # Verbatim bytes — lets a test emit a TRUNCATED/malformed JSON body, which is
+                    # what a mid-stream transport cut looks like to the client. Cannot be
+                    # expressed via "body", which is always json.dumps()ed into valid JSON.
+                    data = spec["raw"].encode() if isinstance(spec["raw"], str) else spec["raw"]
+                    self.send_response(spec.get("status", 200))
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(data)))
+                    for k, v in (spec.get("headers") or {}).items():
+                        self.send_header(k, v)
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
                 if "body" in spec:
                     resp_body = spec["body"]
                 elif status == 200:

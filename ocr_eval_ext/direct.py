@@ -88,12 +88,30 @@ def _is_retryable(exc: Exception) -> bool:
     """408/429/5xx and connection-level failures (no HTTP response at all — DNS, refused
     connection, timeout) are transient: retry them. Everything else (400/401/403/404/409/422/...)
     is permanent: fail fast after exactly one attempt rather than burning the retry budget on a
-    request that will never succeed."""
+    request that will never succeed.
+
+    TRUNCATED RESPONSE BODIES are transient too, and used to be misclassified as permanent.
+    A body cut off mid-stream reaches us as a bare `json.JSONDecodeError` — the openai SDK wraps
+    transport failures that happen *during the request* into `APIConnectionError`, but a body
+    that arrives and then stops partway through is parsed by `response.json()` outside that
+    wrapping, so nothing catches it (verified against a mock serving a truncated body: the escaping
+    type is `json.decoder.JSONDecodeError`, whose MRO is JSONDecodeError -> ValueError, matching
+    neither branch above). Live consequence, measured 2026-08-04: a qwen3.5-9b transcriber page
+    died with `JSONDecodeError: Expecting value: line 1595 column 1 (char 8767)` after 335s and
+    was never retried — yet the identical request succeeded in 145s when re-issued by hand. The
+    page was billed, the document failed, and a retry would have saved both.
+
+    Deliberately narrow: `json.JSONDecodeError`, NOT its `ValueError` parent. A malformed payload
+    is evidence the transport dropped something; a generic ValueError is not.
+
+    Cost note: retrying re-bills the request, and a slow thinking model can take minutes per
+    attempt, so MAX_RETRIES attempts of a 335s call is bounded but not cheap. Failing the document
+    outright wastes the same spend AND loses the page, so retrying is still the better trade."""
     if isinstance(exc, APIConnectionError):     # covers APITimeoutError (subclass)
         return True
     if isinstance(exc, APIStatusError):
         return exc.status_code == 408 or exc.status_code == 429 or 500 <= exc.status_code < 600
-    return False
+    return isinstance(exc, json.JSONDecodeError)
 
 
 def _retry_wait(exc: Exception, attempt: int) -> float:
