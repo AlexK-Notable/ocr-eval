@@ -17,7 +17,7 @@ class RegistryEntry(BaseModel):
 
     id: str
     shape: Literal["vlm-chat", "transcriber"]
-    transport: Literal["openai-compat", "upstream-parser", "bedrock-converse"]
+    transport: Literal["openai-compat", "upstream-parser", "bedrock-converse", "gemini-native"]
     base_url: str | None = None
     model: str | None = None
     upstream_parser: str | None = None
@@ -79,6 +79,28 @@ class RegistryEntry(BaseModel):
                 raise ValueError(
                     f"{self.id}: provider_pin is an OpenRouter routing concept and has no meaning "
                     f"on Bedrock — serving identity is (modelId, region)")
+        if self.transport == "gemini-native":
+            # Exists only to reach `mediaResolution`, which Google's OpenAI-compat shim does not
+            # expose (see ocr_eval_ext/gemini_native.py's module docstring for the live probe).
+            if not self.model:
+                raise ValueError(f"{self.id}: gemini-native requires model (the Gemini model id)")
+            if not self.api_key_env:
+                raise ValueError(
+                    f"{self.id}: gemini-native requires api_key_env (e.g. GEMINI_API_KEY) — the "
+                    f"native endpoint authenticates with an API key, not a credential chain")
+            if self.base_url:
+                raise ValueError(
+                    f"{self.id}: gemini-native takes no base_url — the endpoint is fixed at "
+                    f"generativelanguage.googleapis.com/v1beta; got {self.base_url!r}. A different "
+                    f"base_url would be a different serving stack and belongs in its own transport")
+            if self.region:
+                raise ValueError(
+                    f"{self.id}: gemini-native takes no region (Google does not expose a regional "
+                    f"endpoint here); got {self.region!r}")
+            if self.provider_pin:
+                raise ValueError(
+                    f"{self.id}: provider_pin is an OpenRouter routing concept — Gemini's native "
+                    f"endpoint has one serving stack and nothing to pin")
         return self
 
     @property

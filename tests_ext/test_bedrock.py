@@ -396,5 +396,5 @@ def test_run_direct_rejects_unknown_transport(tmp_path):
         id="x@up", shape="vlm-chat", transport="upstream-parser", upstream_parser="gemini_3_5_flash",
         precision="provider-default", weights_licence="closed", provider_tos_commercial="ok",
         provenance="Google", release_date="2026-05-19")
-    with pytest.raises(ValueError, match="supports transport="):
+    with pytest.raises(ValueError, match="run_direct supports transport in"):
         run_direct(layout, [e], workers=1)

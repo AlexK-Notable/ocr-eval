@@ -443,23 +443,40 @@ def preflight(
       distinguishes them.
 
     upstream-parser entries (Gemini, Mistral) have no server to preflight."""
+    import os
+
     from ocr_eval_ext.bedrock import preflight_bedrock
     from ocr_eval_ext.config import get_entry
+    from ocr_eval_ext.direct import GEMINI_MEDIA_RESOLUTION
+    from ocr_eval_ext.gemini_native import preflight_gemini_native
     from ocr_eval_ext.parsers_openai import preflight as _served_model
 
     entries = load_registry(registry)
     entry = get_entry(entries, entry_id)
-    if entry.transport not in ("openai-compat", "bedrock-converse"):
+    preflightable = ("openai-compat", "bedrock-converse", "gemini-native")
+    if entry.transport not in preflightable:
         console.print(f"[red]{entry_id}: transport={entry.transport!r} — preflight only applies "
-                      f"to openai-compat and bedrock-converse entries[/red]")
+                      f"to {', '.join(preflightable)} entries[/red]")
         raise typer.Exit(1)
     try:
-        served = (preflight_bedrock(entry) if entry.transport == "bedrock-converse"
-                  else _served_model(entry))
+        if entry.transport == "bedrock-converse":
+            served = preflight_bedrock(entry)
+        elif entry.transport == "gemini-native":
+            # Preflight at the SAME media_resolution the run will use — a model can be invokable at
+            # one resolution and rejected at another, so proving it at the default would prove the
+            # wrong thing.
+            key = os.environ.get(entry.api_key_env or "") or ""
+            if not key:
+                raise RuntimeError(f"env var {entry.api_key_env} not set")
+            served = preflight_gemini_native(entry, key, GEMINI_MEDIA_RESOLUTION)
+        else:
+            served = _served_model(entry)
     except Exception as e:
         console.print(f"[red]preflight FAILED for {entry_id}: {e}[/red]")
         raise typer.Exit(1) from e
-    target = f"bedrock:{entry.region}" if entry.transport == "bedrock-converse" else entry.base_url
+    target = (f"bedrock:{entry.region}" if entry.transport == "bedrock-converse"
+              else "google:generativelanguage" if entry.transport == "gemini-native"
+              else entry.base_url)
     console.print(f"[green]preflight PASS[/green] — {target} serves {served}")
 
 

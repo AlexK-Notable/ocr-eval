@@ -15,10 +15,12 @@ import time
 import uuid
 from pathlib import Path
 
+import httpx
 from openai import APIConnectionError, APIStatusError, OpenAI
 from PIL import Image
 
 from ocr_eval_ext import bedrock as _bedrock
+from ocr_eval_ext import gemini_native as _gemini
 from ocr_eval_ext.config import RegistryEntry
 from ocr_eval_ext.preconditions import assert_single_page, ink_coverage
 from realdoc_bench.evaluate.parsers._vision_base import _render_pdf_pages
@@ -73,7 +75,18 @@ MAX_RETRY_WAIT_SEC = 60.0
 # precondition instead of restating it — they were allowed to drift once (the CLI kept rejecting
 # every `bedrock-converse` entry after `run_direct` learned to drive them) and one name is cheaper
 # than the next divergence.
-DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse"})
+DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse", "gemini-native"})
+
+# `transport: gemini-native` only — the image-detail budget, sent on every request. NOT part of
+# STAGE1_CONDITION, because adding a key to that dict would change `condition_hash` for every
+# EXISTING row on every other transport and silently orphan the whole cache. Instead `run_direct`
+# folds it into the condition for gemini-native entries only (see `_condition_for`), so those rows
+# get their own hash and every other transport's rows keep theirs.
+#
+# HIGH rather than the model default, deliberately: the default is per-generation (3.x -> HIGH
+# ~1161 image tokens, 2.5 -> MEDIUM ~317 on the same page), so leaving it unset makes a
+# cross-generation comparison partly a measurement of image budget. See gemini_native.py.
+GEMINI_MEDIA_RESOLUTION = "MEDIA_RESOLUTION_HIGH"
 
 
 def condition_hash(condition: dict) -> str:
@@ -82,6 +95,23 @@ def condition_hash(condition: dict) -> str:
 
 def parser_key(entry_id: str, condition: dict) -> str:
     return f"vlm__{entry_id}__{condition_hash(condition)}"
+
+
+def _condition_for(entry: RegistryEntry, condition: dict) -> dict:
+    """The condition as ACTUALLY served for this entry's transport.
+
+    Only `gemini-native` differs: it adds `media_resolution`, because that transport exists
+    specifically to control it and a row must record what it was served at. Folding the key in here
+    rather than into `STAGE1_CONDITION` keeps it out of every other transport's hash — adding a key
+    to the shared dict would change `condition_hash` for all rows on all transports at once and
+    orphan the entire existing cache for a parameter three quarters of it cannot even use.
+
+    Every caller that computes a parser key or writes a row must go through this, or a row's stored
+    `condition` and its cache-key hash will disagree — which `report`'s D3/label logic would then
+    read as two different conditions."""
+    if entry.transport == "gemini-native":
+        return {**condition, "media_resolution": GEMINI_MEDIA_RESOLUTION}
+    return condition
 
 
 def direct_prompt(question: str, template: str) -> str:
@@ -128,13 +158,26 @@ def _is_retryable(exc: Exception) -> bool:
 
     Bedrock: botocore raises `ClientError` with a string error code and no `.status_code`, so
     neither branch below can classify it — `bedrock.is_retryable_bedrock` owns that taxonomy and is
-    delegated to here so both transports share one retry loop rather than growing a second."""
+    delegated to here so both transports share one retry loop rather than growing a second.
+
+    Gemini-native speaks httpx rather than the openai SDK, so its errors match none of the openai
+    branches either. A rejected CREDENTIAL is checked first and is never retryable: Google returns an
+    invalid key as HTTP 400, so leaving it to the status check below would be correct by accident —
+    but a `GeminiCredentialError` carries no status at all, and treating it as unclassified (falling
+    through to the JSONDecodeError line) would also read as permanent by accident. Named explicitly
+    so the reason is the reason, not a coincidence."""
+    if isinstance(exc, _gemini.GeminiCredentialError):
+        return False                            # a rejected key will be rejected 4 more times
     if isinstance(exc, APIConnectionError):     # covers APITimeoutError (subclass)
         return True
     if isinstance(exc, APIStatusError):
         return exc.status_code == 408 or exc.status_code == 429 or 500 <= exc.status_code < 600
     if _bedrock.is_botocore_error(exc):        # botocore: no .status_code, own taxonomy
         return _bedrock.is_retryable_bedrock(exc)
+    if isinstance(exc, httpx.HTTPStatusError):  # gemini-native
+        return _gemini.is_retryable_status(exc.response.status_code)
+    if isinstance(exc, (httpx.TransportError, httpx.StreamError)):
+        return True                             # no response obtained — same class as a 5xx
     return isinstance(exc, json.JSONDecodeError)   # truncated body — see docstring
 
 
@@ -246,6 +289,7 @@ def _one(client, entry: RegistryEntry, item: dict, png: bytes | None,
     identical, so both transports produce byte-identical cache-row shapes."""
     sampling = condition["sampling"]
     is_bedrock = entry.transport == "bedrock-converse"
+    is_gemini = entry.transport == "gemini-native"
     send_image = not condition.get("no_image")
 
     t0 = time.perf_counter()
@@ -261,6 +305,16 @@ def _one(client, entry: RegistryEntry, item: dict, png: bytes | None,
                     system=SYSTEM, prompt=prompt, png=png if send_image else None,
                     temperature=sampling["temperature"], top_p=sampling["top_p"],
                     max_tokens=sampling["max_tokens"])
+            elif is_gemini:
+                # `media_resolution` is read from the CONDITION, never from the module default, so
+                # the value on the wire is always the one this row's condition hash commits to. A
+                # missing key is a hard error rather than a silent fall back to the model default —
+                # that default is per-generation and is the confound this transport exists to close.
+                text, usage, provider = client.generate(
+                    system=SYSTEM, prompt=prompt, png=png if send_image else None,
+                    temperature=sampling["temperature"], top_p=sampling["top_p"],
+                    max_tokens=sampling["max_tokens"],
+                    media_resolution=condition["media_resolution"])
             else:
                 text, usage, provider = _openai_call(
                     client, entry, prompt, png if send_image else None, sampling)
@@ -312,9 +366,18 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                     f"{condition['sampling']['seed']!r} (Bedrock Converse has no seed parameter). "
                     f"Silently dropping it would make the condition hash overstate "
                     f"reproducibility; use a seed-free condition for Bedrock entries.")
+        elif e.transport == "gemini-native":
+            # Same reasoning as Bedrock's seed check: the native endpoint's generationConfig has no
+            # `seed`, so honouring a seeded condition is impossible and silently dropping it would
+            # let the condition hash assert a reproducibility guarantee the wire never gave.
+            if condition["sampling"].get("seed") is not None:
+                raise ValueError(
+                    f"{e.id}: transport='gemini-native' cannot honor sampling.seed="
+                    f"{condition['sampling']['seed']!r} (Gemini generationConfig has no seed "
+                    f"parameter); use a seed-free condition for Gemini-native entries.")
         else:
             raise ValueError(
-                f"{e.id}: run_direct supports transport='openai-compat' or 'bedrock-converse' "
+                f"{e.id}: run_direct supports transport in {sorted(DIRECT_TRANSPORTS)} "
                 f"(got {e.transport!r})")
 
     bank = json.loads((bank_path or layout.bank_path).read_text())
@@ -333,7 +396,7 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
     # there forever otherwise, since a plain rerun without --force never re-attempts them.
     cached_ok = cached_error = 0
     for e in entries:
-        pk = parser_key(e.id, cond)
+        pk = parser_key(e.id, _condition_for(e, cond))
         for it in items:
             cpath = layout.cache_path(it["question_id"], pk)
             if force or not cpath.exists():
@@ -392,6 +455,10 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
         key = os.environ.get(e.api_key_env) if e.api_key_env else "local"
         if e.api_key_env and not key:
             raise RuntimeError(f"{e.id}: env var {e.api_key_env} not set")
+        if e.transport == "gemini-native":
+            assert e.model            # guaranteed by RegistryEntry's validator; makes the type local
+            clients[e.id] = _gemini.GeminiNativeClient(key or "", model=e.model)
+            continue
         # max_retries=0: this module owns retries end-to-end (_is_retryable / _retry_wait). The
         # SDK's own default retry-on-408/429/5xx would otherwise nest under ours — up to
         # MAX_RETRIES outer attempts x the SDK's own default retries each, observed as 12 real
@@ -410,22 +477,25 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
         render/document problem, and gets `error_class: "harness_error"` instead — conflating the
         two used to make every non-render failure look like a bad scan."""
         e, it, cpath = cell
+        # Per-transport condition: the row's stored `condition` and the hash inside its `parser` key
+        # MUST be derived from the same dict, or `report`/`rescore` read one row as two conditions.
+        ecos = _condition_for(e, cond)
         base = {
-            "qid": it.get("question_id"), "parser": parser_key(e.id, cond),
+            "qid": it.get("question_id"), "parser": parser_key(e.id, ecos),
             "source_file": it.get("source_file"), "domain": it.get("domain", ""),
-            "condition": cond, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+            "condition": ecos, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
             "prompt_sha": None, "image_sha": None, "image_px": None, "image_bytes": None,
         }
         try:
             prompt = direct_prompt(it["question"], it["template"])
             base["prompt_sha"] = hashlib.sha256((SYSTEM + "\x00" + prompt).encode()).hexdigest()[:12]
-            if cond.get("no_image"):
+            if ecos.get("no_image"):
                 # nothing is rendered or sent — image_sha/image_px/image_bytes stay null, matching
                 # "nothing was sent" rather than reporting the hash of an image the model never saw
-                rec = _one(clients[e.id], e, it, None, cond, base, prompt)
+                rec = _one(clients[e.id], e, it, None, ecos, base, prompt)
             else:
                 try:
-                    png = _render_page(layout, it["source_file"], cond, png_cache)
+                    png = _render_page(layout, it["source_file"], ecos, png_cache)
                     blank = ink_coverage(png) < 0.001
                 except Exception as render_exc:
                     rec = {**base, "error": str(render_exc)[:300], "error_class": "render_error"}
@@ -436,7 +506,7 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                         dims = Image.open(io.BytesIO(png)).size
                         base = {**base, "image_sha": hashlib.sha256(png).hexdigest(),
                                 "image_px": list(dims), "image_bytes": len(png)}
-                        rec = _one(clients[e.id], e, it, png, cond, base, prompt)
+                        rec = _one(clients[e.id], e, it, png, ecos, base, prompt)
         except Exception as exc:  # anything past render/ink-coverage: a harness bug, not the doc
             rec = {**base, "error": str(exc)[:300], "error_class": "harness_error"}
         _atomic_write_json(cpath, rec)

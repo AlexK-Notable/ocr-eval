@@ -307,7 +307,7 @@ def test_run_direct_rejects_unsupported_transport(tmp_path):
         precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
         provenance="Test", release_date="2025-01-01",
     )
-    with pytest.raises(ValueError, match="supports transport="):
+    with pytest.raises(ValueError, match="run_direct supports transport in"):
         run_direct(layout, [bad])
 
 
