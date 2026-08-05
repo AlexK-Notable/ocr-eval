@@ -1,0 +1,1 @@
+{"qid": "finance_q37", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_14", "domain": "finance", "answer": {"limit_applies_per_policy_selected": true}, "field_matches": {"limit_applies_per_policy_selected": false}, "match": false}

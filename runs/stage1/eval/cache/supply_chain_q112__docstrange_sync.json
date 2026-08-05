@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q112", "parser": "docstrange_sync", "source_file": "supply_chain_40", "domain": "supply_chain", "answer": {"Methanol Result": "0.0688", "Acidity Result": "0.0021", "Denaturant Content Result": "2.2575"}, "field_matches": {"Methanol Result": true, "Acidity Result": true, "Denaturant Content Result": true}, "match": true}

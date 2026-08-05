@@ -1,0 +1,1 @@
+{"qid": "mortgage_q200", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_91", "domain": "mortgage", "answer": {"appraisal_scenario": "Single Family Scenario 4 (SF4)"}, "field_matches": {"appraisal_scenario": true}, "match": true}

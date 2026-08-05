@@ -1,0 +1,1 @@
+{"qid": "mortgage_q33", "parser": "docstrange_sync", "source_file": "mortgage_12", "domain": "mortgage", "answer": {"selected_hardship_reason": "Other: a hardship that is not covered above", "final_hardship_option_text": "Other: a hardship that is not covered above"}, "field_matches": {"selected_hardship_reason": true, "final_hardship_option_text": true}, "match": true}

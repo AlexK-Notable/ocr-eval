@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q27", "parser": "docstrange_sync", "source_file": "supply_chain_12", "domain": "supply_chain", "answer": {"first_item_unit_of_measure": "LBS", "row_6803_89_unit_value": "LBS"}, "field_matches": {"first_item_unit_of_measure": true, "row_6803_89_unit_value": true}, "match": true}

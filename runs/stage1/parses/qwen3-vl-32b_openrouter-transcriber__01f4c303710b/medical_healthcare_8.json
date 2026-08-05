@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b",
+  "stem": "medical_healthcare_8",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 24.444039071997395,
+  "cost_usd": 0.0,
+  "md_length": 7797,
+  "elapsed_total": 24.444342374801636,
+  "error": ""
+}

@@ -1,0 +1,1 @@
+{"qid": "finance_q118", "parser": "docstrange_sync", "source_file": "finance_58", "domain": "finance", "answer": {"count_1_approximate_date": "2020-05-21", "count_1_company_name": "Lendio"}, "field_matches": {"count_1_approximate_date": true, "count_1_company_name": true}, "match": true}

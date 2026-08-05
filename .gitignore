@@ -16,8 +16,20 @@ dist/
 .mypy_cache/
 .basedpyright/
 
-# Run outputs (gitignored, regenerated per invocation)
-runs/
+# Run outputs. The CORPUS is excluded (515MB of PDFs + 667MB of renders, both
+# re-derivable: PDFs from the pinned HF dataset revision in run_meta.json, PNGs
+# deterministically from those PDFs at the condition's dpi). The RESULTS are kept —
+# transcripts and scored cache rows cost real API spend and cannot be regenerated for
+# free, so they are the artifacts worth versioning.
+runs/*
+!runs/stage1/
+runs/stage1/*
+!runs/stage1/parses/
+!runs/stage1/eval/
+!runs/stage1/qa_bank.json
+!runs/stage1/run_meta.json
+!runs/stage1/report.md
+!runs/stage1/.gitkeep
 
 # IDE
 .idea/

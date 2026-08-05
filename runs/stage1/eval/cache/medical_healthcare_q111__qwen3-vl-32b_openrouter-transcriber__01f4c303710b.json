@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q111", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_49", "domain": "medical_healthcare", "answer": {"group_number": "AARP-OH", "policy_number": "MS 8472639"}, "field_matches": {"group_number": true, "policy_number": true}, "match": true}

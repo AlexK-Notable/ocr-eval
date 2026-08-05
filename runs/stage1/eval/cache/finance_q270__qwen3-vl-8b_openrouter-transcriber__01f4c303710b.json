@@ -1,0 +1,1 @@
+{"qid": "finance_q270", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_129", "domain": "finance", "answer": {"company_name": "ABC Manufacturing Ltd"}, "field_matches": {"company_name": true}, "match": true}

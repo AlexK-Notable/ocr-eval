@@ -1,0 +1,1 @@
+{"qid": "mortgage_q87", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_38", "domain": "mortgage", "answer": {"trec_no": "20-16"}, "field_matches": {"trec_no": true}, "match": true}

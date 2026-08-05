@@ -1,0 +1,11 @@
+{
+  "parser": "docstrange_sync",
+  "stem": "finance_80",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 8.307788902005996,
+  "cost_usd": 0.01,
+  "md_length": 697,
+  "elapsed_total": 8.307917594909668,
+  "error": ""
+}

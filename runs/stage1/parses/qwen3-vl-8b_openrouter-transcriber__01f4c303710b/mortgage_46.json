@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b",
+  "stem": "mortgage_46",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 2.3140788190066814,
+  "cost_usd": 0.0,
+  "md_length": 657,
+  "elapsed_total": 2.3142220973968506,
+  "error": ""
+}

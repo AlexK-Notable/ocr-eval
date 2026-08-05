@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q47", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_19", "domain": "supply_chain", "answer": {"blue_bolded_link_text": "Commodity • Seed", "referenced_page_number": "4-4-1"}, "field_matches": {"blue_bolded_link_text": true, "referenced_page_number": false}, "match": false}

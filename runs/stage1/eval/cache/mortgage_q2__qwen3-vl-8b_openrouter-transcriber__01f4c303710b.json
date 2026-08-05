@@ -1,0 +1,1 @@
+{"qid": "mortgage_q2", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_1", "domain": "mortgage", "answer": {"liability_after_foreclosure_selection": "state law does not protect you from liability for the unpaid balance."}, "field_matches": {"liability_after_foreclosure_selection": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q292", "parser": "docstrange_sync", "source_file": "mortgage_130", "domain": "mortgage", "answer": {"ARM": "yes", "Purchase": "yes", "No Cash-Out Refinance": "no", "Secondary Financing Gov't": "yes"}, "field_matches": {"ARM": true, "Purchase": true, "No Cash-Out Refinance": true, "Secondary Financing Gov't": true}, "match": true}

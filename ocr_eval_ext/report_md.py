@@ -261,6 +261,90 @@ def _categorize(by_parser: dict[str, dict[str, dict]],
     return direct, no_image, section_b
 
 
+
+# ── Per-domain / per-capability breakdowns ────────────────────────────────────────────────────
+
+BREAKDOWN_TOP_CAPABILITIES = 12
+# The bank tags ~130 distinct capabilities, most with a handful of items. Rendering all of them
+# would bury the signal in rows whose CIs span 40pp. Top-N by item count keeps the table readable;
+# the cut is stated in the section text so nobody mistakes it for the full tag set.
+
+
+def _breakdown_buckets(items: list[dict], axis: str) -> list[tuple[str, set[str]]]:
+    """(bucket_label, qids) for `axis` in {"domain", "capability"}, largest bucket first."""
+    buckets: dict[str, set[str]] = {}
+    for it in items:
+        qid = it["question_id"]
+        keys = [it.get("domain") or "(none)"] if axis == "domain" else (it.get("capabilities") or [])
+        for k in keys:
+            buckets.setdefault(str(k), set()).add(qid)
+    ordered = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    return ordered if axis == "domain" else ordered[:BREAKDOWN_TOP_CAPABILITIES]
+
+
+def _bucket_cell(rows_by_qid: dict[str, dict], fields: list[tuple], qids: set[str],
+                 *, iters: int, seed: int, alpha: float) -> str:
+    """acc-over-all + document-clustered CI for one (row, bucket) cell.
+
+    Same estimator as every other accuracy column: errors count as wrong and stay in the
+    denominator, never dropped. The CI is the cluster bootstrap (`stats.cluster_bootstrap_ci`) —
+    fields cluster within documents, so a naive binomial interval on field counts would be far too
+    tight, which is exactly the mistake an ad-hoc per-domain tally invites."""
+    subset = [f for f in fields if f[0] in qids]
+    outcomes = field_outcomes(rows_by_qid, subset)
+    if not outcomes:
+        return "n/a"
+    acc = sum(1 for o in outcomes if o.status == "correct") / len(outcomes)
+    n_docs = _n_docs(outcomes)
+    lo, hi = cluster_bootstrap_ci(outcomes, iters=iters, seed=seed, alpha=alpha)
+    return f"{acc:.1%} [{lo:.1%}, {hi:.1%}] (n={len(outcomes)}, d={n_docs})"
+
+
+def _build_breakdown(section_name: str, axis: str, groups: dict[str, _Group], labels: dict[str, str],
+                     items: list[dict], all_fields: list[tuple], *,
+                     iters: int, seed: int, alpha: float) -> list[str]:
+    """One table per section+axis: rows are pipelines, columns are domains or capabilities.
+
+    Kept in its OWN table per section so the hard shape-segregation rule still holds — vlm-chat
+    and transcriber rows never share a table, here as anywhere else."""
+    if not groups:
+        return []
+    buckets = _breakdown_buckets(items, axis)
+    if not buckets:
+        return []
+    noun = "domain" if axis == "domain" else "capability"
+    head = [f"### {section_name} — per-{noun} (general per-field)", ""]
+    if axis == "capability":
+        head += [f"_Top {BREAKDOWN_TOP_CAPABILITIES} capability tags by item count. The bank tags "
+                 f"far more than this; the rest are omitted for readability, not because they were "
+                 f"scored differently — every question was scored._", ""]
+    head += [f"_Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, "
+             f"`d` = documents. Read `d` before trusting an interval — {MIN_CLUSTER_DOCS} documents "
+             f"is the floor below which paired comparisons are refused elsewhere in this report._",
+             "",
+             "> ⚠️ **These are per-row intervals, NOT a paired test.** Non-overlapping CIs do imply "
+             "a real difference, but *overlapping* CIs do not imply the opposite — a paired "
+             "bootstrap on the same resampled documents is strictly more sensitive. Read an "
+             "overlap as \"not established here\", never as \"no difference\". The separability "
+             "appendix is the paired test, and it covers checkbox accuracy only.",
+             "",
+             "> ⚠️ **A partial run renders as a low score, not as missing data.** Every gold field "
+             "in the bucket stays in the denominator, and a question with no cache row scores as "
+             "an error, i.e. wrong. A row that was interrupted, capped by `--max-spend`, or never "
+             "run to completion will therefore show a near-zero cell that is indistinguishable "
+             "here from a model that answered and got it wrong. Check the row's `n: X/Y` and error "
+             "classes in the section detail above before reading any low cell as a capability "
+             "finding.", ""]
+    header = "| row | " + " | ".join(b for b, _ in buckets) + " |"
+    sep = "|---|" + "---|" * len(buckets)
+    body = []
+    for pk, g in groups.items():
+        cells = [_bucket_cell(g.rows_by_qid, all_fields, qids, iters=iters, seed=seed, alpha=alpha)
+                 for _, qids in buckets]
+        body.append(f"| {labels.get(pk, pk)} | " + " | ".join(cells) + " |")
+    return [*head, header, sep, *body, ""]
+
+
 # ── Per-row metric computation (shared by Section A and Section B — the metric definitions
 #    don't change with shape, only the extra columns rendered alongside them do) ────────────
 
@@ -836,11 +920,19 @@ def build_markdown_report(layout: RunLayout, entries: list[RegistryEntry], *,
     lines: list[str] = []
     lines += _build_header(meta, items)
     lines += _build_section_a(direct_groups, vlm_data, stale_report, direct_labels)
+    lines += _build_breakdown("Section A (vlm-chat)", "domain", direct_groups, direct_labels,
+                              items, all_fields, iters=iters, seed=seed, alpha=alpha)
+    lines += _build_breakdown("Section A (vlm-chat)", "capability", direct_groups, direct_labels,
+                              items, all_fields, iters=iters, seed=seed, alpha=alpha)
     lines += _build_baselines(baselines, checkbox_fields, no_image_groups, vlm_data)
     lines += _build_cross_shape_note(checkbox_items, blank_items, direct_groups, section_b_groups,
                                      direct_labels, section_b_labels)
     lines += _build_section_b(section_b_groups, section_b_data, extractor_id, layout,
                               section_b_labels)
+    lines += _build_breakdown("Section B (transcribe-then-extract)", "domain", section_b_groups,
+                              section_b_labels, items, all_fields, iters=iters, seed=seed, alpha=alpha)
+    lines += _build_breakdown("Section B (transcribe-then-extract)", "capability", section_b_groups,
+                              section_b_labels, items, all_fields, iters=iters, seed=seed, alpha=alpha)
     lines += _build_reproduction_gate(section_b_groups, section_b_labels)
     lines += _build_separability_appendix(direct_groups, section_b_groups, vlm_data,
                                           section_b_data, direct_labels, section_b_labels,

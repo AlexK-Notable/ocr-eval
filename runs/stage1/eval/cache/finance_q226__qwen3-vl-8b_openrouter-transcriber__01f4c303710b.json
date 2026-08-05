@@ -1,0 +1,1 @@
+{"qid": "finance_q226", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_105", "domain": "finance", "answer": {"collector_name": "BURNS POE"}, "field_matches": {"collector_name": true}, "match": true}

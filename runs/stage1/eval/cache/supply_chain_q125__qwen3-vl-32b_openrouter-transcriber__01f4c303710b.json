@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q125", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"card_last4": 6280, "swipe_status": "Non-Swiped", "paid_amount": 126.68}, "field_matches": {"card_last4": true, "swipe_status": true, "paid_amount": true}, "match": true}

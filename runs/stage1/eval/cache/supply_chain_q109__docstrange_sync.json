@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q109", "parser": "docstrange_sync", "source_file": "supply_chain_40", "domain": "supply_chain", "answer": {"Seal 1": 168353, "Seal 2": 168355, "Seal 3": 168356, "Product Code": "ETHD RF 6"}, "field_matches": {"Seal 1": true, "Seal 2": true, "Seal 3": true, "Product Code": true}, "match": true}

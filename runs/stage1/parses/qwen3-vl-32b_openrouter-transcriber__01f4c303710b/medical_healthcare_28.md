@@ -1,0 +1,59 @@
+## Page 1
+
+# FORM 82  
+## GSR DATA SHEET  
+
+**CORONER CASE #:** 2020-05405  
+**DECEDENT'S NAME:** GUARDADO PINEDA, ANDRES F.  
+
+---
+
+### Incoming Mode  
+☐ HOMICIDE ☒ SUICIDE ☐ ACCIDENT ☐ UNDETERMINED ☒ OIS  
+
+**INVESTIGATOR:** LIANNA DARABEDYAN #646370  
+
+**COLLECTED AT:** ☐ FORENSIC SCIENCE CENTER ☒ SCENE ☐ HOSPITAL  
+**COLLECTOR:** LIANNA DARABEDYAN #646370  
+**DATE:** 06/19/2020  
+**TIME:** 0255  
+
+---
+
+### Weapon Location  
+☐ LEFT HAND ☐ RIGHT HAND ☐ UNKNOWN  
+☒ NEITHER, THE WEAPON WAS LOCATED: collected by Detectives  
+
+| FIREARM – MAKE/MODEL: | AMMUNITION – BRAND/CALIBER: |
+|-----------------------|-----------------------------|
+| unknown               | 9mm unknown                 |
+
+**DATE OF SHOOTING:** 06/18/2020 **AT** 1752 **HOURS**
+
+**LOCATION OF DECEDENT:** ☐ INDOORS ☒ OUTDOORS ☐ AUTOMOBILE  
+
+**LOCATION SHOOTING OCCURRED:**  
+Driveway, 420 W. Redondo Beach Blvd., Gardena CA 90248  
+
+**NUMBER OF SHOTS FIRED:** 1+  
+
+---
+
+### Decedent Information  
+**DECEDENT’S ACTIVITY PRIOR TO SHOOTING:** altercation with officers  
+**DECEDENT’S OCCUPATION:** UNKNOWN  
+
+**DECEDENT’S HANDS WERE TOUCHED PRIOR TO GSR COLLECTION BY:**  
+☒ POLICE  
+☐ FAMILY ☒ PARAMEDICS ☐ HANDCUFFED ☐ BAGGED  
+☐ BAGS COLLECTED ☒ OTHER: UNKNOWN  
+
+---
+
+### NOTES/COMMENTS:  
+Officer-Involved Shooting  
+
+---
+
+*REV.03/24/2015 ORIGINAL FORM (MEDICAL FILE)*  
+*FORM SAVE: G:DRIVE→ INVESTIGATIONS→GSR FORM 82 → = enter*

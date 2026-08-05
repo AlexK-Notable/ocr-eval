@@ -1,0 +1,1 @@
+{"qid": "finance_q168", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_82", "domain": "finance", "answer": {"subtotal_receipts_this_page": 20.0}, "field_matches": {"subtotal_receipts_this_page": true}, "match": true}

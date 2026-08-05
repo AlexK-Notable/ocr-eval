@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q75", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"column_header": "Class or Rate Ref. (For Info. Only)"}, "field_matches": {"column_header": true}, "match": true}

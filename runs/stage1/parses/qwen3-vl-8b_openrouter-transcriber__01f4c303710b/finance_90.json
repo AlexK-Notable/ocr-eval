@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b",
+  "stem": "finance_90",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 12.137522015997092,
+  "cost_usd": 0.0,
+  "md_length": 2378,
+  "elapsed_total": 12.137803077697754,
+  "error": ""
+}

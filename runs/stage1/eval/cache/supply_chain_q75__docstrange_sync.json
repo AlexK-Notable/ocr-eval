@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q75", "parser": "docstrange_sync", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"column_header": "Class or Rate Ref. (For Info. Only)"}, "field_matches": {"column_header": true}, "match": true}

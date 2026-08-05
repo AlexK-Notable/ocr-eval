@@ -1,0 +1,1 @@
+{"qid": "mortgage_q458", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_202", "domain": "mortgage", "answer": {"1": "No", "2": null, "3": "No", "4": null, "5": "Not Applicable"}, "field_matches": {"1": true, "2": true, "3": true, "4": true, "5": true}, "match": true}

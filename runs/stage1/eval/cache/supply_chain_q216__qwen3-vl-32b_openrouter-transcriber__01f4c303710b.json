@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q216", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_67", "domain": "supply_chain", "answer": {"Consignee_Name": "EQUISTAR CHEMICALS LP", "Veh_Tare_Weight_LBS": 80600, "Gross_Weight_LBS": 266350}, "field_matches": {"Consignee_Name": true, "Veh_Tare_Weight_LBS": true, "Gross_Weight_LBS": true}, "match": true}

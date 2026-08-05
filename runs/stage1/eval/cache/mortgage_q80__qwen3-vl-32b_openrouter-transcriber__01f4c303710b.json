@@ -1,0 +1,1 @@
+{"qid": "mortgage_q80", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_35", "domain": "mortgage", "answer": {"page_number": "1", "header_date": null}, "field_matches": {"page_number": false, "header_date": false}, "match": false}

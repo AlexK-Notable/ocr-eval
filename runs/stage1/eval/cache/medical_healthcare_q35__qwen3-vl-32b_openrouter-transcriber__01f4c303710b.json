@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q35", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_17", "domain": "medical_healthcare", "answer": {"outside_lab_checked": true}, "field_matches": {"outside_lab_checked": true}, "match": true}

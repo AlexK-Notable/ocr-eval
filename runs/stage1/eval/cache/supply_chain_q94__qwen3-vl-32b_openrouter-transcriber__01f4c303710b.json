@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q94", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_36", "domain": "supply_chain", "answer": {"Row 1 QTY": null, "Row 2 QTY": null}, "field_matches": {"Row 1 QTY": false, "Row 2 QTY": false}, "match": false}

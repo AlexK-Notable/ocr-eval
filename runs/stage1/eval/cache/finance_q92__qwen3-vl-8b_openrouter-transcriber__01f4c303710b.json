@@ -1,0 +1,1 @@
+{"qid": "finance_q92", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_41", "domain": "finance", "answer": {"selection_methods": "Random, Risk-Based, Target Team"}, "field_matches": {"selection_methods": true}, "match": true}

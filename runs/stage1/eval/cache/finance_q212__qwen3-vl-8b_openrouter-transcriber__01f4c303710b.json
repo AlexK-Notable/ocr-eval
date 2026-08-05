@@ -1,0 +1,1 @@
+{"qid": "finance_q212", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_99", "domain": "finance", "answer": {"question_a_answer": null, "question_b_answer": null}, "field_matches": {"question_a_answer": false, "question_b_answer": false}, "match": false}

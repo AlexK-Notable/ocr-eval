@@ -1,0 +1,1 @@
+{"qid": "mortgage_q331", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_158", "domain": "mortgage", "answer": {"Primary Residence": "no", "Secondary Residence": "yes", "Investment": "no", "Fee Simple": "yes"}, "field_matches": {"Primary Residence": true, "Secondary Residence": true, "Investment": true, "Fee Simple": true}, "match": true}

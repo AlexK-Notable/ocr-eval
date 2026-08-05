@@ -1,0 +1,1 @@
+{"qid": "mortgage_q104", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"buyer_initials": "LLC", "seller_initials": "Estate"}, "field_matches": {"buyer_initials": true, "seller_initials": true}, "match": true}

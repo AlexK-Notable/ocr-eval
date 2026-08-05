@@ -1,0 +1,1 @@
+{"qid": "mortgage_q13", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"closing_costs_right_column_text": "17,500.00"}, "field_matches": {"closing_costs_right_column_text": false}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q202", "parser": "docstrange_sync", "source_file": "supply_chain_41", "domain": "supply_chain", "answer": {"INS": 20.25, "GAL_VC": 3877, "GALS60": 30063, "WEIGHT": 125273}, "field_matches": {"INS": true, "GAL_VC": true, "GALS60": true, "WEIGHT": true}, "match": true}

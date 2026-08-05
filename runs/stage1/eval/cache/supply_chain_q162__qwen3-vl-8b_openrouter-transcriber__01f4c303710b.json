@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q162", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"Auth ID": 546818, "Gallons Loaded": 28708}, "field_matches": {"Auth ID": false, "Gallons Loaded": true}, "match": false}

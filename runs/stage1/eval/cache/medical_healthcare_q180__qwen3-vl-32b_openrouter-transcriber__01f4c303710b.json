@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q180", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_74", "domain": "medical_healthcare", "answer": {"answer": ["110.0F", "110.0F"]}, "field_matches": {"answer": true}, "match": true}

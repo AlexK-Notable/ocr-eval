@@ -1,0 +1,1 @@
+{"qid": "finance_q247", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_117", "domain": "finance", "answer": {"total_tax_payable_line_770": 170800, "total_payments_tax_withheld_line_801": 34860}, "field_matches": {"total_tax_payable_line_770": true, "total_payments_tax_withheld_line_801": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q120", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_53", "domain": "medical_healthcare", "answer": {"genital_itch_or_discharge": 1}, "field_matches": {"genital_itch_or_discharge": true}, "match": true}

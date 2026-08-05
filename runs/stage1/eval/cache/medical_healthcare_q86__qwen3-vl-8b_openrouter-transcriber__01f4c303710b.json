@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q86", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_38", "domain": "medical_healthcare", "answer": {"patient_id": "2023.14789", "phone_number": "323-343-0530"}, "field_matches": {"patient_id": true, "phone_number": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "finance_q256", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_121", "domain": "finance", "answer": {"tan_or_pan_of_tenant": "AAA PA1234A"}, "field_matches": {"tan_or_pan_of_tenant": true}, "match": true}

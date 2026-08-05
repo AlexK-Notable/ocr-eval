@@ -1,0 +1,1 @@
+{"qid": "finance_q209", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_98", "domain": "finance", "answer": {"attorney_name": "Louis Rosenfeld, Esquire", "attorney_telephone": "261-1163"}, "field_matches": {"attorney_name": true, "attorney_telephone": true}, "match": true}

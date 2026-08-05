@@ -1,0 +1,1 @@
+{"qid": "mortgage_q370", "parser": "docstrange_sync", "source_file": "mortgage_126", "domain": "mortgage", "answer": {"K1": "YES", "K2": "NO", "K3": "NO", "K4": "UNKNOWN"}, "field_matches": {"K1": true, "K2": true, "K3": true, "K4": true}, "match": true}

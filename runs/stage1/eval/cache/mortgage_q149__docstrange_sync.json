@@ -1,0 +1,1 @@
+{"qid": "mortgage_q149", "parser": "docstrange_sync", "source_file": "mortgage_65", "domain": "mortgage", "answer": {"incomplete_project_detail": "Landscaping", "unit_transfer_fees_detail": 3000}, "field_matches": {"incomplete_project_detail": true, "unit_transfer_fees_detail": true}, "match": true}

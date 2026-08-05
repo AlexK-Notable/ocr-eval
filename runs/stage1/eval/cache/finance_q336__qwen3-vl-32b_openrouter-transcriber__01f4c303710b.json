@@ -1,0 +1,1 @@
+{"qid": "finance_q336", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_165", "domain": "finance", "answer": {"class_a_shares_outstanding": null, "class_b_shares_outstanding": null}, "field_matches": {"class_a_shares_outstanding": false, "class_b_shares_outstanding": false}, "match": false}

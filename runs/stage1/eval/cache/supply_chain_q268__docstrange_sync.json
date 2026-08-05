@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q268", "parser": "docstrange_sync", "source_file": "supply_chain_89", "domain": "supply_chain", "answer": {"Motor Coach": null, "School Bus 1-8": null, "Mini-bus 16+": null}, "field_matches": {"Motor Coach": false, "School Bus 1-8": true, "Mini-bus 16+": true}, "match": false}

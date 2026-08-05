@@ -1,0 +1,49 @@
+## Page 1
+
+# 8.2 APPRAISAL CONDITION
+Buyer’s obligation to purchase the Property: ☐ IS ☒ IS NOT conditioned upon the Property appraising for not less than the Purchase Price. This condition is referred to as the “Appraisal Condition.” If checked in the affirmative, Sections 8.2(a) and 8.2(b) apply; otherwise they do not.
+
+## (a) Buyer’s Right to Cancel
+If after completion of an appraisal by a licensed appraiser, Buyer receives written notice from the Lender or the appraiser that the Property has appraised for less than the Purchase Price (a “Notice of Appraised Value”), Buyer may cancel the REPC by providing written notice to Seller (with a copy of the Notice of Appraised Value) no later than the Financing & Appraisal Deadline referenced in Section 24(c); whereupon the Earnest Money Deposit shall be released to Buyer without the requirement of further written authorization from Seller.
+
+## (b) Failure to Cancel
+If the REPC is not cancelled as provided in this section 8.2, Buyer shall be deemed to have waived the Appraisal Condition, and except as provided in Sections 8.1(b) and 8.3(b)(i), the Earnest Money Deposit shall become non-refundable.
+
+# 8.3 FINANCING CONDITION. (Check Applicable Box)
+
+## (a) ☐ No Financing Required
+Buyer’s obligation to purchase the Property IS NOT conditioned upon Buyer obtaining financing. If checked, Section 8.3(b) below does NOT apply.
+
+## (b) ☐ Financing Required
+Buyer’s obligation to purchase the Property IS conditioned upon Buyer obtaining the Loan referenced in Section 2.1(c). This Condition is referred to as the “Financing Condition.” If checked, Sections 8.3(b)(i), (ii) and (iii) apply; otherwise they do not. If the REPC is not cancelled by Buyer as provided in Sections 8.1(b) or 8.2(a), then Buyer agrees to work diligently and in good faith to obtain the Loan.
+
+### (i) Buyer’s Right to Cancel Before the Financing & Appraisal Deadline
+If Buyer, in Buyer’s sole discretion, is not satisfied with the terms and conditions of the Loan, Buyer may, after the Due Diligence Deadline referenced in Section 24(b), if applicable, cancel the REPC by providing written notice to Seller no later than the Financing & Appraisal Deadline referenced in Section 24(c); whereupon $ ____________ of Buyer’s Earnest Money Deposit shall be released to Seller without the requirement of further written authorization from Buyer, and the remainder of Buyer’s Earnest Money Deposit shall be released to Buyer without further written authorization from Seller.
+
+### (ii) Buyer’s Right to Cancel After the Financing & Appraisal Deadline
+If after expiration of the Financing & Appraisal Deadline referenced in Section 24(c), Buyer fails to obtain the Loan, meaning that the proceeds of the Loan have not been delivered by the Lender to the escrow/closing office as required under Section 3.2, then Buyer shall not be obligated to purchase the Property and Buyer or Seller may cancel the REPC by providing written notice to the other party.
+
+### (iii) Earnest Money Deposit(s) Released to Seller
+If the REPC is cancelled as provided in Section 8.3(b)(ii), Buyer agrees that all of Buyer’s Earnest Money Deposit, or Deposits, if applicable (see Section 8.4 below), shall be released to Seller without the requirement of further written authorization from Buyer. Seller agrees to accept, as Seller’s exclusive remedy, the Earnest Money Deposit, or Deposits, if applicable, as liquidated damages. Buyer and Seller agree that liquidated damages would be difficult and impractical to calculate, and the Earnest Money Deposit, or Deposits, if applicable, is a fair and reasonable estimate of Seller’s damages in the event Buyer fails to obtain the Loan.
+
+# 8.4 ADDITIONAL EARNEST MONEY DEPOSIT
+If the REPC has not been previously canceled by Buyer as provided in Sections 8.1, 8.2 or 8.3, as applicable, then no later than the Due Diligence Deadline, or the Financing & Appraisal Deadline, whichever is later, Buyer: ☑ WILL ☑ WILL NOT deliver to the Buyer’s Brokerage, an Additional Earnest Money Deposit in the amount of $20000 ____________. The Earnest Money Deposit and the Additional Earnest Money Deposit, if applicable, are sometimes referred to herein as the “Deposits”. The Earnest Money Deposit, or Deposits, if applicable, shall be credited toward the Purchase Price at Closing.
+
+# 9. ADDENDA
+There ☐ ARE ☐ ARE NOT addenda to the REPC containing additional terms. If there are, the terms of the following addenda are incorporated into the REPC by this reference: ☐ Addendum No. ____________ ☐ Seller Financing Addendum ☐ FHA/VA Loan Addendum ☐ Other (specify) ____________.
+
+# 10. HOME WARRANTY PLAN / AS-IS CONDITION OF PROPERTY
+
+## 10.1 Home Warranty Plan
+A one-year Home Warranty Plan ☑ WILL ☐ WILL NOT be included in this transaction. If included, the Home Warranty Plan shall be ordered by ☐ Buyer ☑ Seller and shall be issued by a company selected by ☑ Buyer ☑ Seller. The cost of the Home Warranty Plan shall not exceed $ ____________ and shall be paid for at Settlement by ☑ Buyer ☑ Seller.
+
+## 10.2 Condition of Property/Buyer Acknowledgements
+Buyer acknowledges and agrees that in reference to the physical condition of the Property: (a) Buyer is purchasing the Property in its “As-Is” condition without expressed or implied warranties of any kind; (b) Buyer shall have, during Buyer’s Due Diligence as referenced in Section 8.1, an opportunity to completely inspect and evaluate the condition of the Property; and (c) if based on the Buyer’s Due Diligence, Buyer elects to proceed with the purchase of the Property, Buyer is relying wholly on Buyer’s own judgment and that of any contractors or inspectors engaged by Buyer to review, evaluate and inspect the Property. The provisions of Section 10.2 shall survive Closing.
+
+## 10.3 Condition of Property/Seller Acknowledgements
+Seller acknowledges and agrees that in reference to the physical condition of the Property, Seller agrees to: (a) disclose in writing to Buyer defects in the Property known to Seller that materially affect the value of the Property that cannot be discovered by a reasonable inspection by an ordinary prudent Buyer; (b) carefully review, complete, and provide to Buyer a written Seller property condition disclosure as stated in Section 7(a); (c) deliver the Property to Buyer in substantially the same general condition as it was on the date of Acceptance, as defined in Section 23, ordinary wear and tear excepted; (d) deliver the Property to Buyer in broom-clean condition and free of debris and personal belongings; and (e) repair any Seller or tenant moving-related damage to the Property at Seller’s expense. The provisions of Section 10.3 shall survive Closing.
+
+**Buyer’s Initials:** Alexander  
+**Date:** ____________  
+**Seller’s Initials:** Trust  
+**Date:** ____________

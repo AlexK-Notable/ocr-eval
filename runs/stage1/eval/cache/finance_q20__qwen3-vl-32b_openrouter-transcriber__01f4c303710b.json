@@ -1,0 +1,1 @@
+{"qid": "finance_q20", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_7", "domain": "finance", "answer": {"general_aggregate_limit": 2000000, "products_completed_operations_requested": true}, "field_matches": {"general_aggregate_limit": true, "products_completed_operations_requested": true}, "match": true}

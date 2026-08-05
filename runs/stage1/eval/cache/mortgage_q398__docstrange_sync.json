@@ -1,0 +1,1 @@
+{"qid": "mortgage_q398", "parser": "docstrange_sync", "source_file": "mortgage_167", "domain": "mortgage", "answer": {"K1": "Loan Originations Manager", "K2": "2025-03-14", "K3": "70543", "K4": "Lender"}, "field_matches": {"K1": true, "K2": true, "K3": false, "K4": true}, "match": false}

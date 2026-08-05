@@ -1,0 +1,1 @@
+{"qid": "finance_q322", "parser": "docstrange_sync", "source_file": "finance_156", "domain": "finance", "answer": {"convenience_store_authorized_count": 115709}, "field_matches": {"convenience_store_authorized_count": true}, "match": true}

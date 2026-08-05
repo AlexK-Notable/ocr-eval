@@ -1,0 +1,1 @@
+{"qid": "finance_q352", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_25", "domain": "finance", "answer": {"remarks": "Roof repaired, inventory loss minimal"}, "field_matches": {"remarks": true}, "match": true}

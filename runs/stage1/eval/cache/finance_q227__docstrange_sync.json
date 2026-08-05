@@ -1,0 +1,1 @@
+{"qid": "finance_q227", "parser": "docstrange_sync", "source_file": "finance_106", "domain": "finance", "answer": {"salaries_and_compensation": 3928.88, "dividends": 0.0}, "field_matches": {"salaries_and_compensation": false, "dividends": false}, "match": false}

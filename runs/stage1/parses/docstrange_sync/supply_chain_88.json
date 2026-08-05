@@ -1,0 +1,11 @@
+{
+  "parser": "docstrange_sync",
+  "stem": "supply_chain_88",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 14.321891425002832,
+  "cost_usd": 0.01,
+  "md_length": 3832,
+  "elapsed_total": 14.32219934463501,
+  "error": ""
+}

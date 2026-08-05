@@ -1,0 +1,375 @@
+## Page 1
+
+<header>OMB No. 2126-0013</header>
+
+&lt;img&gt;U.S. Department of Transportation Federal Motor Carrier Safety Administration Logo&lt;/img&gt;
+# MOTOR CARRIER IDENTIFICATION REPORT
+## (Application for U.S. DOT NUMBER)
+
+**REASON FOR FILING** (Check Only One)
+☑ NEW APPLICATION ☐ BIENNIAL UPDATE OR CHANGES ☐ OUT OF BUSINESS NOTIFICATION ☐ REAPPLICATION (AFTER REVOCATION OF NEW ENTRANT)
+
+**1. NAME OF MOTOR CARRIER**
+IGUALA BUSMEX INC
+
+**2. TRADE OR D.B.A. (DOING BUSINESS AS) NAME**
+____________
+
+**3. PRINCIPAL STREET ADDRESS/ROUTE NUMBER**
+1504 TELEPHONE
+
+**4. CITY**
+HOUSTON
+
+**5. MAILING ADDRESS (P.O. BOX)**
+1504 TELEPHONE
+
+**6. MAILING CITY**
+HOUSTON
+
+**7. STATE/PROVINCE**
+TEXAS
+
+**8. ZIP CODE +4**
+77023
+
+**9. COLONIA (MEXICO ONLY)**
+____________
+
+**10. STATE/PROVINCE**
+TEXAS
+
+**11. ZIP CODE +4**
+77023
+
+**12. COLONIA (MEXICO ONLY)**
+____________
+
+**13. PRINCIPAL BUSINESS PHONE NUMBER**
+(713) 923-4248
+
+**14. PRINCIPAL CONTACT CELLULAR PHONE NUMBER**
+____________
+
+**15. PRINCIPAL BUSINESS FAX NUMBER**
+____________
+
+**16. USDOT NO.**
+1786461
+
+**17. MC OR MX NO.**
+MC651972
+
+**18. DUN & BRADSTREET NO.**
+____________
+
+**19. IRS/TAX ID NO.**
+EIN# 262818526
+
+**20. INTERNET E-MAIL ADDRESS**
+____________
+
+**21. COMPANY OPERATION** (Circle all that apply)
+☑ A. Interstate Carrier ☐ B. Intrastate Hazmat Carrier ☐ C. Intrastate Non-Hazmat Carrier ☐ D. Interstate Shipper ☐ E. Intrastate Shipper ☐ F. Vehicle Registrant Only
+
+**22. CARRIER MILEAGE** (to nearest 10,000 miles for Last Calendar Year)
+100000 YEAR 2008
+
+**23. OPERATION CLASSIFICATION** (Circle All that Apply)
+☑ A. Authorized For-Hire ☐ D. Private Passengers (Business) ☐ G. U.S. Mail ☐ J. Local Government
+☐ B. Exempt For-Hire ☐ E. Private Passengers (Non-Business) ☐ H. Federal Government ☐ K. Indian Tribe
+☐ C. Private Property ☐ F. Migrant ☐ I. State Government ☐ L. Other
+
+**24. CARGO CLASSIFICATIONS** (Circle All that Apply)
+☐ A. GENERAL FREIGHT
+☐ B. HOUSEHOLD GOODS
+☐ C. METAL SHEETS; COILS; ROLLS
+☐ D. MOTOR VEHICLES
+☐ E. DRIVE AWAY/TOWAWAY
+☐ F. LOGS, POLES, BEAMS, LUMBER
+☐ G. BUILDING MATERIALS
+☐ H. MOBILE HOMES
+☐ I. MACHINERY, LARGE OBJECTS
+☐ J. FRESH PRODUCE
+☐ K. LIQUIDS/GASES
+☐ L. INTERMODAL CONT.
+☐ M. PASSENGERS
+☐ N. OIL FIELD EQUIPMENT
+☐ O. LIVESTOCK
+☐ P. GRAIN, FEED, HAY
+☐ Q. COAL/COKE
+☐ R. MEAT
+☐ S. GARBAGE, REFUSE, TRASH
+☐ T. U.S. MAIL
+☐ U. CHEMICALS
+☐ V. COMMODITIES DRY BULK
+☐ W. REFRIGERATED FOOD
+☐ X. BEVERAGES
+☐ Y. PAPER PRODUCTS
+☐ Z. UTILITY
+☐ AA. FARM SUPPLIES
+☐ BB. CONSTRUCTION
+☐ CC. WATER WELL
+☐ DD. OTHER
+
+**25. HAZARDOUS MATERIALS CARRIED OR SHIPPED** (Circle All that Apply)
+C - CARRIED S - SHIPPED B(BULK) - IN CARGO TANKS NB(NON-BULK) - IN PACKAGE
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>A. DIV 1.1</th>
+      <th>B NB</th>
+      <th>C S</th>
+      <th>K. DIV 2.2A (Ammonia)</th>
+      <th>B NB C S</th>
+      <th>U. DIV 4.2</th>
+      <th>B NB C S</th>
+      <th>EE. HRCQ</th>
+      <th>B NB</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>C S</td>
+      <td>B. DIV 1.2</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>L. DIV 2.3A</td>
+      <td>B NB C S</td>
+      <td>V. DIV 4.3</td>
+      <td>B NB C S</td>
+      <td>FF. CLASS 8</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>C. DIV 1.3</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>M. DIV 2.3B</td>
+      <td>B NB C S</td>
+      <td>W. DIV 5.1</td>
+      <td>B NB C S</td>
+      <td>GG. CLASS 8A</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>D. DIV 1.4</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>N. DIV 2.3C</td>
+      <td>B NB C S</td>
+      <td>X. DIV 5.2</td>
+      <td>B NB C S</td>
+      <td>HH. CLASS 8B</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>E. DIV 1.5</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>O. DIV 2.3D</td>
+      <td>B NB C S</td>
+      <td>Y. DIV 6.2</td>
+      <td>B NB C S</td>
+      <td>II. CLASS 9</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>F. DIV 1.6</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>P. Class 3</td>
+      <td>B NB C S</td>
+      <td>Z. DIV 6.1A</td>
+      <td>B NB C S</td>
+      <td>JJ. ELEVATED TEMP MAT.</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>G. DIV 2.1</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>Q. Class 3A</td>
+      <td>B NB C S</td>
+      <td>AA. DIV 6.1B</td>
+      <td>B NB C S</td>
+      <td>KK. INFECTIOUS WASTE</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>H. DIV 2.1 LPG</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>R. Class 3B</td>
+      <td>B NB C S</td>
+      <td>BB. DIV 6.1 Poison</td>
+      <td>B NB C S</td>
+      <td>LL. MARINE POLLUTANTS</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>I. DIV 2.1 (Methane)</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>S. COM LIQ</td>
+      <td>B NB C S</td>
+      <td>CC. DIV 6.1 SOLID</td>
+      <td>B NB C S</td>
+      <td>MM. HAZARDOUS SUB(RQ)</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td>C S</td>
+      <td>J. DIV 2.2</td>
+      <td>B NB</td>
+      <td>C S</td>
+      <td>T. DIV 4.1</td>
+      <td>B NB C S</td>
+      <td>DD. CLASS 7</td>
+      <td>B NB C S</td>
+      <td>NN. HAZARDOUS WASTE</td>
+      <td>B NB</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>C S</td>
+      <td>OO. ORM</td>
+      <td>B NB</td>
+    </tr>
+  </tbody>
+</table>
+
+**26. NUMBER OF VEHICLES THAT CAN BE OPERATED IN THE U.S.**
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>Straight Trucks</th>
+      <th>Truck Tractors</th>
+      <th>Trailers</th>
+      <th>Hazmat Cargo Tank Trucks</th>
+      <th>Hazmat Cargo Tank Trailers</th>
+      <th>Motor Coach</th>
+      <th>School Bus</th>
+      <th>Mini-bus</th>
+      <th>Van</th>
+      <th>Limousine</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OWNED</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>TERM LEASED</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>TRIP LEASED</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+Number of vehicles carrying number of passengers (including the driver) below
+1-8 9-15 16+ 16+ 1-8 9-15 1-8 9-15 16+
+
+**27. DRIVER INFORMATION**
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>INTERSTATE</th>
+      <th>INTRASTATE</th>
+      <th>TOTAL DRIVERS</th>
+      <th>TOTAL CDL DRIVERS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Within 100-Mile Radius</td>
+      <td>0</td>
+      <td>0</td>
+      <td>5</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Beyond 100-Mile Radius</td>
+      <td>5</td>
+      <td>0</td>
+      <td>____________</td>
+      <td>____________</td>
+    </tr>
+  </tbody>
+</table>
+
+**28. IS YOUR U.S. DOT NUMBER REGISTRATION CURRENTLY REVOKED BY THE FEDERAL MOTOR CARRIER SAFETY ADMINISTRATION?**
+Yes ☐ No ☑
+If Yes, enter your U.S. DOT Number. ____________
+
+**29. PLEASE ENTER NAME(S) OF SOLE PROPRIETOR(S), OFFICERS OR PARTNERS AND TITLES (e.g. PRESIDENT, TREASURER, GENERAL PARTNER, LIMITED PARTNER)**
+
+1. CARLOS ORTUNO, VICE PRESIDENT
+(Please print Name) ____________
+
+2. ____________
+(Please print Name) ____________
+
+**30. CERTIFICATION STATEMENT** (to be completed by an authorized official)
+
+I, IGUALA BUSMEX INC
+(Please print Name) ____________
+certify that I am familiar with the Federal Motor Carrier Safety Regulations and/or Federal Hazardous Materials Regulations. Under penalties of perjury, I declare that the information entered on this report, to the best of my knowledge and belief, true, correct, and complete.
+
+Signature &lt;signature&gt;IGUALA BUSMEX INC&lt;/signature&gt;
+Date 06/26/2008
+Title VICE PRESIDENT
+(Please print) ____________
+
+Form MCS-150 (Rev. 3-24-2005)
+Expiration Date: 03/31/2011

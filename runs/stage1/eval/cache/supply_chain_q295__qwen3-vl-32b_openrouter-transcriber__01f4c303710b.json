@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q295", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_103", "domain": "supply_chain", "answer": {"31A": "Mexico (MX)", "31C": "N/A (truck shipment)", "31F": "Disclaimed"}, "field_matches": {"31A": true, "31C": true, "31F": true}, "match": true}

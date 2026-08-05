@@ -1,0 +1,1 @@
+{"qid": "finance_q107", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_54", "domain": "finance", "answer": {"case_no": "20-6318-Hunt"}, "field_matches": {"case_no": true}, "match": true}

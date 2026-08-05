@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b",
+  "stem": "supply_chain_65",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 15.942412631004117,
+  "cost_usd": 0.0,
+  "md_length": 4142,
+  "elapsed_total": 15.942698240280151,
+  "error": ""
+}

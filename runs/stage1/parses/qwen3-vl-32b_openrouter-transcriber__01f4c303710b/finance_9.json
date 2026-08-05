@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b",
+  "stem": "finance_9",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 23.614658297999995,
+  "cost_usd": 0.0,
+  "md_length": 6651,
+  "elapsed_total": 23.614840030670166,
+  "error": ""
+}

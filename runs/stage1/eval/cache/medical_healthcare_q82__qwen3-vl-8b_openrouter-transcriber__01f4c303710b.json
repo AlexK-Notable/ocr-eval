@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q82", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_36", "domain": "medical_healthcare", "answer": {"ug_definition": "Micrograms"}, "field_matches": {"ug_definition": true}, "match": true}

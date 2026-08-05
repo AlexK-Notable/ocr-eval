@@ -1,0 +1,1 @@
+{"qid": "finance_q354", "parser": "docstrange_sync", "source_file": "finance_24", "domain": "finance", "answer": {"manufacturing": true, "office": false}, "field_matches": {"manufacturing": true, "office": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q37", "parser": "docstrange_sync", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"monthly_property_tax_amount": 625}, "field_matches": {"monthly_property_tax_amount": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q123", "parser": "docstrange_sync", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Subtotal": 110, "Sales Tax": 9, "Fuel Taxes/Fees": 6, "Total Due": 126}, "field_matches": {"Subtotal": false, "Sales Tax": false, "Fuel Taxes/Fees": false, "Total Due": false}, "match": false}

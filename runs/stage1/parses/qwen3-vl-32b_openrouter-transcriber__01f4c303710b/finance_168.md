@@ -1,0 +1,26 @@
+## Page 1
+
+# Substantial Size & Scale
+
+Our revenue & market capitalization continue to exceed those of our primary peers, demonstrating our significantly larger size and scale.
+
+## 3-YEAR AVERAGE REVENUE & MARKET CAP VS. PEERS (2023-2025)¹
+
+*Figure: 3-Year Average Revenue & Market Cap vs. Peers (2023-2025)*
+
+---
+
+# Leading CEO Pay-for-Performance Alignment
+
+Our relative annual CEO pay-for-performance alignment has been consistently stronger than our primary peers, reflected by our more efficient annual CEO pay allocation ratio.
+
+## 3-YEAR AVERAGE ANNUAL CEO PAY AS % OF PROFITS (2023-2025)²⁴
+
+*Figure: 3-Year Average Annual CEO Pay as % of Profits (2023-2025)*
+
+---
+
+¹ ROTCE is a non-GAAP financial measure; refer to Note 1 on page 103 for a further discussion of this measure.  
+² Peer ROTCE, Revenue, Net Income and CEO Compensation based on public disclosures (Form 10-K, Form 8-K, Annual Proxy Filings); Market Capitalization from S&P CapIQ database.  
+³ TSR shows the cumulative total return of JPM common stock compared to the indices, with dividends reinvested.  
+⁴ Annual compensation comprises base salary, cash bonus paid and long-term incentive compensation (target value) in connection with the performance year, which may be different from amounts reported in the Summary compensation table. Refer to page 56 for further information. The percentage of profits paid is equal to 3-year average annual CEO compensation divided by 3-year average net income. Excludes special awards.

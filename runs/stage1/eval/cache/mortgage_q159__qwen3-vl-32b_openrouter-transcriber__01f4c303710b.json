@@ -1,0 +1,1 @@
+{"qid": "mortgage_q159", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_69", "domain": "mortgage", "answer": {"bottom_right_exhibit_label": "Red HUD Certification Label with white text"}, "field_matches": {"bottom_right_exhibit_label": false}, "match": false}

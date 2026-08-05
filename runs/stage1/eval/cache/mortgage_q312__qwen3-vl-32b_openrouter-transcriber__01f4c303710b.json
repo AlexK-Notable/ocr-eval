@@ -1,0 +1,1 @@
+{"qid": "mortgage_q312", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_146", "domain": "mortgage", "answer": {"Co-Borrower": "Dana L. Mercer", "Co-Borrower Date": "2025-03-06"}, "field_matches": {"Co-Borrower": true, "Co-Borrower Date": true}, "match": true}

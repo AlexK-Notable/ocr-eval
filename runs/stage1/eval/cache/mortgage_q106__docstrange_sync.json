@@ -1,0 +1,1 @@
+{"qid": "mortgage_q106", "parser": "docstrange_sync", "source_file": "mortgage_45", "domain": "mortgage", "answer": {"city_of": "Chicago", "microwave_ovens_checked": true}, "field_matches": {"city_of": true, "microwave_ovens_checked": true}, "match": true}

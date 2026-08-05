@@ -1,0 +1,1 @@
+{"qid": "mortgage_q253", "parser": "docstrange_sync", "source_file": "mortgage_112", "domain": "mortgage", "answer": {"Completed": "unchecked", "Jointly": "unchecked", "Not Jointly": "checked"}, "field_matches": {"Completed": true, "Jointly": true, "Not Jointly": true}, "match": true}

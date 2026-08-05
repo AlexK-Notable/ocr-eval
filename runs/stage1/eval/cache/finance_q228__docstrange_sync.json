@@ -1,0 +1,1 @@
+{"qid": "finance_q228", "parser": "docstrange_sync", "source_file": "finance_106", "domain": "finance", "answer": {"contributions_paid": 83.0, "interest": 340.0, "net_income": 3212.46}, "field_matches": {"contributions_paid": true, "interest": false, "net_income": false}, "match": false}

@@ -1,0 +1,51 @@
+## Page 1
+
+&lt;page_number&gt;Page 3 of 6 pages&lt;/page_number&gt;
+
+**6. TITLE & TITLE INSURANCE.**
+
+**6.1 Title to Property.** Seller represents that Seller has fee title to the Property and will convey marketable title to the Property to Buyer at Closing by general warranty deed. Buyer does agree to accept title to the Property subject to the contents of the Commitment for Title Insurance (the “Commitment”) provided by Seller under Section 7, and as reviewed and approved by Buyer under Section 8.
+
+(a) **Long-Term Lease or Rental Agreements.** Buyer agrees to accept title to the Property subject to any long-term tenant lease or rental agreements (meaning for periods of thirty (30) or more consecutive days) affecting the Property not expiring prior to Closing. Buyer also agrees to accept title to the Property subject to any existing rental and property management agreements affecting the Property not expiring prior to Closing. The provisions of this Section 6.1(a) shall survive Closing.
+
+(b) **Short-Term Rental Bookings.** Buyer agrees to accept title to the Property subject to any short-term rental bookings (meaning for periods of less than thirty (30) consecutive days) affecting the Property not expiring prior to Closing. The provisions of this Section 6.1(b) shall survive Closing.
+
+**6.2 Title Insurance.** At Settlement, Seller agrees to pay for and cause to be issued in favor of Buyer, through the title insurance agency that issued the Commitment (the “Issuing Agent”), the most current version of the ALTA Homeowner’s Policy of Title Insurance (the “Homeowner’s Policy”). If the Homeowner’s Policy is not available through the Issuing Agent, Buyer and Seller further agree as follows: (a) Seller agrees to pay for the Homeowner’s Policy if available through any other title insurance agency selected by Buyer; (b) if the Homeowner’s Policy is not available either through the Issuing Agent or any other title insurance agency, then Seller agrees to pay for, and Buyer agrees to accept, the most current available version of an ALTA Owner’s Policy of Title Insurance (“Owner’s Policy”) available through the Issuing Agent.
+
+**7. SELLER DISCLOSURES.** No later than the Seller Disclosure Deadline referenced in Section 24(a), Seller shall provide to Buyer the following documents in hard copy or electronic format which are collectively referred to as the “Seller Disclosures”:
+
+(a) a written Seller property condition disclosure for the Property, completed, signed and dated by Seller as provided in Section 10.3;
+
+(b) a Lead-Based Paint Disclosure & Acknowledgement for the Property, completed, signed and dated by Seller (only if the Property was built prior to 1978);
+
+(c) a Commitment for Title Insurance as referenced in Section 6.1;
+
+(d) a copy of any restrictive covenants (CC&R’s), rules and regulations affecting the Property;
+
+(e) a copy of the most recent minutes, budget and financial statement for the homeowners’ association, if any;
+
+(f) a copy of any long-term tenant lease or rental agreements affecting the Property not expiring prior to Closing;
+
+(g) a copy of any short-term rental booking schedule (as of the Seller Disclosure Deadline) for guest use of the Property after Closing;
+
+(h) a copy of any existing property management agreements affecting the Property;
+
+(i) evidence of any water rights and/or water shares referenced in Section 1.4;
+
+(j) written notice of any claims and/or conditions known to Seller relating to environmental problems and building or zoning code violations;
+
+(k) In general, the sale or other disposition of a U.S. real property interest by a foreign person is subject to income tax withholding under the Foreign Investment in Real Property Tax Act of 1980 (FIRPTA). A “foreign person” includes a non-resident alien individual, foreign corporation, partnership, trust or estate. If FIRPTA applies to Seller, Seller is advised that Buyer or other qualified substitute may be legally required to withhold this tax at Closing. In order to avoid closing delays, if Seller is a foreign person under FIRPTA, Seller shall advise Buyer in writing; and
+
+(l) Other (specify) ____________
+
+**8. BUYER’S CONDITIONS OF PURCHASE.**
+
+**8.1 DUE DILIGENCE CONDITION.** Buyer’s obligation to purchase the Property: ☑ IS ☑ IS NOT conditioned upon Buyer’s Due Diligence as defined in this Section 8.1(a) below. This condition is referred to as the “Due Diligence Condition.” If checked in the affirmative, Sections 8.1(a) through 8.1(c) apply; otherwise they do not.
+
+(a) **Due Diligence Items.** Buyer’s Due Diligence shall consist of Buyer’s review and approval of the contents of the Seller Disclosures referenced in Section 7, and any other tests, evaluations and verifications of the Property deemed necessary or appropriate by Buyer, such as: the physical condition of the Property; the existence of any hazardous substances, environmental issues or geologic conditions; the square footage or acreage of the land and/or improvements; the condition of the roof, walls, and foundation; the condition of the plumbing, electrical, mechanical, heating and air conditioning systems and fixtures; the condition of all appliances; the costs and availability of homeowners’ insurance and flood insurance, if applicable; water source, availability and quality; the location of property lines; regulatory use restrictions or violations; fees for services such as HOA dues, municipal services, and utility costs; convicted sex offenders residing in proximity to the Property; and any other matters deemed material to Buyer in making a decision to purchase the Property. Unless otherwise provided in the REPC, all of Buyer’s Due Diligence shall be paid for by Buyer and shall be conducted by individuals or entities of Buyer’s choice. Seller agrees to cooperate with Buyer’s Due Diligence. Buyer agrees to pay for any damage to the Property resulting from any such inspections or tests during the Due Diligence.
+
+(b) **Buyer’s Right to Cancel or Resolve Objections.** If Buyer determines, in Buyer’s sole discretion, that the results of the Due Diligence are unacceptable, Buyer may either: (i) no later than the Due Diligence Deadline referenced in Section 24(b), cancel the REPC by providing written notice to Seller, whereupon the Earnest Money Deposit shall be released to Buyer without the requirement of further written authorization from Seller; or (ii) no later than the Due Diligence Deadline referenced in Section 24(b), resolve in writing with Seller any objections Buyer has arising from Buyer’s Due Diligence.
+
+(c) **Failure to Cancel or Resolve Objections.** If Buyer fails to cancel the REPC or fails to resolve in writing with Seller any objections Buyer has arising from Buyer’s Due Diligence, as provided in Section 8.1(b), Buyer shall be deemed to have waived the Due Diligence Condition, and except as provided in Sections 8.2(a) and 8.3(b)(i), the Earnest Money Deposit shall become non-refundable.
+
+Buyer’s Initials LLC ____________ Date ____________ Seller’s Initials Estate ____________ Date ____________

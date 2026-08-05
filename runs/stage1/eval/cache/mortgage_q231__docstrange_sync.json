@@ -1,0 +1,1 @@
+{"qid": "mortgage_q231", "parser": "docstrange_sync", "source_file": "mortgage_103", "domain": "mortgage", "answer": {"a": "YES", "d": "YES", "e": "YES", "f": "NO"}, "field_matches": {"a": true, "d": true, "e": true, "f": true}, "match": true}

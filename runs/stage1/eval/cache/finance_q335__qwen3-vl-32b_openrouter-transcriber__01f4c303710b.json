@@ -1,0 +1,1 @@
+{"qid": "finance_q335", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_165", "domain": "finance", "answer": {"quarterly_period_ended": "2023-03-31", "irs_employer_identification_number": null}, "field_matches": {"quarterly_period_ended": true, "irs_employer_identification_number": false}, "match": false}

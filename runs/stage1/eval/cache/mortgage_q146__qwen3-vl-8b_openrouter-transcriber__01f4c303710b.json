@@ -1,0 +1,1 @@
+{"qid": "mortgage_q146", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_64", "domain": "mortgage", "answer": {"condop_checkbox": false, "physical_address": "700 1st Ave, NW\nUnit 1206\nWashington, DC 20001"}, "field_matches": {"condop_checkbox": true, "physical_address": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "finance_q250", "parser": "docstrange_sync", "source_file": "finance_119", "domain": "finance", "answer": {"identification_no_of_trp": "APM1234Q", "reimbursement_amount": 160}, "field_matches": {"identification_no_of_trp": false, "reimbursement_amount": false}, "match": false}

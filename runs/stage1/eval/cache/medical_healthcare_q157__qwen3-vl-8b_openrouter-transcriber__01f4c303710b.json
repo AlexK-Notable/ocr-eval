@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q157", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_69", "domain": "medical_healthcare", "answer": {"diagnosis_code_a": null, "diagnosis_code_b": null}, "field_matches": {"diagnosis_code_a": false, "diagnosis_code_b": false}, "match": false}

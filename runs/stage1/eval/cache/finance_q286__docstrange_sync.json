@@ -1,0 +1,1 @@
+{"qid": "finance_q286", "parser": "docstrange_sync", "source_file": "finance_138", "domain": "finance", "answer": {"taxpayer_id_number": "123-45-6789", "daytime_telephone_number": "555-234-5678"}, "field_matches": {"taxpayer_id_number": true, "daytime_telephone_number": true}, "match": true}

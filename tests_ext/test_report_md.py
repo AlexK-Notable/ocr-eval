@@ -881,15 +881,61 @@ def test_stamp_columns_unregistered_includes_contract_as_unknown():
     assert "contract: unknown (unregistered)" in _stamp_columns(None)
 
 
+# ── per-domain / per-capability breakdowns ────────────────────────────────────────────────────
+
+def test_breakdown_buckets_domain_and_capability_ordering():
+    from ocr_eval_ext.report_md import BREAKDOWN_TOP_CAPABILITIES, _breakdown_buckets
+    items = [
+        {"question_id": "q1", "domain": "mortgage", "capabilities": ["checkbox_state", "rare"]},
+        {"question_id": "q2", "domain": "mortgage", "capabilities": ["checkbox_state"]},
+        {"question_id": "q3", "domain": "finance", "capabilities": ["checkbox_state"]},
+    ]
+    doms = _breakdown_buckets(items, "domain")
+    assert doms[0][0] == "mortgage" and doms[0][1] == {"q1", "q2"}   # largest bucket first
+    assert dict(doms)["finance"] == {"q3"}
+
+    caps = _breakdown_buckets(items, "capability")
+    assert caps[0][0] == "checkbox_state"                            # an item can join many buckets
+    assert len(caps) <= BREAKDOWN_TOP_CAPABILITIES
+
+
+def test_breakdown_cell_counts_errors_as_wrong_and_reports_clustered_ci():
+    """acc-over-all: an unscorable row is WRONG, never dropped from the denominator — same rule as
+    every other accuracy column. Two docs, one correct, one errored -> 50%."""
+    from ocr_eval_ext.report_md import _bucket_cell
+    fields = [("q1", "k", True, "docA"), ("q2", "k", True, "docB")]
+    rows = {"q1": {"answer": {"k": True}, "field_matches": {"k": True}},
+            "q2": {"error": "boom"}}
+    cell = _bucket_cell(rows, fields, {"q1", "q2"}, iters=50, seed=0, alpha=0.05)
+    assert cell.startswith("50.0% [")
+    assert "n=2, d=2" in cell
+
+
+def test_breakdown_cell_is_na_when_bucket_has_no_fields():
+    from ocr_eval_ext.report_md import _bucket_cell
+    assert _bucket_cell({}, [("q1", "k", True, "docA")], {"other"}, iters=50, seed=0,
+                        alpha=0.05) == "n/a"
+
+
+def test_section_a_breakdown_stays_inside_section_a(tmp_path):
+    """Structural: a Section A table appearing after the '## Section B' header would break the
+    shape-segregation rule I1 guards. Breakdowns must sit inside their own section."""
+    layout, entries = _build_full_fixture(tmp_path)
+    md = build_markdown_report(layout, entries, iters=50)
+    assert "Section A (vlm-chat) — per-domain" in md
+    assert "Section B (transcribe-then-extract) — per-domain" in md
+    assert "Section A (vlm-chat) — per-" not in md.split("## Section B")[1]
+    assert "Section B (transcribe-then-extract) — per-" not in md.split("## Section B")[0]
+
+
 # ── the cross-shape warning must name the LIVE extractor, not a stale literal ─────────────────
 # Regression guard: D11 moved score.py's DEFAULT_MODEL and this warning kept naming the old
 # model, so one report contradicted itself — line 49 said gemini-3-flash-preview while the
 # Section B header said gemini-3.1-flash-lite.
 
 def test_cross_shape_warning_names_the_live_extractor_model():
-    from realdoc_bench.evaluate.score import DEFAULT_MODEL
-
     from ocr_eval_ext.report_md import CROSS_SHAPE_WARNING
+    from realdoc_bench.evaluate.score import DEFAULT_MODEL
 
     assert f"`{DEFAULT_MODEL}`" in CROSS_SHAPE_WARNING
 

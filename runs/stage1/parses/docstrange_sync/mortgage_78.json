@@ -1,0 +1,11 @@
+{
+  "parser": "docstrange_sync",
+  "stem": "mortgage_78",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 23.29834584199125,
+  "cost_usd": 0.01,
+  "md_length": 3833,
+  "elapsed_total": 23.298474311828613,
+  "error": ""
+}

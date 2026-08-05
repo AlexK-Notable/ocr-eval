@@ -1,0 +1,1 @@
+{"qid": "finance_q151", "parser": "docstrange_sync", "source_file": "finance_75", "domain": "finance", "answer": {"investment_analysis": true, "barrier_analysis": true}, "field_matches": {"investment_analysis": true, "barrier_analysis": true}, "match": true}

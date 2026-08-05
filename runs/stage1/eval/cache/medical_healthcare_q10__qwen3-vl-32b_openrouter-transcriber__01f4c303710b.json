@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q10", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_7", "domain": "medical_healthcare", "answer": {"bone_marrow_aspirate_col_2": true, "research_samples_col_4": "X"}, "field_matches": {"bone_marrow_aspirate_col_2": true, "research_samples_col_4": true}, "match": true}

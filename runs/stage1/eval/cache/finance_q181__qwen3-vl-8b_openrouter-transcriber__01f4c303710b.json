@@ -1,0 +1,1 @@
+{"qid": "finance_q181", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_87", "domain": "finance", "answer": {"occupation": "Physician", "receipt_for_primary_checked": false}, "field_matches": {"occupation": true, "receipt_for_primary_checked": false}, "match": false}

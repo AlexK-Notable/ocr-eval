@@ -1,0 +1,1 @@
+{"qid": "finance_q339", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_167", "domain": "finance", "answer": {"manufacturing_goodwill_2021": 25463}, "field_matches": {"manufacturing_goodwill_2021": true}, "match": true}

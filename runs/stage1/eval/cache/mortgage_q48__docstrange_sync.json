@@ -1,0 +1,1 @@
+{"qid": "mortgage_q48", "parser": "docstrange_sync", "source_file": "mortgage_17", "domain": "mortgage", "answer": {"monthly_hoa_fee_amount": 0}, "field_matches": {"monthly_hoa_fee_amount": true}, "match": true}

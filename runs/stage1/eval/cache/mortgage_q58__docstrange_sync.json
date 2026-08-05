@@ -1,0 +1,1 @@
+{"qid": "mortgage_q58", "parser": "docstrange_sync", "source_file": "mortgage_22", "domain": "mortgage", "answer": {"owner_occupied_checked": true, "keep_property_checked": true}, "field_matches": {"owner_occupied_checked": true, "keep_property_checked": true}, "match": true}

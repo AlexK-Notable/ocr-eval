@@ -1,0 +1,1 @@
+{"qid": "mortgage_q411", "parser": "docstrange_sync", "source_file": "mortgage_183", "domain": "mortgage", "answer": {"Deposit Accounts": 31522.8, "Loans Outstanding": 2415.0}, "field_matches": {"Deposit Accounts": true, "Loans Outstanding": true}, "match": true}

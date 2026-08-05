@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q312", "parser": "docstrange_sync", "source_file": "supply_chain_112", "domain": "supply_chain", "answer": {"Pump Hose": "no", "Steam and Hot Water": "yes", "Trenching/Excavation": "yes", "Work Near Water": "yes"}, "field_matches": {"Pump Hose": false, "Steam and Hot Water": false, "Trenching/Excavation": true, "Work Near Water": false}, "match": false}

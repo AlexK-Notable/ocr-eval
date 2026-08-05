@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q22", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_10", "domain": "supply_chain", "answer": {"consignee_country_territory": "United States", "gray_box_text": "Argentina"}, "field_matches": {"consignee_country_territory": true, "gray_box_text": false}, "match": false}

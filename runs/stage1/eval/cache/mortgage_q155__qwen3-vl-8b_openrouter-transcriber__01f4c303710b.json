@@ -1,0 +1,1 @@
+{"qid": "mortgage_q155", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_68", "domain": "mortgage", "answer": {"first_photo_title": "Non-Residential Use - Agricultural - Barn", "dock_placeholder_text": "This is where the Dock photo would display."}, "field_matches": {"first_photo_title": true, "dock_placeholder_text": true}, "match": true}

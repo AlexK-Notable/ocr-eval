@@ -1,0 +1,1 @@
+{"qid": "mortgage_q448", "parser": "docstrange_sync", "source_file": "mortgage_200", "domain": "mortgage", "answer": {"406_Taxes": "$ 1,245.50", "407_Taxes": "$ 640.00"}, "field_matches": {"406_Taxes": true, "407_Taxes": true}, "match": true}

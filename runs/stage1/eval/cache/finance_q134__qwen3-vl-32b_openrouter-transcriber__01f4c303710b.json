@@ -1,0 +1,1 @@
+{"qid": "finance_q134", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_67", "domain": "finance", "answer": {"case_number": "3:21-cr-00271-01", "filed_date": "2021-10-27"}, "field_matches": {"case_number": false, "filed_date": true}, "match": false}

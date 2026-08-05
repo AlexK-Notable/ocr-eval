@@ -1,0 +1,1 @@
+{"qid": "mortgage_q287", "parser": "docstrange_sync", "source_file": "mortgage_127", "domain": "mortgage", "answer": {"Status": "YES", "Explanation": "One indoor cat lived in the home 2018-2024."}, "field_matches": {"Status": true, "Explanation": true}, "match": true}

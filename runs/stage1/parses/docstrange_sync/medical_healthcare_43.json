@@ -1,0 +1,11 @@
+{
+  "parser": "docstrange_sync",
+  "stem": "medical_healthcare_43",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 37.00629433798895,
+  "cost_usd": 0.01,
+  "md_length": 5136,
+  "elapsed_total": 37.006596326828,
+  "error": ""
+}

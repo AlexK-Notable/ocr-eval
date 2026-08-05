@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q70", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_32", "domain": "medical_healthcare", "answer": {"department_name": "DEPARTMENT OF MEDICAL EXAMINER", "medical_examiner_name": "Djabourian, Raffi"}, "field_matches": {"department_name": true, "medical_examiner_name": false}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "finance_q53", "parser": "docstrange_sync", "source_file": "finance_20", "domain": "finance", "answer": {"total_premium_new": 1350, "retro_date_occurrence_4_selected": true}, "field_matches": {"total_premium_new": true, "retro_date_occurrence_4_selected": true}, "match": true}

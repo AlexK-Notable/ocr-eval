@@ -1,0 +1,1 @@
+{"qid": "finance_q8", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_3", "domain": "finance", "answer": {"direct_billing_state": false}, "field_matches": {"direct_billing_state": false}, "match": false}

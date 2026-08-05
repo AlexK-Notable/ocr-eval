@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q115", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_51", "domain": "medical_healthcare", "answer": {"dicyclomine_dosage": "10 mg", "dicyclomine_frequency": "1 tab up to 3x/day"}, "field_matches": {"dicyclomine_dosage": true, "dicyclomine_frequency": true}, "match": true}

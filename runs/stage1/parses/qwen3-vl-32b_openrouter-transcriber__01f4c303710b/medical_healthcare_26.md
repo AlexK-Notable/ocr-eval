@@ -1,0 +1,127 @@
+## Page 1
+
+# MEDICAL REPORT
+## COUNTY OF LOS ANGELES
+### DEPARTMENT OF MEDICAL EXAMINER-CORONER
+
+**AUTOPSY CLASS:** ☒ A ☐ B ☐ C ☐ Examination Only D  
+☐ FAMILY OBJECTION TO AUTOPSY  
+**Date:** 6/22/20 **Time:** 1515 **Dr. (Print):** Young  
+**FINAL ON:** 6/22/20 **By: (Print):** Young  
+
+**APPROXIMATE INTERVAL BETWEEN ONSET AND DEATH:** min  
+
+---
+
+## DEATH WAS CAUSED BY: (Enter only one cause per line for A, B, C, and D)
+
+**(A) IMMEDIATE CAUSE:** Multiple gunshot wounds  
+**(B) DUE TO, OR AS A CONSEQUENCE OF:**  
+**(C) DUE TO, OR AS A CONSEQUENCE OF:**  
+**(D) DUE TO, OR AS A CONSEQUENCE OF:**  
+
+---
+
+## OTHER CONDITIONS CONTRIBUTING BUT NOT RELATED TO THE IMMEDIATE CAUSE OF DEATH:
+
+☐ NATURAL ☐ SUICIDE ☒ HOMICIDE  
+☐ ACCIDENT ☐ COULD NOT BE DETERMINED  
+
+*If other than natural causes, HOW DID INJURY OCCUR?* with handgun  
+
+---
+
+**WAS OPERATION PERFORMED FOR ANY CONDITION STATED ABOVE:** ☐ YES ☒ NO  
+**TYPE OF SURGERY:**  
+☐ ORGAN PROCUREMENT  
+**TECHNICIAN:** Ted  
+**PREGNANCY IN LAST YEAR:** ☐ YES ☐ NO ☐ UNK ☐ NOT APPLICABLE  
+☒ WITNESS TO AUTOPSY  
+☒ EVIDENCE RECOVERED AT AUTOPSY  
+**Item Description:** 3 bullets  
+
+---
+
+## PRIOR EXAMINATION REVIEW BY DME
+
+☐ BODY TAG ☐ CLOTHING  
+☒ X-RAY (No. 7) ☐ FLUORO  
+☐ SPECIAL PROCESSING TAG ☐ MED. RECORDS  
+☐ AT SCENE PHOTOS (No. )  
+
+---
+
+## CASE CIRCUMSTANCES
+
+☐ EMBALMED  
+☐ DECOMPOSED  
+☐ >24 HRS IN HOSPITAL  
+☐ OTHER: (Reason)  
+
+---
+
+## TYPING SPECIMEN
+
+**TYPING SPECIMEN TAKEN BY:** Ty  
+**SOURCE:** Heart  
+
+---
+
+## TOXICOLOGY SPECIMEN
+
+**COLLECTED BY:** K.Y  
+☐ HEART BLOOD ☐ STOMACH CONTENTS  
+☐ FEMORAL BLOOD ☒ VITREOUS  
+**TECHNIQUE:** Chest BLOOD ☐ SPLEEN  
+☐ BILE ☐ KIDNEY  
+☒ LIVER ☐  
+☒ URINE ☐  
+**URINE GLUCOSE DIPSTICK RESULT:** 4+ 3+ 2+ 1+ 0  
+**TOX SPECIMEN RECONCILIATION BY:**  
+
+---
+
+## HISTOLOGY
+
+☒ Regular (No. ) ☐ Oversize (No. )  
+**Histopath Cut:** ☐ Autopsy ☐ Lab  
+
+---
+
+## TOXICOLOGY REQUESTS
+
+**FORM 3A:** ☐ YES ☐ NO  
+☐ NO TOXICOLOGY REQUESTED  
+**SCREEN:** ☒ C ☐ H ☐ T ☐ S ☐ D  
+☐ ALCOHOL ONLY  
+☐ CARBON MONOXIDE  
+☐ OTHER (Specify drug and tissue)  
+
+---
+
+## REQUESTED MATERIAL ON PENDING CASES
+
+☐ POLICE REPORT ☐ MED HISTORY  
+☐ TOX FOR COD ☐ HISTOLOGY  
+☐ TOX FOR R/O ☐ INVESTIGATIONS  
+☐ MICROBIOLOGY ☐ EYE PATH. CONS.  
+☐ RADIOLOGY CONS.  
+☐ CONSULT ON:  
+☐ BRAIN SUBMITTED  
+☐ NEURO CONSULT ☐ DME TO CUT  
+☐ CRIMINALISTICS  
+☐ GSR ☐ SEXUAL ASSAULT ☐ OTHER  
+
+---
+
+**RESIDENT:**  
+**DME:**  
+
+*Figure: Form footer indicating color-coded copies — WHITE - File Copy, CANARY - Forensic Lab, PINK - Certification, GOLDENROD - DME (Rev. 9/13)*
+
+---
+
+**Case Number:** 2020-05405  
+**Name:** GUARDADO PINEDA, ANDRES F  
+**ID:** HOMI 195  
+**Age:** 18 **Gender:** ☒ Male / ☐ Female

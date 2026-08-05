@@ -1,0 +1,33 @@
+## Page 1
+
+# Figure 2: Status of Loans Referred by Lenders but not Captured
+
+## FLAGGED
+- **Not Forgiven**: 425 loans, $49.3 million
+- **Paid in Full**: 125 loans, $16.8 million
+- **Fully Forgiven**: 178 loans, $6.7 million
+
+## NOT FLAGGED
+- **Not Forgiven**: 1,589 loans, $199.8 million
+- **Paid in Full**: 225 loans, $26.1 million
+- **Fully Forgiven**: 5,130 loans, $139.1 million
+
+*Figure: Pie charts showing the status (Not Forgiven, Paid in Full, Fully Forgiven) and dollar amounts for flagged and not flagged loans referred by lenders but not captured by SBA.*
+
+**Legend:**
+- ■ Not Forgiven
+- □ Paid in Full
+- ◊ Fully Forgiven
+
+*Source: OIG analysis of PPP portfolio data.*
+
+SBA did not capture all suspicious loans referred by lenders because it did not have sufficient processes and procedures, such as supervisory reviews and a reconciliation process, to ensure OCRM’s summary workbook included all loans referred by lenders as being suspected of fraud or illegal activity. GAO’s *Standards for Internal Control in the Federal Government* recommends that management establish and operate activities to monitor the internal control system and evaluate the results, including regular management and supervisory activities, comparisons, and reconciliations.⁸ Further, Office of Management and Budget guidance states that periodic assessments should be integrated as part of management’s continuous monitoring of internal control, which should be ingrained in the agency’s operations.⁹
+
+SBA built a data set containing the suspicious loan numbers based on the loans referred by lenders as part of their outreach project; however, it did not adequately review the information to ensure completeness. While OCRM officials stated they were completing manual reviews of lender responses as resources allowed, they noted there were over 4,000 emails from lenders to review.
+
+By not capturing and flagging the 6,944 loans, totaling $365 million, referred by lenders as suspected of fraud or illegal activity, there is an increased risk of fraud and financial loss.
+
+---
+
+⁸ GAO-14-704G, *Standards for Internal Control in the Federal Government*, September 2014.  
+⁹ OMB, M-16-17, OMB Circular A-123, *Management’s Responsibility of Internal Control*, July 2016.

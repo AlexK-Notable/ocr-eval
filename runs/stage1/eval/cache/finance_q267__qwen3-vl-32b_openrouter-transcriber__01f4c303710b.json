@@ -1,0 +1,1 @@
+{"qid": "finance_q267", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_128", "domain": "finance", "answer": {"accounts_attached_box_80": true, "box_115_label": null}, "field_matches": {"accounts_attached_box_80": true, "box_115_label": false}, "match": false}

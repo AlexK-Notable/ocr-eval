@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q96", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_42", "domain": "medical_healthcare", "answer": {"substance_name": "buprenorphine", "investigator_name": "Hertzog, Jennifer"}, "field_matches": {"substance_name": true, "investigator_name": true}, "match": true}

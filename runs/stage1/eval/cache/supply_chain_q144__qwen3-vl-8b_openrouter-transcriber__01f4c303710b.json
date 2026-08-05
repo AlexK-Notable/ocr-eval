@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q144", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_48", "domain": "supply_chain", "answer": {"ref": "22480-SW", "contact": "NABIL FARAG", "phone": "(562) 683-2016"}, "field_matches": {"ref": false, "contact": true, "phone": false}, "match": false}

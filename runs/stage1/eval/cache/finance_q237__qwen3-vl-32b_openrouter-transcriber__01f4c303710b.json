@@ -1,0 +1,1 @@
+{"qid": "finance_q237", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_111", "domain": "finance", "answer": {"receive_psi_selection": true, "net_psi_amount_a": 3847.0}, "field_matches": {"receive_psi_selection": false, "net_psi_amount_a": true}, "match": false}

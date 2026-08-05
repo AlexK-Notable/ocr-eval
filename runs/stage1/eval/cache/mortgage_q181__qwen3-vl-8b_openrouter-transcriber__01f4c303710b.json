@@ -1,0 +1,1 @@
+{"qid": "mortgage_q181", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_81", "domain": "mortgage", "answer": {"subject_exterior_quality": "Q3"}, "field_matches": {"subject_exterior_quality": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q301", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_136", "domain": "mortgage", "answer": {"First Signature": "Harold P. McCray", "Second Signature": "Ruth E. McCray", "Date": "2025-03-11"}, "field_matches": {"First Signature": true, "Second Signature": true, "Date": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q54", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_21", "domain": "mortgage", "answer": {"gross_wages": 8450}, "field_matches": {"gross_wages": true}, "match": true}

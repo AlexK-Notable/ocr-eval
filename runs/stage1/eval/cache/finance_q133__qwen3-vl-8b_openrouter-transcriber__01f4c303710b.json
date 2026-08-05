@@ -1,0 +1,1 @@
+{"qid": "finance_q133", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_66", "domain": "finance", "answer": {"transaction_date": "2020-06-25", "approximate_amount": 500065, "bank_name": "Bank 2"}, "field_matches": {"transaction_date": true, "approximate_amount": true, "bank_name": true}, "match": true}

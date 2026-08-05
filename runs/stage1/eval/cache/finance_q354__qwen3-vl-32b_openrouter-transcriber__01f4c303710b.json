@@ -1,0 +1,1 @@
+{"qid": "finance_q354", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_24", "domain": "finance", "answer": {"manufacturing": true, "office": false}, "field_matches": {"manufacturing": true, "office": true}, "match": true}

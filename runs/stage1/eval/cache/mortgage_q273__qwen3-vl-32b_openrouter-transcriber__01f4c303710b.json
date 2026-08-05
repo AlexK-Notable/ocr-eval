@@ -1,0 +1,1 @@
+{"qid": "mortgage_q273", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_120", "domain": "mortgage", "answer": {"22-No": "checked", "24-Yes": "checked", "26-Flood": "checked"}, "field_matches": {"22-No": true, "24-Yes": true, "26-Flood": true}, "match": true}

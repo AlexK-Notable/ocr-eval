@@ -1,0 +1,1 @@
+{"qid": "finance_q293", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_142", "domain": "finance", "answer": {"website_url": "www.fema.gov", "footer_title_text": "Improving FEMA’s Individual Assistance, Technical Assistance Contracts"}, "field_matches": {"website_url": true, "footer_title_text": true}, "match": true}

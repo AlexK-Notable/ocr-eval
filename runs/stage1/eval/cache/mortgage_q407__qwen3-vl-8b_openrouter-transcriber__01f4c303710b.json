@@ -1,0 +1,1 @@
+{"qid": "mortgage_q407", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_185", "domain": "mortgage", "answer": {"Box 40": "2025-06-01", "Box 41": "2025-12-15", "Box 42": "2026-02-01", "Box 43": 1}, "field_matches": {"Box 40": true, "Box 41": true, "Box 42": true, "Box 43": true}, "match": true}

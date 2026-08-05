@@ -1,0 +1,1 @@
+{"qid": "finance_q225", "parser": "docstrange_sync", "source_file": "finance_105", "domain": "finance", "answer": {"class_of_tax": "1925 Income"}, "field_matches": {"class_of_tax": false}, "match": false}

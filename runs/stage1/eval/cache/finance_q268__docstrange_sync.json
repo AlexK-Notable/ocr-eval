@@ -1,0 +1,1 @@
+{"qid": "finance_q268", "parser": "docstrange_sync", "source_file": "finance_128", "domain": "finance", "answer": {"trading_profits_box_155": 2845000.0, "interest_and_non_trading_profits_box_170": 42500.0}, "field_matches": {"trading_profits_box_155": true, "interest_and_non_trading_profits_box_170": true}, "match": true}

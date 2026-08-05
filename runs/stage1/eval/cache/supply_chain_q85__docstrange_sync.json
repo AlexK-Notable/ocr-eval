@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q85", "parser": "docstrange_sync", "source_file": "supply_chain_34", "domain": "supply_chain", "answer": {"Quantity": 10, "Price per Gallon": 5, "Line Total": 59}, "field_matches": {"Quantity": false, "Price per Gallon": false, "Line Total": false}, "match": false}

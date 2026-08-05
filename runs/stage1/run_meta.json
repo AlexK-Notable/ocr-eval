@@ -1,0 +1,9 @@
+{
+  "dataset_revision": "906170ab201d7b8238a32a9115fc66b4b72e0710",
+  "harness_commit": "fb26a6876481de76dc293f722ab4efa71279904d",
+  "pymupdf_version": "1.28.0",
+  "renders_verified": true,
+  "partial_corpus": false,
+  "revision_source": "hf_metadata",
+  "extractor_id": "gemini-3.1-flash-lite"
+}

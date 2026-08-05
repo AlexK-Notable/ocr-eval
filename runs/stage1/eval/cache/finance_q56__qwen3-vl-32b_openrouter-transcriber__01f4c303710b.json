@@ -1,0 +1,1 @@
+{"qid": "finance_q56", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_21", "domain": "finance", "answer": {"time_meridiem": "PM", "transaction_type": "CHANGE"}, "field_matches": {"time_meridiem": true, "transaction_type": true}, "match": true}

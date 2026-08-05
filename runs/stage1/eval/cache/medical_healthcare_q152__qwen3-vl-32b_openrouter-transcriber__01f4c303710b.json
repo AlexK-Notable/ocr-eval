@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q152", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_67", "domain": "medical_healthcare", "answer": {"medicaid_eligible_yes_checked": "Yes"}, "field_matches": {"medicaid_eligible_yes_checked": true}, "match": true}

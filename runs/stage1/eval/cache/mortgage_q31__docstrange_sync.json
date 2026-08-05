@@ -1,0 +1,1 @@
+{"qid": "mortgage_q31", "parser": "docstrange_sync", "source_file": "mortgage_12", "domain": "mortgage", "answer": {"current_interest_rate": 5.875}, "field_matches": {"current_interest_rate": true}, "match": true}

@@ -1,0 +1,1 @@
+{"qid": "finance_q349", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_15", "domain": "finance", "answer": {"zip_code": 94104}, "field_matches": {"zip_code": true}, "match": true}

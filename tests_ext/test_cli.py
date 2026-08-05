@@ -20,7 +20,15 @@ runner = CliRunner()
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
-_REAL_BANK_MISSING = not (REPO_ROOT / "runs" / "stage1" / "qa_bank.json").exists()
+# The guard must check for the CORPUS, not the bank. `runs/stage1/` now versions the run's
+# results (parses/, eval/, qa_bank.json) while deliberately excluding the 1.2GB of source PDFs and
+# renders, which are re-derivable from the pinned dataset revision. Keying the skip on
+# qa_bank.json alone made this test FAIL rather than skip on a fresh clone: the bank is present,
+# the PDFs it references are not, and `verify` correctly reports 581 missing source_files.
+_REAL_CORPUS_MISSING = (
+    not (REPO_ROOT / "runs" / "stage1" / "qa_bank.json").exists()
+    or not any((REPO_ROOT / "runs" / "stage1" / "docs").glob("*.pdf"))
+)
 _UV_MISSING = shutil.which("uv") is None
 
 
@@ -67,7 +75,8 @@ def test_pins_path_is_package_relative_and_exists():
 
 # ── verify against the REAL bank (item 2) ─────────────────────────────────────────────────────
 
-@pytest.mark.skipif(_REAL_BANK_MISSING, reason="real 581-PDF corpus not present in this checkout")
+@pytest.mark.skipif(_REAL_CORPUS_MISSING,
+                    reason="real 581-PDF corpus not present (re-download at the pinned revision)")
 def test_verify_skip_renders_passes_on_real_bank():
     """`runs/stage1/` ships the real 581-PDF corpus + bank at the pinned revision. --skip-renders
     keeps this test fast (pins + cardinality only, no render sweep) while still proving the real

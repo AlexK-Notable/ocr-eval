@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q43", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_18", "domain": "supply_chain", "answer": {"consignee_value": null, "importer_value": "France"}, "field_matches": {"consignee_value": false, "importer_value": true}, "match": false}

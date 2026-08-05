@@ -1,0 +1,134 @@
+## Page 1
+
+# IV. EMPLOYMENT INFORMATION
+
+## Borrower
+
+**Name & Address of Employer:**  
+Harbor Electric LLC  
+1250 Long Point Rd  
+Mount Pleasant, SC 29464  
+
+☐ Self Employed  
+**No**
+
+**Yrs. on this job:**  
+5
+
+**Yrs. employed in this line of work/profession:**  
+10
+
+**Position/Title/Type of Business:**  
+Journeyman Electrician - Construction
+
+**Business Phone (incl. area code):**  
+843-555-0259
+
+---
+
+## Co-Borrower
+
+**Name & Address of Employer:**  
+Roper St. Francis Hospital  
+316 Calhoun St  
+Charleston, SC 29401  
+
+☐ Self Employed  
+**No**
+
+**Yrs. on this job:**  
+6
+
+**Yrs. employed in this line of work/profession:**  
+11
+
+**Position/Title/Type of Business:**  
+Registered Nurse - Healthcare
+
+**Business Phone (incl. area code):**  
+843-555-0395
+
+---
+
+*If employed in current position for less than two years or if currently employed in more than one position, complete the following:*
+
+### Borrower (Additional Employment)
+
+**Name & Address of Employer:**  
+☐ Self Employed  
+*(blank)*
+
+**Dates (from-to):**  
+*(blank)*
+
+**Monthly Income:**  
+$ *(blank)*
+
+**Position/Title/Type of Business:**  
+*(blank)*
+
+**Business Phone (incl. area code):**  
+*(blank)*
+
+---
+
+### Co-Borrower (Additional Employment)
+
+**Name & Address of Employer:**  
+☐ Self Employed  
+*(blank)*
+
+**Dates (from-to):**  
+*(blank)*
+
+**Monthly Income:**  
+$ *(blank)*
+
+**Position/Title/Type of Business:**  
+*(blank)*
+
+**Business Phone (incl. area code):**  
+*(blank)*
+
+---
+
+## V. MONTHLY INCOME AND COMBINED HOUSING EXPENSE INFORMATION
+
+| Gross Monthly Income | Borrower | Co-Borrower | Total | Combined Monthly Housing Expense | Present | Proposed |
+|----------------------|----------|-------------|-------|----------------------------------|---------|----------|
+| Base Empl. Income*   | $5,600   | $5,000      | $10,600 | Rent                             | $1,850  | $2,380   |
+| Overtime             |          |             |       | First Mortgage (P&I)             |         |          |
+| Bonuses              |          |             |       | Other Financing (P&I)           |         |          |
+| Commissions          |          |             |       | Hazard Insurance                 |         | $105     |
+| Dividends/Interest   |          |             |       | Real Estate Taxes               |         | $300     |
+| Net Rental Income    |          |             |       | Mortgage Insurance               |         | $140     |
+| Other (before completing, see the notice in "describe other income," below) |          |             |       | Homeowner Assn. Dues            |         | $75      |
+|                      |          |             |       | Other:                           |         |          |
+| **Total**            | $5,600   | $5,000      | $10,600 | **Total**                        | $1,850  | $3,000   |
+
+*Self Employed Borrower(s) may be required to provide additional documentation such as tax returns and financial statements.
+
+**Describe Other Income**  
+None
+
+**Notice:** Alimony, child support, or separate maintenance income need not be revealed if the Borrower (B) or Co-Borrower (C) does not choose to have it considered for repaying this loan.
+
+---
+
+**B/C**  
+*(blank)*
+
+**Monthly Amount**  
+$ *(blank)*
+
+---
+
+Uniform Residential Loan Application  
+Freddie Mac Form 65 7/05 (rev. 6/09)  
+Calyx Form - Loanapp2.frm (11/09)
+
+Page 2
+
+Borrower  
+Co-Borrower  
+Fannie Mae Form 1003 7/05 (rev. 6/09)

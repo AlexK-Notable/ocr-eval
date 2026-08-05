@@ -1,0 +1,1 @@
+{"qid": "mortgage_q387", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_150", "domain": "mortgage", "answer": {"LenderName": "Palmetto Home Mortgage", "LenderZip": "29201"}, "field_matches": {"LenderName": true, "LenderZip": true}, "match": true}

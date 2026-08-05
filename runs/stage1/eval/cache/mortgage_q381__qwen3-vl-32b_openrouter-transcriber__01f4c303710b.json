@@ -1,0 +1,1 @@
+{"qid": "mortgage_q381", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_148", "domain": "mortgage", "answer": {"Purchaser1": "Oliver J. Mercer", "Purchaser2": "Dana L. Mercer", "Broker2": "Jordan P. Lowe"}, "field_matches": {"Purchaser1": true, "Purchaser2": true, "Broker2": true}, "match": true}

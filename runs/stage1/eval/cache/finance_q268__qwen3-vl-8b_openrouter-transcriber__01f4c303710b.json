@@ -1,0 +1,1 @@
+{"qid": "finance_q268", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_128", "domain": "finance", "answer": {"trading_profits_box_155": 2845000000, "interest_and_non_trading_profits_box_170": 4250000000}, "field_matches": {"trading_profits_box_155": false, "interest_and_non_trading_profits_box_170": false}, "match": false}

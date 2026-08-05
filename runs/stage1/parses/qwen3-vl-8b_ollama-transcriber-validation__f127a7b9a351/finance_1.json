@@ -1,0 +1,11 @@
+{
+  "parser": "qwen3-vl-8b_ollama-transcriber-validation__f127a7b9a351",
+  "stem": "finance_1",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 20.16360586800147,
+  "cost_usd": 0.0,
+  "md_length": 9,
+  "elapsed_total": 20.16504216194153,
+  "error": ""
+}

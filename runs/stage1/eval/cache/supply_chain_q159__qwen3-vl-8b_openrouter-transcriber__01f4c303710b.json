@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q159", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"Car Number": "PPRX 17360", "Customer": "Pule", "Date": "2020-12-17", "Spot": 10}, "field_matches": {"Car Number": true, "Customer": false, "Date": true, "Spot": true}, "match": false}

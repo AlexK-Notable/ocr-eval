@@ -1,0 +1,1 @@
+{"qid": "mortgage_q274", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_120", "domain": "mortgage", "answer": {"02-Assignment": null, "06-CWCOT": null, "33-Partial Claim": null}, "field_matches": {"02-Assignment": false, "06-CWCOT": false, "33-Partial Claim": false}, "match": false}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q421", "parser": "docstrange_sync", "source_file": "mortgage_193", "domain": "mortgage", "answer": {"40": null, "41": null, "42": "04-15-2025", "43": "1", "Unit1_b": "05-29-2025", "Unit2_b": null}, "field_matches": {"40": true, "41": true, "42": false, "43": true, "Unit1_b": false, "Unit2_b": true}, "match": false}

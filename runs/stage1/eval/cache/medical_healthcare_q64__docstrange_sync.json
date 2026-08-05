@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q64", "parser": "docstrange_sync", "source_file": "medical_healthcare_29", "domain": "medical_healthcare", "answer": {"cause_of_death_a": "Acute effects of ketamine"}, "field_matches": {"cause_of_death_a": true}, "match": true}
