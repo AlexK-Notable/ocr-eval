@@ -700,7 +700,11 @@ def score(
 @app.command()
 def report(
     run_dir: Path = typer.Option(..., "--run-dir"),
-    registry: Path = typer.Option(REPO_ROOT / "configs" / "registry.yaml", "--registry"),
+    registry: list[Path] = typer.Option(
+        [REPO_ROOT / "configs" / "registry.yaml"], "--registry",
+        help="Repeatable. A run dir can legitimately hold rows from more than one registry "
+             "(e.g. configs/registry.yaml + configs/registry-bedrock.yaml); pass each one so "
+             "every row resolves its stamp columns instead of rendering '(unregistered)'."),
     allow_stale_render: bool = typer.Option(
         False, "--allow-stale-render",
         help="D3: proceed even when a vlm__ row's stored image_sha no longer matches a "
@@ -717,7 +721,15 @@ def report(
 
     layout = RunLayout.at(run_dir)
     _preflight(layout)
-    entries = load_registry(registry)
+    # Concatenate, then re-check ids ACROSS files: `load_registry` only rejects duplicates within
+    # one file, and two registries silently sharing an id would make `_resolve_entry` pick by list
+    # order — a stamp column quietly attributed to the wrong entry. Fail closed instead.
+    entries = [e for path in registry for e in load_registry(path)]
+    ids = [e.id for e in entries]
+    cross_dupes = sorted({i for i in ids if ids.count(i) > 1})
+    if cross_dupes:
+        console.print(f"[red]duplicate registry ids across --registry files: {cross_dupes}[/red]")
+        raise typer.Exit(1)
     try:
         md = build_markdown_report(layout, entries, allow_stale_render=allow_stale_render,
                                    iters=iters)

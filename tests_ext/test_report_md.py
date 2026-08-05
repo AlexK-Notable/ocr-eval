@@ -381,6 +381,82 @@ def test_report_cli_exits_nonzero_on_stale_render_then_succeeds_with_flag(tmp_pa
     assert (layout.root / "report.md").exists()
 
 
+def _two_row_layout(tmp_path: Path) -> tuple[RunLayout, str, str]:
+    """One run dir holding rows from two different registries — the real shape after a Bedrock
+    leg and an OpenRouter leg land in the same run dir."""
+    layout = _minimal_layout(tmp_path, with_pdf=True)
+    items = [{"question_id": "cb0", "source_file": "doc_0", "domain": "test",
+              "question": "checked?", "capabilities": ["checkbox_state"],
+              "gold_dict": {"checked": True}}]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    png = _render_page(layout, "doc_0", STAGE1_CONDITION, layout.root / "docs_png")
+    image_sha = hashlib.sha256(png).hexdigest()
+    pk_a = parser_key("vlmH@mock", STAGE1_CONDITION)
+    pk_b = parser_key("haiku@bedrock", STAGE1_CONDITION)
+    for pk, prov in ((pk_a, "ProviderA"), (pk_b, "bedrock:us-east-1")):
+        rec = {"qid": "cb0", "parser": pk, "source_file": "doc_0", "domain": "test",
+               "condition": STAGE1_CONDITION, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+               "image_sha": image_sha, "resolved_provider": prov,
+               "answer": {"checked": True}, "field_matches": {"checked": True}, "match": True,
+               "error_class": "none"}
+        cpath = layout.cache_path("cb0", pk)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps(rec))
+    return layout, pk_a, pk_b
+
+
+def test_report_registry_flag_is_repeatable_so_every_row_resolves_its_stamps(tmp_path, monkeypatch):
+    """A run dir can legitimately hold rows from two registries (configs/registry.yaml plus
+    configs/registry-bedrock.yaml). With only one passed, the other's rows render
+    '(unregistered)' — metrics are still correct, but precision/licence/ToS/contamination all
+    read 'unknown', which is exactly the provenance a comparative table needs."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout, _pk_a, _pk_b = _two_row_layout(tmp_path)
+    reg_main = tmp_path / "registry.yaml"
+    reg_bed = tmp_path / "registry-bedrock.yaml"
+    _write_single_vlm_registry(reg_main, "vlmH@mock", "http://vlmH.invalid/v1")
+    reg_bed.write_text(yaml.safe_dump([{
+        "id": "haiku@bedrock", "shape": "vlm-chat", "transport": "bedrock-converse",
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0", "region": "us-east-1",
+        "precision": "provider-default", "weights_licence": "closed",
+        "provider_tos_commercial": "ok", "provenance": "Anthropic", "release_date": "2025-10-01",
+    }]))
+
+    # One registry: the Bedrock row cannot resolve.
+    r1 = runner.invoke(app, ["report", "--run-dir", str(layout.root),
+                             "--registry", str(reg_main), "--iters", "50"])
+    assert r1.exit_code == 0, r1.output
+    assert "(unregistered)" in (layout.root / "report.md").read_text()
+
+    # Both registries: every row resolves, so no row is left unstamped.
+    r2 = runner.invoke(app, ["report", "--run-dir", str(layout.root),
+                             "--registry", str(reg_main), "--registry", str(reg_bed),
+                             "--iters", "50"])
+    assert r2.exit_code == 0, r2.output
+    md = (layout.root / "report.md").read_text()
+    assert "(unregistered)" not in md
+    assert "haiku@bedrock" in md and "vlmH@mock" in md
+
+
+def test_report_rejects_duplicate_ids_across_registry_files(tmp_path, monkeypatch):
+    """`load_registry` only dedupes WITHIN one file. Two files sharing an id would make
+    resolution depend on argument order — a stamp column silently attributed to the wrong entry.
+    Fail closed instead."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    layout, _pk_a, _pk_b = _two_row_layout(tmp_path)
+    reg_1 = tmp_path / "r1.yaml"
+    reg_2 = tmp_path / "r2.yaml"
+    _write_single_vlm_registry(reg_1, "collide@mock", "http://one.invalid/v1")
+    _write_single_vlm_registry(reg_2, "collide@mock", "http://two.invalid/v1")
+
+    result = runner.invoke(app, ["report", "--run-dir", str(layout.root),
+                                 "--registry", str(reg_1), "--registry", str(reg_2),
+                                 "--iters", "50"])
+    assert result.exit_code == 1
+    assert "duplicate registry ids across" in result.output
+    assert "collide@mock" in result.output
+
+
 # ── C1: STALE-RENDER must genuinely re-render, never read back the cache that produced image_sha ──
 
 def test_c1_stale_render_positive_control_swapped_pdf_is_detected(tmp_path):
