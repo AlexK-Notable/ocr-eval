@@ -180,6 +180,35 @@ def test_usage_is_remapped_to_openai_field_names_and_keeps_native_shape():
     assert provider == "google:generativelanguage"
 
 
+def test_omitted_candidates_token_count_becomes_zero_not_none():
+    """Google OMITS `candidatesTokenCount` entirely when the completion is empty — verified on a real
+    cell, whose usageMetadata was `{promptTokenCount: 1928, totalTokenCount: 1928}` with no
+    candidates field. Mapping that to None killed a full-bank run ~300 cells in, because
+    `run_direct`'s cost tracker does `u.get("completion_tokens", 0) / 1e6` and a dict default does
+    NOT fire for a present-but-None key: `TypeError: unsupported operand type(s) for /: 'NoneType'
+    and 'float'`. Zero is also the honest value — no completion tokens were produced."""
+    body = {"candidates": [{"content": {"parts": []}, "finishReason": "MAX_TOKENS"}],
+            "usageMetadata": {"promptTokenCount": 1928, "totalTokenCount": 1928}}
+    c = gn.GeminiNativeClient("k", model="m",
+                              client=_client(lambda r: httpx.Response(200, json=body)))
+    _t, usage, _p = c.generate(system="s", prompt="p", png=PNG, temperature=0.0, top_p=1.0,
+                               max_tokens=64, media_resolution=GEMINI_MEDIA_RESOLUTION)
+    assert usage["completion_tokens"] == 0
+    assert usage["prompt_tokens"] == 1928
+    # arithmetic that previously raised must now work
+    assert (usage["prompt_tokens"] / 1e6) + (usage["completion_tokens"] / 1e6) > 0
+
+
+def test_entirely_absent_usage_metadata_is_all_zeros():
+    body = {"candidates": [{"content": {"parts": [{"text": "{}"}]}, "finishReason": "STOP"}]}
+    c = gn.GeminiNativeClient("k", model="m",
+                              client=_client(lambda r: httpx.Response(200, json=body)))
+    _t, usage, _p = c.generate(system="s", prompt="p", png=None, temperature=0.0, top_p=1.0,
+                               max_tokens=8, media_resolution=GEMINI_MEDIA_RESOLUTION)
+    assert usage["prompt_tokens"] == 0 and usage["completion_tokens"] == 0
+    assert usage["total_tokens"] == 0
+
+
 def test_multi_part_text_is_joined():
     body = {"candidates": [{"content": {"parts": [{"text": "a"}, {"text": "b"}]},
                             "finishReason": "STOP"}], "usageMetadata": {}}

@@ -518,8 +518,17 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
         u = rec.get("usage") or {}
         cost = u.get("cost")
         if cost is None and entry.pricing:                 # vLLM/local/no-cost-field fallback
-            cost = (u.get("prompt_tokens", 0) / 1e6) * entry.pricing["input_per_mtok"] \
-                 + (u.get("completion_tokens", 0) / 1e6) * entry.pricing["output_per_mtok"]
+            # `or 0` on each count, NOT `.get(k, 0)`: a provider that OMITS a token field gives a
+            # present-but-None key once the transport has normalized its usage dict, and a dict
+            # default never fires for that. Gemini omits `candidatesTokenCount` whenever the
+            # completion is empty, which killed a full-bank run ~300 cells in with
+            # `TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'`. The transports
+            # now coerce at the source too; this is the belt-and-braces layer, because the cost of
+            # being wrong here is a dead run mid-spend rather than a bad number.
+            prompt_toks = u.get("prompt_tokens") or 0
+            completion_toks = u.get("completion_tokens") or 0
+            cost = (prompt_toks / 1e6) * entry.pricing["input_per_mtok"] \
+                 + (completion_toks / 1e6) * entry.pricing["output_per_mtok"]
         if cost is None:
             if max_spend_usd is not None:
                 # FAIL CLOSED: never treat an unknown cost as free. A cell whose true cost cannot

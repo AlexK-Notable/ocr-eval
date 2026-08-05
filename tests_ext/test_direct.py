@@ -205,6 +205,31 @@ def test_max_spend_aborts_on_priced_mock(tmp_path):
         run_direct(layout, [entry(mock.base_url)], max_spend_usd=0.01)
 
 
+def test_spend_tracking_survives_a_null_token_count(tmp_path):
+    """A provider may OMIT a token field rather than send 0 — Gemini omits `candidatesTokenCount`
+    whenever the completion is empty. Once a transport has normalized usage into the shared dict
+    shape, that arrives as a present-but-None key, and `u.get("completion_tokens", 0)`'s default does
+    NOT fire for it. This killed a real full-bank run ~300 cells into paid spend with
+    `TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'`.
+
+    Uses registry pricing with no `usage.cost`, which is exactly the path that divides."""
+    layout = make_run_dir(tmp_path)
+    priced = entry("http://placeholder.invalid/v1").model_copy(
+        update={"pricing": {"input_per_mtok": 1.0, "output_per_mtok": 2.0}})
+    responses = [{"body": _success_body({"prompt_tokens": 100, "completion_tokens": None})}]
+    with MockOpenAI(responses=responses) as mock:
+        priced = priced.model_copy(update={"base_url": mock.base_url})
+        summary = run_direct(layout, [priced], max_spend_usd=10.0)
+    # The claim is that spend tracking does not EXPLODE on a null count. `spend` is a local inside
+    # run_direct (not surfaced in the summary), so the observable assertion is that the cell
+    # completed and was scored — previously this raised before either could happen.
+    assert summary["ok"] == 1 and summary["error"] == 0
+    pk = parser_key(priced.id, STAGE1_CONDITION)
+    rec = json.loads(layout.cache_path("q1", pk).read_text())
+    assert rec["error_class"] == "none" and rec["match"] is True
+    assert rec["usage"]["completion_tokens"] is None    # the row keeps what the provider sent
+
+
 def test_max_spend_fails_closed_without_cost_or_pricing(tmp_path):
     """C1 ruling: an unresolvable cost (no usage.cost, no registry pricing) must abort the run
     rather than being treated as free — this is the mutant `spend += cost or 0.0` would pass."""

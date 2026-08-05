@@ -194,9 +194,17 @@ class GeminiNativeClient:
         um = raw.get("usageMetadata") or {}
         usage = {
             # Remapped to the openai-compat field names so metrics/report code needs no branch.
-            "prompt_tokens": um.get("promptTokenCount"),
-            "completion_tokens": um.get("candidatesTokenCount"),
-            "total_tokens": um.get("totalTokenCount"),
+            #
+            # `or 0` rather than `.get(k)`: Google OMITS `candidatesTokenCount` entirely when the
+            # completion is empty (verified on a real cell — `usageMetadata` came back as
+            # `{promptTokenCount: 1928, totalTokenCount: 1928}` with no candidates field at all).
+            # A None here reaches `run_direct`'s `track()` as `u.get("completion_tokens", 0)`, whose
+            # default does NOT fire for a present-but-None key, and killed a full-bank run with
+            # `TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'` after ~300
+            # cells. Zero is also the honest value: no completion tokens were generated.
+            "prompt_tokens": um.get("promptTokenCount") or 0,
+            "completion_tokens": um.get("candidatesTokenCount") or 0,
+            "total_tokens": um.get("totalTokenCount") or 0,
             "gemini_usage": um,                      # native shape kept verbatim alongside
             "finish_reason": first.get("finishReason"),
             "media_resolution": media_resolution,    # what the row was ACTUALLY served at
