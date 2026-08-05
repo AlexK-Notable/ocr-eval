@@ -64,11 +64,13 @@ uv run ocr-eval report --run-dir runs/stage1 \
 | Keyless local direct-QA smoke (Ollama vlm-chat → cache → `report.md`) | Implemented, live-validated |
 | Condition-hash disambiguation (same registry id, two condition hashes) | Implemented, live-validated |
 | Hosted `vlm-chat` candidates (OpenRouter Qwen3-VL/Qwen3.5) | Implemented; needs `OPENROUTER_API_KEY`, unrun |
-| Gemini extractor validation gate + scoring leg | Implemented; needs `GEMINI_API_KEY`, unrun |
+| Gemini extractor validation gate + scoring leg | **Run** — 4,068 cells scored, 0 errors; extractor now `gemini-3.1-flash-lite` (divergence D11) |
 | Hosted transcriber (Mistral OCR 4) | Implemented; needs `MISTRAL_API_KEY`, unrun |
-| Hosted transcriber (Nanonets DocStrange) | Implemented, single-page live smoke passed; full corpus unrun — needs `DOCSTRANGE_API_KEY`, $0.01/page (581 pages ≈ $5.81), ~55 s/page |
+| Hosted transcriber (Nanonets DocStrange) | **Run + scored** — 581/581 parsed ($5.81), 93.0% checkbox, 97.6% transcript-recall, 82.1% strict ([results](docs/results-stage1-2026-08-04.md)) |
+| Hosted transcribers (Qwen3-VL 8B / 32B) | **Run + scored** — 1,162/1,162 parsed, 0 fail; 32B ties DocStrange on checkboxes at ~1/8 the cost |
+| Transcriber `qwen3.5-9b` | Registered but **not viable** — non-terminating on ~half of dense pages, any budget; see results doc §5 |
 | Local vLLM specialists (GLM-OCR, dots.ocr) | Implemented ([local-serving.md](docs/local-serving.md)); unrun |
-| Reproduction gate (DoD #2) | Implemented; needs a scored transcriber row to evaluate |
+| Reproduction gate (DoD #2) | Has its first scored transcriber rows; comparison against upstream Table 3 not yet done (D11 changed the extractor — see results doc §3) |
 | Stage 2 (conditions, classical engines) / Stage 3 (CheckboxQA, HITL) | Not started — see [roadmap](docs/superpowers/plans/2026-08-01-stage2-3-roadmap.md) |
 
 ## Doc map
@@ -81,6 +83,7 @@ uv run ocr-eval report --run-dir runs/stage1 \
 | [`docs/api.md`](docs/api.md) | Provider contract, retry policy, cost control, per-provider serving notes and caveats |
 | [`docs/runbook-stage1.md`](docs/runbook-stage1.md) | The operational, numbered Stage 1 run procedure and DoD checklist |
 | [`docs/local-serving.md`](docs/local-serving.md) | vLLM launch lines and context-budget arithmetic for local specialists |
+| [`docs/results-stage1-2026-08-04.md`](docs/results-stage1-2026-08-04.md) | Measured Stage 1 results: the three scored transcriber rows, extractor A/B, budget sizing, harness defects found |
 | [`docs/applicability-table.md`](docs/applicability-table.md) | Which condition axis binds to which pipeline step, per shape |
 | [`docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md`](docs/superpowers/specs/2026-08-01-ocr-eval-pipeline-design.md) | The design spec (rev 2 + rev 2.1 divergence appendix) |
 | [`docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md`](docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md) | The implementation plan and full divergence ledger (D1–D10) |

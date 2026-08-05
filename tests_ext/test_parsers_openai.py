@@ -260,6 +260,63 @@ def test_register_openai_parsers_threads_provider_pin_into_built_parser(tmp_path
     assert instance._provider_pin == {"order": ["Alibaba"], "allow_fallbacks": False}
 
 
+# ── the transcription leg must price itself from registry rates ────────────────────────────────
+# Dynamically-registered parser names can never appear in the static catalog.yaml, so
+# VisionParserBase's parse_cost/agent_cost lookups both miss and cost comes back None — which
+# upstream _parse_one writes to disk as a literal 0.0. Live consequence: both Qwen transcriber
+# rows rendered "realized cost: $0.0000" after a run that actually cost ~$0.70 each.
+
+def _priced_pdf(tmp_path):
+    pdf = tmp_path / "d.pdf"
+    doc = fitz.open()
+    doc.new_page(width=612, height=792)
+    doc.save(pdf)
+    return pdf
+
+
+def test_transcription_leg_is_priced_from_registry_rates(tmp_path):
+    pdf = _priced_pdf(tmp_path)
+    with MockOpenAI(reply_text="hello") as mock:          # mock reports 100 in / 10 out
+        p = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m",
+                                     pricing={"input_per_mtok": 1.0, "output_per_mtok": 10.0})
+        result = p.parse(pdf)
+    expected = (100 / 1e6) * 1.0 + (10 / 1e6) * 10.0
+    assert result.cost_estimate_usd == pytest.approx(expected)
+    assert result.cost_estimate_usd > 0                   # the whole point: not a fabricated zero
+
+
+def test_unpriced_entry_stays_unknown_rather_than_zero(tmp_path):
+    """None must NOT collapse to 0.0 here — report_md's M1 guard distinguishes 'unpriced' from
+    'confirmed free', and it can only do that if a genuine unknown stays None."""
+    pdf = _priced_pdf(tmp_path)
+    with MockOpenAI(reply_text="hello") as mock:
+        result = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m").parse(pdf)
+    assert result.cost_estimate_usd is None
+
+
+def test_unrecognised_pricing_shape_stays_unknown(tmp_path):
+    """A page-rate-shaped dict (or any unexpected shape) must not raise or invent a number."""
+    pdf = _priced_pdf(tmp_path)
+    with MockOpenAI(reply_text="hello") as mock:
+        result = OpenAICompatVisionParser(base_url=mock.base_url, model="org/m",
+                                          pricing={"usd_per_page": 0.01}).parse(pdf)
+    assert result.cost_estimate_usd is None
+
+
+def test_register_openai_parsers_threads_pricing_into_built_parser(tmp_path):
+    registry_path = tmp_path / "r.yaml"
+    _write_registry(registry_path, [{
+        "id": "priced@openrouter", "shape": "transcriber", "transport": "openai-compat",
+        "base_url": "https://openrouter.ai/api/v1", "model": "org/priced",
+        "pricing": {"input_per_mtok": 0.117, "output_per_mtok": 0.455},
+        "api_key_env": None, "precision": "provider-default", "weights_licence": "mit",
+        "provider_tos_commercial": "ok", "provenance": "X", "release_date": "2025-01-01",
+    }])
+    names = register_openai_parsers(registry_path)
+    from realdoc_bench.evaluate.parsers.base import build
+    assert build(names[0])._pricing == {"input_per_mtok": 0.117, "output_per_mtok": 0.455}
+
+
 # ── truncated response bodies are retried on the TRANSCRIBER leg too ──────────────────────────
 # This is the path that actually failed in production: a qwen3.5-9b page died with
 # `JSONDecodeError: Expecting value: line 1595 column 1 (char 8767)` after 335s, was classified

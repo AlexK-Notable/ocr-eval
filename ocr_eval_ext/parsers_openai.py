@@ -71,7 +71,8 @@ class OpenAICompatVisionParser(VisionParserBase):
     # this condition reproduces exactly the failure described above, on every page.
 
     def __init__(self, *, base_url: str, model: str, api_key_env: str | None = None,
-                 provider_pin: dict | None = None, reasoning: dict | None = None):
+                 provider_pin: dict | None = None, reasoning: dict | None = None,
+                 pricing: dict | None = None):
         import os
 
         from openai import OpenAI
@@ -87,6 +88,8 @@ class OpenAICompatVisionParser(VisionParserBase):
         self._model = model
         self._reasoning = reasoning            # caps thinking so it cannot eat the whole
                                                  # completion budget (see TRANSCRIBER_CONDITION)
+        self._pricing = pricing                # registry per-token rates; see `parse` below for
+                                                 # why the transcription leg has to price itself
         self._provider_pin = provider_pin      # I2: hosted transcribers (e.g. OpenRouter) honor
                                                  # this exactly like direct.py's `_one` does
         # N1: upstream `run_parse` builds ONE `ParseProvider` instance per parser name and shares
@@ -175,6 +178,39 @@ class OpenAICompatVisionParser(VisionParserBase):
                     usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
         raise RuntimeError("unreachable")  # loop above always returns or raises
 
+    def _priced(self, result: ParseResult) -> float | None:
+        """Price the transcription leg from the registry entry's per-token rates.
+
+        `VisionParserBase.parse` prices via `parse_cost(pricing_key or name)` and then
+        `agent_cost(...)`, both of which look the name up in `catalog.yaml`. Parsers built here
+        are registered DYNAMICALLY (`safe_name(id) + "__" + condition_hash`), so their names can
+        never be in a static catalog and both lookups miss — cost comes back `None`, and upstream
+        `_parse_one` writes `result.cost_estimate_usd or 0.0`, turning "unknown" into a literal
+        `0.0` on disk.
+
+        That reads as FREE. Live consequence: both Qwen transcriber rows rendered
+        `realized cost: $0.0000` in Section B after a run that actually cost ~$0.70 each.
+        `report_md._transcription_cost_latency`'s M1 guard is supposed to catch exactly this and
+        print "n/a (unpriced)", but it only fires when the entry carries no `pricing` at all —
+        these entries DO carry per-token rates, so the guard concluded the zero was real. The
+        guard was not wrong; the leg simply never consulted the rates it was holding.
+
+        Registry rates are USD per MILLION tokens (`input_per_mtok`/`output_per_mtok`), matching
+        `direct.py`'s usage. Returns None — never 0.0 — when the entry has no usable rates or the
+        provider reported no usage, so a genuine unknown stays distinguishable from a real zero
+        and the M1 guard can still do its job."""
+        if not self._pricing:
+            return result.cost_estimate_usd
+        raw = result.raw or {}
+        in_tok, out_tok = raw.get("input_tokens"), raw.get("output_tokens")
+        if not in_tok and not out_tok:
+            return result.cost_estimate_usd          # provider returned no usage — stays unknown
+        try:
+            return ((in_tok or 0) / 1e6) * self._pricing["input_per_mtok"] + \
+                   ((out_tok or 0) / 1e6) * self._pricing["output_per_mtok"]
+        except (KeyError, TypeError):
+            return result.cost_estimate_usd          # unrecognised pricing shape — stay unknown
+
     def parse(self, pdf_path: Path, *, cache_dir: Path | None = None) -> ParseResult:
         """I2/N1: wraps `VisionParserBase.parse` purely to surface the resolved provider(s)
         collected across pages by `_call_page` — that base method's per-page loop only threads
@@ -200,6 +236,7 @@ class OpenAICompatVisionParser(VisionParserBase):
         self._tl.providers = set()
         try:
             result = super().parse(pdf_path, cache_dir=cache_dir)
+            result.cost_estimate_usd = self._priced(result)
         finally:
             # L2: drain _fanout_providers unconditionally — including when parse() raised — so a
             # document whose fan-out failed never leaves residual providers for a LATER
@@ -252,7 +289,8 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
         if e.shape != "transcriber" or e.transport != "openai-compat":
             continue
         name = f"{safe_name(e.id)}__{suffix}"
-        binding = (e.base_url, e.model, e.api_key_env, e.provider_pin, e.reasoning)
+        binding = (e.base_url, e.model, e.api_key_env, e.provider_pin, e.reasoning,
+                   None if e.pricing is None else tuple(sorted(e.pricing.items())))
         if name in parser_registry:
             existing_binding = getattr(parser_registry.get(name), "_registry_binding", None)
             if existing_binding is not None and existing_binding != binding:
@@ -268,7 +306,8 @@ def register_openai_parsers(registry_path: Path) -> list[str]:
             OpenAICompatVisionParser.__init__(self, base_url=_e.base_url, model=_e.model,
                                               api_key_env=_e.api_key_env,
                                               provider_pin=_e.provider_pin,
-                                              reasoning=_e.reasoning)
+                                              reasoning=_e.reasoning,
+                                              pricing=_e.pricing)
 
         cls = type(name, (OpenAICompatVisionParser,), {
             "__init__": _init,
