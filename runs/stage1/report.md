@@ -1,6 +1,6 @@
 # Stage 1 OCR Evaluation Report
 
-Generated: 2026-08-05T15:57:52.291428+00:00
+Generated: 2026-08-05T16:39:03.377993+00:00
 Dataset revision: 906170ab201d7b8238a32a9115fc66b4b72e0710 (revision_source: hf_metadata)
 Harness commit: fb26a6876481de76dc293f722ab4efa71279904d
 Extractor: gemini-3.1-flash-lite
@@ -22,14 +22,16 @@ precision unasserted across all rows in this section
 
 | model | checkbox acc-over-all | polarity checked/unchecked | blank/null acc-over-all | hallucination_rate | general/field | strict/question | beats majority |
 |---|---|---|---|---|---|---|---|
-| qwen3-vl-8b@openrouter | 90.7% [86.3%, 94.6%] (n_docs=123) | checked 95.8% / unchecked 81.7% | 77.1% [68.5%, 84.9%] (n_docs=94) | 22.9% (n_answered=188, error_rate=0.0%) | 86.4% | 75.1% | yes |
-| **INCOMPLETE (369/1356)** qwen3.5-9b@openrouter | 36.0% [28.0%, 45.4%] (n_docs=123) | checked 45.5% / unchecked 19.4% | 0.5% [0.0%, 1.8%] (n_docs=94) | 66.7% (n_answered=3, error_rate=98.4%) | 13.1% | 19.1% | no |
-| **INCOMPLETE (1035/1356)** vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) | 87.2% [81.8%, 92.1%] (n_docs=123) | checked 94.5% / unchecked 74.2% | 23.9% [15.4%, 32.9%] (n_docs=94) | 19.6% (n_answered=56, error_rate=70.2%) | 54.4% | 57.9% | yes |
-| vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered) | 87.2% [81.9%, 91.8%] (n_docs=123) | checked 93.3% / unchecked 76.3% | 62.2% [51.9%, 72.0%] (n_docs=94) | 20.4% (n_answered=147, error_rate=21.8%) | 78.0% | 70.3% | yes |
+| claude-haiku-4.5@bedrock | 88.8% [83.3%, 93.5%] (n_docs=123) | checked 96.4% / unchecked 75.3% | 89.4% [83.1%, 94.4%] (n_docs=94) | 6.7% (n_answered=180, error_rate=4.3%) | 83.0% | 71.7% | yes |
+| qwen3-vl-8b@openrouter ⚠STALE-RENDER | 90.7% [86.3%, 94.6%] (n_docs=123) | checked 95.8% / unchecked 81.7% | 77.1% [68.5%, 84.9%] (n_docs=94) | 22.9% (n_answered=188, error_rate=0.0%) | 86.4% | 75.1% | yes |
+| **INCOMPLETE (369/1356)** qwen3.5-9b@openrouter ⚠STALE-RENDER | 36.0% [28.0%, 45.4%] (n_docs=123) | checked 45.5% / unchecked 19.4% | 0.5% [0.0%, 1.8%] (n_docs=94) | 66.7% (n_answered=3, error_rate=98.4%) | 13.1% | 19.1% | no |
+| **INCOMPLETE (1035/1356)** vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) ⚠STALE-RENDER | 87.2% [81.8%, 92.1%] (n_docs=123) | checked 94.5% / unchecked 74.2% | 23.9% [15.4%, 32.9%] (n_docs=94) | 19.6% (n_answered=56, error_rate=70.2%) | 54.4% | 57.9% | yes |
+| vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered) ⚠STALE-RENDER | 87.2% [81.9%, 91.8%] (n_docs=123) | checked 93.3% / unchecked 76.3% | 62.2% [51.9%, 72.0%] (n_docs=94) | 20.4% (n_answered=147, error_rate=21.8%) | 78.0% | 70.3% | yes |
 | **INCOMPLETE (60/1356)** vlm__qwen3-vl-8b@ollama-validation-ctx16k__8b1b841fc49b (unregistered) | 14.3% [7.6%, 21.7%] (n_docs=123) | checked 17.0% / unchecked 9.7% | 0.0% [0.0%, 0.0%] (n_docs=94) | 0.0% (n_answered=0, error_rate=100.0%) | 2.0% | 3.3% | no |
 | **INCOMPLETE (60/1356)** vlm__qwen3-vl-8b@ollama-validation__42581bd83e8a (unregistered) | 10.5% [5.3%, 16.1%] (n_docs=123) | checked 10.9% / unchecked 9.7% | 0.0% [0.0%, 0.0%] (n_docs=94) | 0.0% (n_answered=0, error_rate=100.0%) | 1.6% | 2.9% | no |
 | **INCOMPLETE (60/1356)** vlm__qwen3-vl-8b@ollama-validation__4caf39e9ac1f (unregistered) | 8.9% [4.5%, 14.2%] (n_docs=123) | checked 10.3% / unchecked 6.5% | 0.0% [0.0%, 0.0%] (n_docs=94) | 0.0% (n_answered=0, error_rate=100.0%) | 1.4% | 2.6% | no |
 
+- **claude-haiku-4.5@bedrock** — precision: unknown (not asserted) · licence: closed · ToS: ok — AWS Bedrock: no training on customer inputs by default (AWS  · contaminated: no · contract: promptable · providers seen: bedrock:us-east-1 · median latency: 1.54s · realized cost: n/a · n: 1356/1356 · error classes: api_error=20, none=1331, parse_error=5
 - **qwen3-vl-8b@openrouter** — precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok · contaminated: no · contract: promptable · providers seen: Alibaba · median latency: 1.49s · realized cost: $0.3897 · n: 1356/1356 · error classes: none=1353, parse_error=3
 - **qwen3.5-9b@openrouter** — precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok — pinned DeepInfra: cleanest commercial ToS in survey; Silicon · contaminated: no · contract: promptable · providers seen: DeepInfra · median latency: 11.10s · realized cost: $0.0657 · n: 369/1356 · error classes: api_error=6, empty=51, missing=987, none=311, parse_error=1
 - **vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered)** — precision: unknown (unregistered) · licence: unknown (unregistered) · ToS: unknown (unregistered) · contaminated: unknown (unregistered) · contract: unknown (unregistered) · providers seen: (none recorded) · median latency: 2.31s · realized cost: n/a · n: 1035/1356 · error classes: missing=321, none=1035
@@ -48,6 +50,7 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 | row | mortgage | finance | supply_chain | medical_healthcare |
 |---|---|---|---|---|
+| claude-haiku-4.5@bedrock | 84.4% [80.1%, 88.1%] (n=1502, d=222) | 81.4% [77.5%, 85.1%] (n=703, d=172) | 84.6% [80.3%, 88.5%] (n=1215, d=113) | 74.5% [63.8%, 83.8%] (n=322, d=74) |
 | vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) | 76.6% [71.6%, 81.1%] (n=1502, d=222) | 79.7% [75.2%, 84.0%] (n=703, d=172) | 8.2% [5.3%, 11.8%] (n=1215, d=113) | 69.6% [58.4%, 79.9%] (n=322, d=74) |
 | vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered) | 72.6% [66.8%, 78.4%] (n=1502, d=222) | 80.4% [75.8%, 84.5%] (n=703, d=172) | 84.1% [79.9%, 87.7%] (n=1215, d=113) | 74.5% [66.8%, 82.1%] (n=322, d=74) |
 | qwen3-vl-8b@openrouter | 91.1% [88.9%, 93.0%] (n=1502, d=222) | 81.5% [77.3%, 85.5%] (n=703, d=172) | 86.4% [82.4%, 90.1%] (n=1215, d=113) | 75.2% [67.6%, 82.5%] (n=322, d=74) |
@@ -68,6 +71,7 @@ _Cells are acc-over-all with a document-clustered 95% CI; `n` = gold fields, `d`
 
 | row | field_value_pairing | checkbox_state | column_alignment | row_binding | table_structure | form_region | parallel_columns | line_binding | scanned_form | multi_column_grid | handdrawn_check | blank_field |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| claude-haiku-4.5@bedrock | 84.7% [81.6%, 87.6%] (n=1239, d=335) | 81.7% [76.8%, 86.1%] (n=1049, d=252) | 82.0% [77.1%, 86.9%] (n=768, d=250) | 85.7% [81.7%, 89.6%] (n=790, d=226) | 87.9% [83.8%, 91.4%] (n=993, d=190) | 82.1% [77.0%, 86.9%] (n=515, d=180) | 86.7% [81.4%, 91.3%] (n=451, d=157) | 80.1% [74.7%, 85.2%] (n=397, d=147) | 72.5% [65.8%, 79.2%] (n=408, d=121) | 81.2% [74.5%, 87.3%] (n=404, d=119) | 91.6% [87.7%, 95.0%] (n=238, d=83) | 84.4% [80.0%, 88.9%] (n=270, d=97) |
 | vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) | 56.3% [49.8%, 63.8%] (n=1239, d=335) | 61.3% [54.0%, 69.0%] (n=1049, d=252) | 63.0% [56.2%, 69.9%] (n=768, d=250) | 62.7% [55.5%, 69.9%] (n=790, d=226) | 45.0% [36.0%, 54.9%] (n=993, d=190) | 64.1% [56.1%, 72.0%] (n=515, d=180) | 78.0% [70.4%, 85.1%] (n=451, d=157) | 73.3% [64.7%, 81.0%] (n=397, d=147) | 64.5% [54.3%, 75.2%] (n=408, d=121) | 59.4% [49.6%, 68.8%] (n=404, d=119) | 85.7% [79.5%, 91.2%] (n=238, d=83) | 68.5% [57.6%, 79.0%] (n=270, d=97) |
 | vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered) | 85.5% [82.7%, 88.0%] (n=1239, d=335) | 76.0% [70.2%, 81.2%] (n=1049, d=252) | 80.5% [75.5%, 85.2%] (n=768, d=250) | 81.0% [75.9%, 85.9%] (n=790, d=226) | 75.8% [68.3%, 82.3%] (n=993, d=190) | 85.2% [81.4%, 88.9%] (n=515, d=180) | 83.8% [77.1%, 89.6%] (n=451, d=157) | 84.9% [80.2%, 89.0%] (n=397, d=147) | 82.6% [77.5%, 87.4%] (n=408, d=121) | 74.0% [66.1%, 81.3%] (n=404, d=119) | 85.3% [79.2%, 90.6%] (n=238, d=83) | 83.3% [78.6%, 87.7%] (n=270, d=97) |
 | qwen3-vl-8b@openrouter | 87.6% [85.2%, 89.8%] (n=1239, d=335) | 84.4% [80.2%, 87.9%] (n=1049, d=252) | 83.3% [79.0%, 87.3%] (n=768, d=250) | 85.7% [81.3%, 89.6%] (n=790, d=226) | 87.2% [83.2%, 90.7%] (n=993, d=190) | 83.5% [78.8%, 87.8%] (n=515, d=180) | 90.2% [86.4%, 93.8%] (n=451, d=157) | 86.1% [81.6%, 90.2%] (n=397, d=147) | 81.9% [75.4%, 87.6%] (n=408, d=121) | 81.9% [76.1%, 87.4%] (n=404, d=119) | 89.1% [82.9%, 94.2%] (n=238, d=83) | 82.6% [77.2%, 87.1%] (n=270, d=97) |
@@ -164,6 +168,13 @@ _upstream construction — for the reproduction gate only; not the ranking key._
 Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section only (Section A vs Section B pipelines are not directly comparable — see the cross-shape note above). Sign convention: Δ = first label minus second label (a positive Δ favors the FIRST name listed in each comparison).
 
 ### Section A
+- claude-haiku-4.5@bedrock vs vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) [INCOMPLETE 1035/1356]: not separable — Δ CI [-3.2pp, 6.3pp] spans 0
+- claude-haiku-4.5@bedrock vs vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered): not separable — Δ CI [-2.8pp, 6.3pp] spans 0
+- claude-haiku-4.5@bedrock vs qwen3-vl-8b@openrouter: not separable — Δ CI [-6.2pp, 2.1pp] spans 0
+- claude-haiku-4.5@bedrock vs qwen3.5-9b@openrouter [INCOMPLETE 369/1356]: separable — claude-haiku-4.5@bedrock ahead, Δ=[42.9pp, 61.7pp]
+- claude-haiku-4.5@bedrock vs vlm__qwen3-vl-8b@ollama-validation-ctx16k__8b1b841fc49b (unregistered) [INCOMPLETE 60/1356]: separable — claude-haiku-4.5@bedrock ahead, Δ=[66.4pp, 82.0pp]
+- claude-haiku-4.5@bedrock vs vlm__qwen3-vl-8b@ollama-validation__42581bd83e8a (unregistered) [INCOMPLETE 60/1356]: separable — claude-haiku-4.5@bedrock ahead, Δ=[71.4pp, 85.1pp]
+- claude-haiku-4.5@bedrock vs vlm__qwen3-vl-8b@ollama-validation__4caf39e9ac1f (unregistered) [INCOMPLETE 60/1356]: separable — claude-haiku-4.5@bedrock ahead, Δ=[73.2pp, 86.3pp]
 - vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) [INCOMPLETE 1035/1356] vs vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f (unregistered): not separable — Δ CI [-2.4pp, 2.3pp] spans 0
 - vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) [INCOMPLETE 1035/1356] vs qwen3-vl-8b@openrouter: separable — qwen3-vl-8b@openrouter ahead, Δ=[-6.8pp, -0.4pp]
 - vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) [INCOMPLETE 1035/1356] vs qwen3.5-9b@openrouter [INCOMPLETE 369/1356]: separable — vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f (unregistered) [INCOMPLETE 1035/1356] ahead, Δ=[41.4pp, 60.1pp]
@@ -190,4 +201,15 @@ Pairwise paired-bootstrap deltas on checkbox acc-over-all, WITHIN each section o
 - docstrange@nanonets vs qwen3-vl-32b@openrouter-transcriber: not separable — Δ CI [-3.0pp, 6.1pp] spans 0
 - docstrange@nanonets vs qwen3-vl-8b@openrouter-transcriber: separable — docstrange@nanonets ahead, Δ=[6.1pp, 19.1pp]
 - qwen3-vl-32b@openrouter-transcriber vs qwen3-vl-8b@openrouter-transcriber: separable — qwen3-vl-32b@openrouter-transcriber ahead, Δ=[4.9pp, 17.1pp]
+
+## STALE-RENDER
+
+The following parser keys have rows that are STALE-RENDER (stored `image_sha` no longer matches a freshly recomputed render) or RENDER-UNAVAILABLE (the referenced document could not be re-rendered at all — treated as a failure, not a pass, since the row's basis can no longer be confirmed).
+
+This check is intentionally sensitive to MORE than a swapped PDF: a different pymupdf version, OS/font stack, or machine than the one that originally scored these rows can also change the rendered pixels enough to change the hash. A STALE-RENDER here does not automatically mean the underlying PDF changed — it means THIS environment cannot currently confirm the row still matches what it claims to; re-render on the original scoring machine/pymupdf version before assuming the worse explanation.
+
+- **vlm__qwen3-vl-8b-instruct@ollama-validation-ctx8k__4caf39e9ac1f**: 29 doc(s) — ['finance_101 (STALE-RENDER)', 'finance_102 (STALE-RENDER)', 'finance_104 (STALE-RENDER)', 'finance_105 (STALE-RENDER)', 'finance_109 (STALE-RENDER)', 'finance_141 (STALE-RENDER)', 'finance_148 (STALE-RENDER)', 'finance_168 (STALE-RENDER)', 'finance_171 (STALE-RENDER)', 'finance_172 (STALE-RENDER)'] (+19 more)
+- **vlm__qwen3-vl-8b-instruct@ollama-validation__4caf39e9ac1f**: 29 doc(s) — ['finance_101 (STALE-RENDER)', 'finance_102 (STALE-RENDER)', 'finance_104 (STALE-RENDER)', 'finance_105 (STALE-RENDER)', 'finance_109 (STALE-RENDER)', 'finance_141 (STALE-RENDER)', 'finance_148 (STALE-RENDER)', 'finance_168 (STALE-RENDER)', 'finance_171 (STALE-RENDER)', 'finance_172 (STALE-RENDER)'] (+19 more)
+- **vlm__qwen3-vl-8b@openrouter__4caf39e9ac1f**: 29 doc(s) — ['finance_101 (STALE-RENDER)', 'finance_102 (STALE-RENDER)', 'finance_104 (STALE-RENDER)', 'finance_105 (STALE-RENDER)', 'finance_109 (STALE-RENDER)', 'finance_141 (STALE-RENDER)', 'finance_148 (STALE-RENDER)', 'finance_168 (STALE-RENDER)', 'finance_171 (STALE-RENDER)', 'finance_172 (STALE-RENDER)'] (+19 more)
+- **vlm__qwen3.5-9b@openrouter__4caf39e9ac1f**: 28 doc(s) — ['finance_101 (STALE-RENDER)', 'finance_102 (STALE-RENDER)', 'finance_104 (STALE-RENDER)', 'finance_105 (STALE-RENDER)', 'finance_109 (STALE-RENDER)', 'finance_141 (STALE-RENDER)', 'finance_148 (STALE-RENDER)', 'finance_168 (STALE-RENDER)', 'finance_171 (STALE-RENDER)', 'finance_172 (STALE-RENDER)'] (+18 more)
 
