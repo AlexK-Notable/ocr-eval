@@ -320,11 +320,27 @@ Ollama shim limits, both verified live:
   `dashboard-upstream-UNSEGREGATED.html` precisely so it can never be mistaken for the
   authoritative output; **`report.md` is the only authoritative artifact.**
 - **Scoring-leg cost has no automated preview (D6).** Each scored question costs one
-  `gemini-3-flash-preview` extractor call per transcriber (~1,356 calls per full-corpus score run
-  — low-single-digit dollars per transcriber at current Gemini pricing). Unlike the direct leg,
-  `--dry-run` has no cost estimate for this leg at all (upstream exposes no hook for it — a
-  documented divergence, see `docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md`). Budget
-  it manually before scoring a new transcriber, and smoke with `--limit 20` first (as in step 6).
+  `gemini-3-flash-preview` extractor call per transcriber (~1,356 calls per full-corpus score
+  run). Unlike the direct leg, `--dry-run` has no cost estimate for this leg at all (upstream
+  exposes no hook for it — a documented divergence, see
+  `docs/superpowers/plans/2026-08-01-stage1-eval-pipeline.md`). Budget it manually before scoring
+  a new transcriber, and smoke with `--limit 20` first (as in step 6).
+
+  **Measured 2026-08-04** against real DocStrange transcripts: **2,507 input / 31 output tokens
+  per call** — an input-dominated read, not a generation. Over 1,356 calls that is 3.40M input +
+  0.042M output, so at `gemini-3-flash-preview`'s Standard rate (**$0.50 /M input, $3.00 /M
+  output**, verified against ai.google.dev/gemini-api/docs/pricing on 2026-08-04) a full-corpus
+  transcriber row costs **≈ $1.83**. Scale that by transcript length: cost is ~linear in
+  markdown size, and 2.5k tokens/call reflects ~10k-char pages.
+
+  Do **not** reach for a Flash-Lite extractor to save money here — measured, it saves only
+  $0.70–$0.92/row (`gemini-3.5-flash-lite` ≈ $1.13, `gemini-3.1-flash-lite` ≈ $0.91) in exchange
+  for changing the measurement instrument on every transcriber row and confounding the DoD #2
+  reproduction gate. Note also that the 5-fixture `selftest --extractor` gate does **not**
+  discriminate between them — all three score 5/5 — so passing it is not evidence a cheaper
+  extractor is equivalent on the real bank. If extractor cost ever does bite, the lever is the
+  **Batch tier at exactly half Standard** ($0.25 /M in, $1.50 /M out → ≈ $0.92/row) with no model
+  change at all.
 
 ## Definition-of-done checklist
 
