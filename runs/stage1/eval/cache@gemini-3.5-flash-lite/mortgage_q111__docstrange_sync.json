@@ -1,0 +1,1 @@
+{"qid": "mortgage_q111", "parser": "docstrange_sync", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"foundation_detail": "Metal | Post and Pier", "roof_detail": "Metal\nEstimated Age: 20 or more years"}, "field_matches": {"foundation_detail": true, "roof_detail": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

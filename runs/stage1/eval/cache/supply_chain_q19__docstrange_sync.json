@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q19", "parser": "docstrange_sync", "source_file": "supply_chain_9", "domain": "supply_chain", "answer": {"purpose_of_shipment": "2024-03-13"}, "field_matches": {"purpose_of_shipment": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "supply_chain_q19", "parser": "docstrange_sync", "source_file": "supply_chain_9", "domain": "supply_chain", "answer": {"purpose_of_shipment": "2024-03-13"}, "field_matches": {"purpose_of_shipment": true}, "match": true, "extractor": "gemini-3.6-flash"}

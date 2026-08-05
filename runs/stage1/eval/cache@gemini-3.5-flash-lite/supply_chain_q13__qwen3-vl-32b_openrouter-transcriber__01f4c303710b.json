@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q13", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_6", "domain": "supply_chain", "answer": {"invoice_no": "COM-2024-1148", "payment_terms": "United States"}, "field_matches": {"invoice_no": true, "payment_terms": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

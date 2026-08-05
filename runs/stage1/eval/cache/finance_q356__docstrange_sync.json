@@ -1,1 +1,1 @@
-{"qid": "finance_q356", "parser": "docstrange_sync", "source_file": "finance_4", "domain": "finance", "answer": {"no_of_members": 2, "and_managers": 2}, "field_matches": {"no_of_members": true, "and_managers": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q356", "parser": "docstrange_sync", "source_file": "finance_4", "domain": "finance", "answer": {"no_of_members": null, "and_managers": 2}, "field_matches": {"no_of_members": false, "and_managers": true}, "match": false, "extractor": "gemini-3.6-flash"}

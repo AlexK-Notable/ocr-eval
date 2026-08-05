@@ -1,0 +1,1 @@
+{"qid": "mortgage_q171", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_76", "domain": "mortgage", "answer": {"construction_method": "Manufactured Site Built"}, "field_matches": {"construction_method": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

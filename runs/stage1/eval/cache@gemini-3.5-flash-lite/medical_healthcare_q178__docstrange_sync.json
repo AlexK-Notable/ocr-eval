@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q178", "parser": "docstrange_sync", "source_file": "medical_healthcare_73", "domain": "medical_healthcare", "answer": {"3-1A": "IN", "3-1B": null, "3-1C": "IN", "3-1D": null}, "field_matches": {"3-1A": true, "3-1B": false, "3-1C": true, "3-1D": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

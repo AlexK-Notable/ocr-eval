@@ -1,0 +1,1 @@
+{"qid": "finance_q127", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_63", "domain": "finance", "answer": {"attestation_day": 15, "attestation_location": "Fort Lauderdale, FL"}, "field_matches": {"attestation_day": false, "attestation_location": true}, "match": false, "extractor": "gemini-3.5-flash-lite"}

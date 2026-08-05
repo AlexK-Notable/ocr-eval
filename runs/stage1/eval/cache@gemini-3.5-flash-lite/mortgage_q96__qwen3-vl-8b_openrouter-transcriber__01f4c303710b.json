@@ -1,0 +1,1 @@
+{"qid": "mortgage_q96", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_42", "domain": "mortgage", "answer": {"deposit_amount": 200000, "delivery_obligation": "WILL"}, "field_matches": {"deposit_amount": true, "delivery_obligation": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q156", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_51", "domain": "supply_chain", "answer": {"# Replaced?": null, "BOV gasket replaced?": "YES"}, "field_matches": {"# Replaced?": false, "BOV gasket replaced?": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

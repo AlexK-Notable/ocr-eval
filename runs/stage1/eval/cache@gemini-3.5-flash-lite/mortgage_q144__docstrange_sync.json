@@ -1,0 +1,1 @@
+{"qid": "mortgage_q144", "parser": "docstrange_sync", "source_file": "mortgage_63", "domain": "mortgage", "answer": {"first_borrower_name": "John Jones", "current_owner_of_public_record": "Harry Smith, Bill Smith"}, "field_matches": {"first_borrower_name": true, "current_owner_of_public_record": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

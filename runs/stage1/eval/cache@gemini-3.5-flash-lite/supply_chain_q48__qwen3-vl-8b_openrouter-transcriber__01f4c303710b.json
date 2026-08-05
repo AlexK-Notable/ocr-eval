@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q48", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_19", "domain": "supply_chain", "answer": {"step_3_page_reference": "page-3-4-5"}, "field_matches": {"step_3_page_reference": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

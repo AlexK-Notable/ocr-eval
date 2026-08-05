@@ -1,0 +1,1 @@
+{"qid": "mortgage_q385", "parser": "docstrange_sync", "source_file": "mortgage_149", "domain": "mortgage", "answer": {"Renee": "Purchaser", "Luis": "Seller", "Morgan": "Broker"}, "field_matches": {"Renee": true, "Luis": true, "Morgan": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

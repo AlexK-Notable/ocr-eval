@@ -1,1 +1,1 @@
-{"qid": "finance_q225", "parser": "docstrange_sync", "source_file": "finance_105", "domain": "finance", "answer": {"class_of_tax": "Payment on 1925 Income"}, "field_matches": {"class_of_tax": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q225", "parser": "docstrange_sync", "source_file": "finance_105", "domain": "finance", "answer": {"class_of_tax": "Payment on 1925 Income"}, "field_matches": {"class_of_tax": true}, "match": true, "extractor": "gemini-3.6-flash"}

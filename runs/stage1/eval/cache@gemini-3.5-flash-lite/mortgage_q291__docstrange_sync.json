@@ -1,0 +1,1 @@
+{"qid": "mortgage_q291", "parser": "docstrange_sync", "source_file": "mortgage_130", "domain": "mortgage", "answer": {"Property Type": "Condominium", "Property Rights": "Fee Simple", "Construction": "New (less than 1 year)"}, "field_matches": {"Property Type": true, "Property Rights": true, "Construction": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

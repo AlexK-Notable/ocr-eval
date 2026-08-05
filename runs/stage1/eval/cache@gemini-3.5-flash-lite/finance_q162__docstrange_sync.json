@@ -1,0 +1,1 @@
+{"qid": "finance_q162", "parser": "docstrange_sync", "source_file": "finance_80", "domain": "finance", "answer": {"withdrawals_water_stress_selection": true}, "field_matches": {"withdrawals_water_stress_selection": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

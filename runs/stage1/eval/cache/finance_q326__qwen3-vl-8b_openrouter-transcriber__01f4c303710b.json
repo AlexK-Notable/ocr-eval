@@ -1,1 +1,1 @@
-{"qid": "finance_q326", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_158", "domain": "finance", "answer": {"delaware_eitc_percentage": null}, "field_matches": {"delaware_eitc_percentage": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q326", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_158", "domain": "finance", "answer": {"delaware_eitc_percentage": 0.2}, "field_matches": {"delaware_eitc_percentage": true}, "match": true, "extractor": "gemini-3.6-flash"}

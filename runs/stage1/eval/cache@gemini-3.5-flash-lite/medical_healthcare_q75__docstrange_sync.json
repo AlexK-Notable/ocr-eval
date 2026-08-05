@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q75", "parser": "docstrange_sync", "source_file": "medical_healthcare_34", "domain": "medical_healthcare", "answer": {"case_number": "2023-14789"}, "field_matches": {"case_number": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

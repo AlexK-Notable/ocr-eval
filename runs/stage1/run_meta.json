@@ -5,5 +5,5 @@
   "renders_verified": true,
   "partial_corpus": false,
   "revision_source": "hf_metadata",
-  "extractor_id": "gemini-3.5-flash-lite"
+  "extractor_id": "gemini-3.6-flash"
 }

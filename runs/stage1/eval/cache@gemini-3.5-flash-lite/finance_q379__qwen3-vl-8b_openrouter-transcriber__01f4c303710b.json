@@ -1,0 +1,1 @@
+{"qid": "finance_q379", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_65", "domain": "finance", "answer": {"footnote_number": 1, "preceding_symbol": null}, "field_matches": {"footnote_number": true, "preceding_symbol": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

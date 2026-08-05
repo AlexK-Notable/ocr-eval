@@ -1,1 +1,1 @@
-{"qid": "finance_q174", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_84", "domain": "finance", "answer": {"date_of_receipt": "2026-02-22"}, "field_matches": {"date_of_receipt": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q174", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_84", "domain": "finance", "answer": {"date_of_receipt": "2026-02-22"}, "field_matches": {"date_of_receipt": true}, "match": true, "extractor": "gemini-3.6-flash"}

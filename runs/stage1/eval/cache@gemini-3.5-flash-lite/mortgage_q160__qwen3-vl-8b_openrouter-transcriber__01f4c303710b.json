@@ -1,0 +1,1 @@
+{"qid": "mortgage_q160", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_70", "domain": "mortgage", "answer": {"first_exhibit_title": "Deck - Deck 1"}, "field_matches": {"first_exhibit_title": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

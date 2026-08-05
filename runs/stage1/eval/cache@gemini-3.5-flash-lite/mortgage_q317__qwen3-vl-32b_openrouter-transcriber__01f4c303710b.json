@@ -1,0 +1,1 @@
+{"qid": "mortgage_q317", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_150", "domain": "mortgage", "answer": {"answer": ["Part 1 – General Information", "Part 2 – Borrower Authorization"]}, "field_matches": {"answer": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

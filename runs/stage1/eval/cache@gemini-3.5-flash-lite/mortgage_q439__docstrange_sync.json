@@ -1,0 +1,1 @@
+{"qid": "mortgage_q439", "parser": "docstrange_sync", "source_file": "mortgage_197", "domain": "mortgage", "answer": {"Inventory_Analysis": "14", "Subject_Project_Data": null}, "field_matches": {"Inventory_Analysis": true, "Subject_Project_Data": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

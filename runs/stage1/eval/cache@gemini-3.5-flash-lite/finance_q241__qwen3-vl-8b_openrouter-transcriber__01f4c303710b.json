@@ -1,0 +1,1 @@
+{"qid": "finance_q241", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_113", "domain": "finance", "answer": {"gross_payments_foreign_withholding_non_primary": 2150}, "field_matches": {"gross_payments_foreign_withholding_non_primary": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

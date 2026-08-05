@@ -1,1 +1,1 @@
-{"qid": "finance_q136", "parser": "docstrange_sync", "source_file": "finance_67", "domain": "finance", "answer": {"registration_year": "2007"}, "field_matches": {"registration_year": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q136", "parser": "docstrange_sync", "source_file": "finance_67", "domain": "finance", "answer": {"registration_year": "2007"}, "field_matches": {"registration_year": true}, "match": true, "extractor": "gemini-3.6-flash"}

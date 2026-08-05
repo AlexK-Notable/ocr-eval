@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q66", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_30", "domain": "medical_healthcare", "answer": {"teeth": "ALL NATURAL TEETH", "id_view": "Yes"}, "field_matches": {"teeth": true, "id_view": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

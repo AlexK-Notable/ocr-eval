@@ -1,0 +1,1 @@
+{"qid": "finance_q261", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_124", "domain": "finance", "answer": {"income_tax_accounts_included_yes": "Yes"}, "field_matches": {"income_tax_accounts_included_yes": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

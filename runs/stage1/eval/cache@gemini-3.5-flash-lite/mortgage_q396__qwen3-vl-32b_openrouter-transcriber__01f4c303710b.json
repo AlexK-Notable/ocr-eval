@@ -1,0 +1,1 @@
+{"qid": "mortgage_q396", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_166", "domain": "mortgage", "answer": {"LenderDate": "2025-05-06", "CodeNumber": 31245, "Type": "Mortgagee"}, "field_matches": {"LenderDate": true, "CodeNumber": true, "Type": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q111", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_55", "domain": "finance", "answer": {"phone_number": "(206) 553-7970", "full_address": "700 STEWART ST., SUITE 5220\nSEATTLE, WASHINGTON 98101"}, "field_matches": {"phone_number": true, "full_address": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

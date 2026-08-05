@@ -38,7 +38,7 @@ from realdoc_bench.evaluate.runs import RunLayout
 
 
 # ── Constants — tunable scoring knobs ──────────────────────────────────────
-DEFAULT_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_MODEL = "gemini-3.6-flash"
 # FORK DIVERGENCE (D11) — upstream and this project's own spec both pin `gemini-3-flash-preview`
 # here, ratified "exactly as upstream — required for published-number comparability"
 # (specs/2026-08-01-ocr-eval-pipeline-design.md:79). Overridden by user decision on two grounds:
@@ -54,15 +54,44 @@ DEFAULT_MODEL = "gemini-3.5-flash-lite"
 #        gemini-2.5-flash        235/300 (78.3%)  +12/-18, p=0.362
 #      Nothing separates them, which is what makes the choice among them free on accuracy grounds.
 #
-# REVISION 2026-08-05 (user decision): the pin moves 3.1-flash-lite -> `gemini-3.5-flash-lite`,
-# the newest GA flash-lite generation. Both are GA and the A/B above cannot separate them
-# (p=1.000), so this is a generation-currency choice, not an accuracy one.
-# DELIBERATELY NOT `gemini-flash-lite-latest`: a floating alias resolves to a different model over
-# time, so two runs months apart would silently use different graders while `run_meta.json` stamped
-# the same name — the exact reproducibility failure ground 1 above exists to prevent. A moving
-# instrument is worse than an old one.
-# NOTE the 5-fixture `selftest --extractor` gate does NOT discriminate between these models
-# (all score 5/5) — it is a floor, not evidence of equivalence. The n=300 paired run is.
+# REVISION 2 (2026-08-05, user decision): 3.1-flash-lite -> `gemini-3.5-flash-lite`, the newest GA
+# flash-lite generation. DELIBERATELY NOT `gemini-flash-lite-latest`: a floating alias resolves to a
+# different model over time, so two runs months apart would silently use different graders while
+# `run_meta.json` stamped the same name — the exact reproducibility failure ground 1 above exists to
+# prevent. A moving instrument is worse than an old one.
+#
+# REVISION 3 (2026-08-05, user decision): -> `gemini-3.6-flash`. This one IS an accuracy decision,
+# and it retires the "nothing separates them" claim above. Re-scoring the full 4,068 transcriber
+# cells under each of the three graders (same cells, same transcripts) gives:
+#     extractor              fully-correct / 4068     vs 3.5              vs 3.1
+#     gemini-3.6-flash               3206         b=213 c=76 p=3.4e-16  b=199 c=98 p=4.7e-09
+#     gemini-3.1-flash-lite          3105              —                      —
+#     gemini-3.5-flash-lite          3069         b=108 c=144 p=0.027 (3.1 better)
+# 3.6-flash is better than both by a wide, unambiguous margin (~2.5pp over 3.1, ~3.4pp over 3.5).
+# The n=300 A/B above was simply underpowered: it could not separate models that a 4,068-cell paired
+# test separates at p<1e-15. Small-n non-significance rejects a LARGE difference; it never
+# establishes equivalence.
+#
+# CONTAMINATION — checked, not assumed. `gemini-3.6-flash` post-dates RealDoc-Bench's public
+# availability (config.CONTAMINATION_CUTOFF = 2026-05-24), so a memorizing grader could inflate
+# every transcriber row while looking better. `scripts/extractor_memorization_probe.py` feeds the
+# extractor transcripts with the answer REMOVED (empty body / an unrelated decoy page) and checks
+# whether it still emits the gold value. n=30 items:
+#     arm         3.6-flash   3.5-flash-lite (pre-cutoff control)
+#     real            76.7%   80.0%
+#     shuffled        56.7%   46.7%
+#     empty            0.0%    0.0%
+#     decoy            0.0%    0.0%
+# Both graders collapse to ZERO without content, and the post-cutoff model is no better on the blind
+# arms than the pre-cutoff one — the profile of a model that reads its input, not one reciting a
+# memorized bank. NB this bounds contamination of the EXTRACTOR only; a candidate model's own
+# contamination is a separate question that `entry.contaminated` flags per row.
+#
+# OPERATIONAL COST of this revision: 3.6-flash is ~12x slower per leg than flash-lite (10 min vs
+# 0.8 min per 1,356 cells) and has much tighter quota — 16 workers sustains 429s, so
+# `scripts/rescore-d11rev3.sh` runs at 6.
+# NOTE the 5-fixture `selftest --extractor` gate does NOT discriminate between any of these models
+# (all score 5/5) — it is a floor, not evidence of equivalence. The paired full-corpus run is.
 # COST OF THE CHANGE: DoD #2 compares our absolute numbers against upstream's published Table 3,
 # which upstream produced with `gemini-3-flash-preview`. A repro gap now carries one extra
 # uncontrolled variable. Re-pin the constant above to reproduce upstream exactly.

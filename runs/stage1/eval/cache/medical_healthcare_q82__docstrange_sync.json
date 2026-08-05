@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q82", "parser": "docstrange_sync", "source_file": "medical_healthcare_36", "domain": "medical_healthcare", "answer": {"ug_definition": "Micrograms"}, "field_matches": {"ug_definition": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "medical_healthcare_q82", "parser": "docstrange_sync", "source_file": "medical_healthcare_36", "domain": "medical_healthcare", "answer": {"ug_definition": "Micrograms"}, "field_matches": {"ug_definition": true}, "match": true, "extractor": "gemini-3.6-flash"}

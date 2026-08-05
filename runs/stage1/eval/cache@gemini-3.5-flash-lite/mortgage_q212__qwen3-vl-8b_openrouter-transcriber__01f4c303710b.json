@@ -1,0 +1,1 @@
+{"qid": "mortgage_q212", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_97", "domain": "mortgage", "answer": {"married": false, "separated": false}, "field_matches": {"married": true, "separated": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

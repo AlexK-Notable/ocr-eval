@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q38", "parser": "docstrange_sync", "source_file": "medical_healthcare_18", "domain": "medical_healthcare", "answer": {"line_below_name": "HOMI 195"}, "field_matches": {"line_below_name": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "medical_healthcare_q38", "parser": "docstrange_sync", "source_file": "medical_healthcare_18", "domain": "medical_healthcare", "answer": {"line_below_name": "HOMI 195"}, "field_matches": {"line_below_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

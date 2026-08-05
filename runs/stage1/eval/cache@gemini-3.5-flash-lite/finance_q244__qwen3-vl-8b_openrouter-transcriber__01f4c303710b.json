@@ -1,0 +1,1 @@
+{"qid": "finance_q244", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_115", "domain": "finance", "answer": {"taxable_income_line_a": 850000.0, "subtotal_line_g": 495000.0}, "field_matches": {"taxable_income_line_a": true, "subtotal_line_g": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

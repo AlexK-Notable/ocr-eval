@@ -1,0 +1,1 @@
+{"qid": "mortgage_q213", "parser": "docstrange_sync", "source_file": "mortgage_97", "domain": "mortgage", "answer": {"us_citizen": false}, "field_matches": {"us_citizen": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

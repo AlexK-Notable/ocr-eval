@@ -1,0 +1,1 @@
+{"qid": "mortgage_q113", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_48", "domain": "mortgage", "answer": {"interior_condition_unit_1": "C4", "interior_quality_unit_1": "Q5"}, "field_matches": {"interior_condition_unit_1": true, "interior_quality_unit_1": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

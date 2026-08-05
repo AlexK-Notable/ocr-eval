@@ -1,0 +1,1 @@
+{"qid": "mortgage_q45", "parser": "docstrange_sync", "source_file": "mortgage_16", "domain": "mortgage", "answer": {"reduction_in_income_marked": true, "disaster_insurance_claim_marked": true}, "field_matches": {"reduction_in_income_marked": true, "disaster_insurance_claim_marked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

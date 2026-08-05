@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q102", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_38", "domain": "supply_chain", "answer": {"SHIPPER": "Amazon Fulfillment Services", "CARRIER": "AQJES"}, "field_matches": {"SHIPPER": true, "CARRIER": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

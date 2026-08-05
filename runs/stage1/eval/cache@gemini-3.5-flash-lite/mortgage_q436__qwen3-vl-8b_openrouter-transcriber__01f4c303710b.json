@@ -1,0 +1,1 @@
+{"qid": "mortgage_q436", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_194", "domain": "mortgage", "answer": {"Years 1-7": "82.35", "Years 8-30": "—"}, "field_matches": {"Years 1-7": true, "Years 8-30": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

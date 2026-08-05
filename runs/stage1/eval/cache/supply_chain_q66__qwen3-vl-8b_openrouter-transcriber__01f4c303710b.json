@@ -1,1 +1,1 @@
-{"qid": "supply_chain_q66", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_27", "domain": "supply_chain", "answer": {"telephone_label": "Telephone"}, "field_matches": {"telephone_label": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "supply_chain_q66", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_27", "domain": "supply_chain", "answer": {"telephone_label": "Telephone"}, "field_matches": {"telephone_label": true}, "match": true, "extractor": "gemini-3.6-flash"}

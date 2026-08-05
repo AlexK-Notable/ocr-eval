@@ -1,0 +1,1 @@
+{"qid": "finance_q197", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_93", "domain": "finance", "answer": {"ein": "36 - 2847159", "sponsors_telephone_number": "(312) 555 - 0723"}, "field_matches": {"ein": true, "sponsors_telephone_number": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

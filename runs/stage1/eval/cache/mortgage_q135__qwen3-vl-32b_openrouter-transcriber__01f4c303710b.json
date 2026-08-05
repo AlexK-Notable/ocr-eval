@@ -1,1 +1,1 @@
-{"qid": "mortgage_q135", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_59", "domain": "mortgage", "answer": {"appraisal_version_number": "1"}, "field_matches": {"appraisal_version_number": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "mortgage_q135", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_59", "domain": "mortgage", "answer": {"appraisal_version_number": "1"}, "field_matches": {"appraisal_version_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

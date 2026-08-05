@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q120", "parser": "docstrange_sync", "source_file": "medical_healthcare_53", "domain": "medical_healthcare", "answer": {"genital_itch_or_discharge": 1}, "field_matches": {"genital_itch_or_discharge": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

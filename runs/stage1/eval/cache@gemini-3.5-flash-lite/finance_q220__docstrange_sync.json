@@ -1,0 +1,1 @@
+{"qid": "finance_q220", "parser": "docstrange_sync", "source_file": "finance_102", "domain": "finance", "answer": {"total_taxable_wages_dollars": 719340}, "field_matches": {"total_taxable_wages_dollars": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

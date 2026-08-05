@@ -1,0 +1,17 @@
+extractor: gemini-3.6-flash   items: 30   control transcripts: docstrange_sync
+
+  ! shuffled medical_healthcare_q13: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:g
+  ! empty medical_healthcare_q13: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:g
+  ! decoy medical_healthcare_q13: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:g
+  ! real mortgage_q342: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:g
+arm          correct    rate   interpretation
+real              23   76.7%   control — reading the actual transcript
+shuffled          17   56.7%   content kept, layout destroyed
+empty              0    0.0%   NOTHING to read: any correctness here is recall or luck
+decoy              0    0.0%   unrelated page: correctness here is recall or invention
+
+blind-arm ceiling: 0.0%
+NB a nonzero blind rate is EXPECTED, not proof of contamination — many gold values are
+   guessable priors (a null blank field, a boolean that is usually true). Read it
+   against this same extractor's rate on OTHER arms, and against another extractor's
+   blind rate on the same items, before concluding anything.

@@ -1,0 +1,1 @@
+{"qid": "finance_q179", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_86", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field"}, "field_matches": {"occupation": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

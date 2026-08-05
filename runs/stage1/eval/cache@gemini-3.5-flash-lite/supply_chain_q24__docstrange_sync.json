@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q24", "parser": "docstrange_sync", "source_file": "supply_chain_11", "domain": "supply_chain", "answer": {"terms_of_sale": "FCA Seattle", "total_net_weight_value": 0}, "field_matches": {"terms_of_sale": true, "total_net_weight_value": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q330", "parser": "docstrange_sync", "source_file": "finance_160", "domain": "finance", "answer": {"common_stock_2020_transactions": "(32)", "retained_earnings_2018_transactions": 0}, "field_matches": {"common_stock_2020_transactions": true, "retained_earnings_2018_transactions": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q159", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_78", "domain": "finance", "answer": {"other_project_type": "Improved Forest Management (IFM)"}, "field_matches": {"other_project_type": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

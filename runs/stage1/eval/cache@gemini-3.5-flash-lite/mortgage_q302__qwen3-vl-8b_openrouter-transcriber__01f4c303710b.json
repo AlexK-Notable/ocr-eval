@@ -1,0 +1,1 @@
+{"qid": "mortgage_q302", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_137", "domain": "mortgage", "answer": {"does": "no", "does not": "yes"}, "field_matches": {"does": true, "does not": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

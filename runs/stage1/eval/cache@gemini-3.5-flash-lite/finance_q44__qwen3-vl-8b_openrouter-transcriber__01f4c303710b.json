@@ -1,0 +1,1 @@
+{"qid": "finance_q44", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_17", "domain": "finance", "answer": {"premises_operations_marked": true, "contractual_liability_marked": true}, "field_matches": {"premises_operations_marked": true, "contractual_liability_marked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

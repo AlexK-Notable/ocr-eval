@@ -10,17 +10,23 @@ assumption or remains unverified, it says so.
 
 ## 1. Section B — the three scored transcriber rows
 
-**Re-scored 2026-08-05** under D11-rev2's extractor (`gemini-3.5-flash-lite`). Numbers below are the
-current ones; the pre-rev2 figures and the old-vs-new comparison are in §3.
+**Re-scored twice on 2026-08-05.** Current numbers use D11-rev3's extractor
+(`gemini-3.6-flash`); the three-way grader comparison that settled the choice is in §3.
 
 | row | checkbox acc-over-all | blank/null | hallucination | general/field | strict/question | transcript-recall | median latency |
 |---|---|---|---|---|---|---|---|
-| `docstrange@nanonets` | **95.0%** [91.9, 97.6] | 95.2% | 4.8% | 88.7% | **80.9%** | **97.6%** | 30.3 s |
-| `qwen3-vl-32b@openrouter-transcriber` | 91.9% [87.7, 95.5] | 93.6% | 6.4% | 86.9% | 76.4% | 92.7% | 14.8 s |
-| `qwen3-vl-8b@openrouter-transcriber` | 81.0% [74.4, 86.8] | 93.1% | 6.9% | 81.2% | 69.0% | 94.3% | 8.0 s |
+| `docstrange@nanonets` | **93.8%** [90.2, 96.9] | **96.3%** | **3.7%** | **91.1%** | **84.4%** | **97.6%** | 30.3 s |
+| `qwen3-vl-32b@openrouter-transcriber` | 90.3% [85.9, 94.1] | 95.2% | 4.8% | 88.9% | 79.4% | 92.7% | 14.8 s |
+| `qwen3-vl-8b@openrouter-transcriber` | 81.8% [75.1, 87.4] | 95.2% | 4.8% | 83.9% | 72.7% | 94.3% | 8.0 s |
 
-All three: extractor `gemini-3.5-flash-lite`, input `raster-png`, `beats majority: yes`,
-**0 errors** across 4,068 scored cells (1,356 × 3) — on both the original and the re-scored pass.
+All three: extractor `gemini-3.6-flash`, input `raster-png`, `beats majority: yes`, **0 errors**
+across 4,068 scored cells (1,356 × 3) — on all three grading passes.
+
+Note the metrics do **not** move together across graders. Under 3.6-flash every row's
+`general/field` and `strict/question` improve markedly (docstrange 80.9% → 84.4% strict), while
+docstrange's headline *checkbox* figure drifts down 95.0% → 93.8%. Checkbox accuracy is one bucket of
+258 boolean fields; the pooled fully-correct count is the broader signal, and it rises decisively
+(§3). Read both before declaring a grader "better".
 
 ### The headline is a tie, not a ranking
 
@@ -137,6 +143,55 @@ A single "which extractor is better" number would have hidden that.
 adequate to reject a *large* difference and inadequate to establish equivalence. The p=1.000 at
 n=300 was read as "these are interchangeable"; at n=4,068 the same comparison is p=0.027. Power, not
 significance, was the missing quantity.
+
+### D11 rev 3 (2026-08-05) — `gemini-3.6-flash`, and the three-way result
+
+Third grading pass, same 4,068 cells and same transcripts, so all three graders are directly
+comparable on identical work:
+
+| extractor | fully-correct / 4068 | vs 3.5-flash-lite | vs 3.1-flash-lite |
+|---|---|---|---|
+| **`gemini-3.6-flash`** | **3206** | b=213 c=76, **p=3.4e-16** | b=199 c=98, **p=4.7e-09** |
+| `gemini-3.1-flash-lite` | 3105 | b=144 c=108, p=0.027 | — |
+| `gemini-3.5-flash-lite` | 3069 | — | — |
+
+Per leg: docstrange 1113 → 1097 → **1144**, qwen3-vl-32b 1042 → 1036 → **1076**, qwen3-vl-8b
+950 → 936 → **986** (3.1 / 3.5 / 3.6).
+
+**3.6-flash is better than both flash-lite tiers by an unambiguous margin** — ~2.5pp over 3.1, ~3.4pp
+over 3.5, at p < 1e-8. This retires the D11 "nothing separates them" premise outright: the n=300 A/B
+could not distinguish graders that a 4,068-cell paired test separates at p<1e-15.
+
+**Contamination: checked, not assumed.** `gemini-3.6-flash` post-dates the corpus
+(`CONTAMINATION_CUTOFF = 2026-05-24`), and a grader reciting a memorized bank would inflate every row
+while looking better — the failure mode that would make this whole table worthless.
+`scripts/extractor_memorization_probe.py` removes the answer from the transcript and checks whether
+the extractor still produces the gold value, with the pre-cutoff 3.5-flash-lite as control:
+
+| arm | 3.6-flash (post-cutoff) | 3.5-flash-lite (control) |
+|---|---|---|
+| real transcript | 76.7% | 80.0% |
+| shuffled lines | 56.7% | 46.7% |
+| **empty body** | **0.0%** | **0.0%** |
+| **decoy page** | **0.0%** | **0.0%** |
+
+Both collapse to zero without content, and the post-cutoff model is no better on the blind arms than
+the pre-cutoff one. That is the profile of a model reading its input. This bounds contamination of
+the **extractor** only — a candidate model's own contamination is separate, and flagged per row by
+`entry.contaminated`.
+
+**Operational cost:** 3.6-flash is ~12x slower per leg (10 min vs 0.8 min per 1,356 cells) and has
+much tighter quota. At the CLI's default 16 workers it sustained 429s and lost 15 cells;
+`scripts/rescore-d11rev3.sh` now runs at 6 workers, and the final pass completed 4,068/4,068 with
+**0 errors**.
+
+> **Two harness bugs this pass exposed**, both now fixed and worth knowing:
+> 1. `ocr-eval score` exits 2 when any cell errors (its fail-visible contract). A `set -e` in the
+>    driver script treated 15 rate-limited cells as fatal and silently abandoned legs 2 and 3 — while
+>    appearing to still run, because rows are written incrementally.
+> 2. Upstream's `_worker` treats **any** cached error as terminal ("re-attempt only when the markdown
+>    appears"), so a transient 429 freezes permanently and `--force` is the only built-in remedy — at
+>    the cost of re-billing all 1,356 cells. Deleting just the affected rows re-attempts only those.
 
 **Cost of the change:** DoD #2 compares our absolute numbers to upstream's published Table 3,
 produced with `gemini-3-flash-preview`, so a reproduction gap now carries one extra uncontrolled

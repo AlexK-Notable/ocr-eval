@@ -1,0 +1,13 @@
+extractor: gemini-3.5-flash-lite   items: 30   control transcripts: docstrange_sync
+
+arm          correct    rate   interpretation
+real              24   80.0%   control — reading the actual transcript
+shuffled          14   46.7%   content kept, layout destroyed
+empty              0    0.0%   NOTHING to read: any correctness here is recall or luck
+decoy              0    0.0%   unrelated page: correctness here is recall or invention
+
+blind-arm ceiling: 0.0%
+NB a nonzero blind rate is EXPECTED, not proof of contamination — many gold values are
+   guessable priors (a null blank field, a boolean that is usually true). Read it
+   against this same extractor's rate on OTHER arms, and against another extractor's
+   blind rate on the same items, before concluding anything.

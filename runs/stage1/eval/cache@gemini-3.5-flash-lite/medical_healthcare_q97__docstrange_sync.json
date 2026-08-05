@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q97", "parser": "docstrange_sync", "source_file": "medical_healthcare_42", "domain": "medical_healthcare", "answer": {"reviewed_date_time": "10/29/2023 at 10:54:00"}, "field_matches": {"reviewed_date_time": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

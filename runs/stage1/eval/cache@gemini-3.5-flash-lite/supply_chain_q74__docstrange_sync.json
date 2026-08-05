@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q74", "parser": "docstrange_sync", "source_file": "supply_chain_3", "domain": "supply_chain", "answer": {"col1": "Handling Units No.", "col2": "Handling Units Type"}, "field_matches": {"col1": false, "col2": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

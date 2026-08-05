@@ -1,0 +1,1 @@
+{"qid": "finance_q195", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_92", "domain": "finance", "answer": {"pension_schedule_6_c_checked": null, "general_schedule_5_g_checked": null}, "field_matches": {"pension_schedule_6_c_checked": false, "general_schedule_5_g_checked": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

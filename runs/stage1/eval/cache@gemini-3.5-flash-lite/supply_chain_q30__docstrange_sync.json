@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q30", "parser": "docstrange_sync", "source_file": "supply_chain_13", "domain": "supply_chain", "answer": {"exporter_country_territory": "United States"}, "field_matches": {"exporter_country_territory": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q137", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_46", "domain": "supply_chain", "answer": {"Container": "MSMU7991839", "Seal": 114227}, "field_matches": {"Container": true, "Seal": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

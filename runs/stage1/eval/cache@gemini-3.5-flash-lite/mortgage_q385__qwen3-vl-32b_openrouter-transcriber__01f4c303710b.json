@@ -1,0 +1,1 @@
+{"qid": "mortgage_q385", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_149", "domain": "mortgage", "answer": {"Renee": "Purchaser", "Luis": "Seller", "Morgan": "Broker"}, "field_matches": {"Renee": true, "Luis": true, "Morgan": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

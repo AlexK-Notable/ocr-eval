@@ -1,0 +1,1 @@
+{"qid": "finance_q215", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_101", "domain": "finance", "answer": {"total_taxable_wages_paid": 7376.67}, "field_matches": {"total_taxable_wages_paid": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

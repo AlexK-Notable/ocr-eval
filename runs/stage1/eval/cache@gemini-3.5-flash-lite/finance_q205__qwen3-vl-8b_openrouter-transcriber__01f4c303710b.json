@@ -1,0 +1,1 @@
+{"qid": "finance_q205", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_96", "domain": "finance", "answer": {"taxable_estate": null, "credit_for_state_death_taxes": 69367.36}, "field_matches": {"taxable_estate": false, "credit_for_state_death_taxes": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q172", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_58", "domain": "supply_chain", "answer": {"Auth ID": 540811, "Gallons Loaded": 29177, "Date": "2020-12-17"}, "field_matches": {"Auth ID": true, "Gallons Loaded": true, "Date": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

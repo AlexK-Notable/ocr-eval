@@ -1,0 +1,1 @@
+{"qid": "finance_q360", "parser": "docstrange_sync", "source_file": "finance_30", "domain": "finance", "answer": {"bldg_checked": false}, "field_matches": {"bldg_checked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

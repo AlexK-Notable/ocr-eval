@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q158", "parser": "docstrange_sync", "source_file": "medical_healthcare_69", "domain": "medical_healthcare", "answer": {"occurrence_span_code_35a": null}, "field_matches": {"occurrence_span_code_35a": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "medical_healthcare_q158", "parser": "docstrange_sync", "source_file": "medical_healthcare_69", "domain": "medical_healthcare", "answer": {"occurrence_span_code_35a": "70"}, "field_matches": {"occurrence_span_code_35a": true}, "match": true, "extractor": "gemini-3.6-flash"}

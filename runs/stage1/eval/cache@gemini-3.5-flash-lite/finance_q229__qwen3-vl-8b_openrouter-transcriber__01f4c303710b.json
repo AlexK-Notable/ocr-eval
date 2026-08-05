@@ -1,0 +1,1 @@
+{"qid": "finance_q229", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_107", "domain": "finance", "answer": {"corporation_name": "Gulf Coast Lumber Co.", "organization_state": "South Dakota"}, "field_matches": {"corporation_name": false, "organization_state": true}, "match": false, "extractor": "gemini-3.5-flash-lite"}

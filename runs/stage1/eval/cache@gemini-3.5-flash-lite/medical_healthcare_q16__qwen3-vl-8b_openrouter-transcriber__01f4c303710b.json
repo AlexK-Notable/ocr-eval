@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q16", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_9", "domain": "medical_healthcare", "answer": {"reporting_state": "TX"}, "field_matches": {"reporting_state": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

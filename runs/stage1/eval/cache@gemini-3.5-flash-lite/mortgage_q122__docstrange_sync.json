@@ -1,0 +1,1 @@
+{"qid": "mortgage_q122", "parser": "docstrange_sync", "source_file": "mortgage_52", "domain": "mortgage", "answer": {"urar_section": "Assignment Information", "description": "Corrected borrower name"}, "field_matches": {"urar_section": true, "description": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

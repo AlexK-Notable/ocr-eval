@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q283", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_98", "domain": "supply_chain", "answer": {"Name": "Pacific Med Imaging Distributors, Inc.", "State": "CA", "ID": "47-3920184-00"}, "field_matches": {"Name": true, "State": true, "ID": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

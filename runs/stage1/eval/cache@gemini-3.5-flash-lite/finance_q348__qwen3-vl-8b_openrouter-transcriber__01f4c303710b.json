@@ -1,0 +1,1 @@
+{"qid": "finance_q348", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_5", "domain": "finance", "answer": {"full_time_employees": 3}, "field_matches": {"full_time_employees": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

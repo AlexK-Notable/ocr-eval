@@ -1,1 +1,1 @@
-{"qid": "mortgage_q107", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_45", "domain": "mortgage", "answer": {"buyer_initials_name": "Jennifer"}, "field_matches": {"buyer_initials_name": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "mortgage_q107", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_45", "domain": "mortgage", "answer": {"buyer_initials_name": "Jennifer"}, "field_matches": {"buyer_initials_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

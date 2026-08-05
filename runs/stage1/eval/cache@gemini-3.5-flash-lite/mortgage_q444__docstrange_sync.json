@@ -1,0 +1,1 @@
+{"qid": "mortgage_q444", "parser": "docstrange_sync", "source_file": "mortgage_190", "domain": "mortgage", "answer": {"10": "$ 0", "11": "$ 5,130", "12a": "$ 1,995 / mo.", "12b": "144 months"}, "field_matches": {"10": true, "11": true, "12a": true, "12b": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

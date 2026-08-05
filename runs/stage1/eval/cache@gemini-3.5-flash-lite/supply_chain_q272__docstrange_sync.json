@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q272", "parser": "docstrange_sync", "source_file": "supply_chain_92", "domain": "supply_chain", "answer": {"Beat/Sub Area": "S37", "Veh #1 Type": 10, "Odometer": 4081, "Passanger Capacity": 57}, "field_matches": {"Beat/Sub Area": true, "Veh #1 Type": true, "Odometer": true, "Passanger Capacity": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

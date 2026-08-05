@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q48", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_22", "domain": "medical_healthcare", "answer": {"medical_examiner_degree": "M.D."}, "field_matches": {"medical_examiner_degree": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q313", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_147", "domain": "mortgage", "answer": {"Purchaser (Borrower)": "Marcus D. Ellison", "Purchaser (Co-Borrower)": "Renee K. Ellison"}, "field_matches": {"Purchaser (Borrower)": true, "Purchaser (Co-Borrower)": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q45", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_18", "domain": "supply_chain", "answer": {"weight_subtext": "lb / kg"}, "field_matches": {"weight_subtext": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

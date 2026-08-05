@@ -1,0 +1,1 @@
+{"qid": "finance_q26", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_10", "domain": "finance", "answer": {"check_if_none": false, "column_header_between_date_and_reserved": "AMOUNT PAID"}, "field_matches": {"check_if_none": true, "column_header_between_date_and_reserved": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

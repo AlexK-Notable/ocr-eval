@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q78", "parser": "docstrange_sync", "source_file": "supply_chain_32", "domain": "supply_chain", "answer": {"1.3": "Upper frame has been damaged. Requires replacement.", "1.4": "Lower Left frame is bent. Requires replacement."}, "field_matches": {"1.3": true, "1.4": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

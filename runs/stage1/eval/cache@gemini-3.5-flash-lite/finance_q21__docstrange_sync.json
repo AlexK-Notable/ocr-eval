@@ -1,0 +1,1 @@
+{"qid": "finance_q21", "parser": "docstrange_sync", "source_file": "finance_8", "domain": "finance", "answer": {"agency_customer_id": "FL20240517-001"}, "field_matches": {"agency_customer_id": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

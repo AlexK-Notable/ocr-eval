@@ -88,7 +88,7 @@ uv run ocr-eval report --run-dir runs/stage1 \
 | Condition-hash disambiguation (same registry id, two condition hashes) | Implemented, live-validated |
 | Hosted `vlm-chat` candidates (OpenRouter Qwen3-VL/Qwen3.5) | Implemented; needs `OPENROUTER_API_KEY`, unrun |
 | Bedrock `vlm-chat` candidates (`transport: bedrock-converse`) | Implemented, live-validated (no API key — SigV4); transcriber leg not wired |
-| Gemini extractor validation gate + scoring leg | **Run** — 4,068 cells scored, 0 errors; extractor `gemini-3.5-flash-lite` (divergence D11 rev 2), stamped per row |
+| Gemini extractor validation gate + scoring leg | **Run** — 4,068 cells scored, 0 errors; extractor `gemini-3.6-flash` (divergence D11 rev 3 — best of three graders measured head-to-head, p<1e-8), stamped per row |
 | Hosted transcriber (Mistral OCR 4) | Implemented; needs `MISTRAL_API_KEY`, unrun |
 | Hosted transcriber (Nanonets DocStrange) | **Run + scored** — 581/581 parsed ($5.81), 93.0% checkbox, 97.6% transcript-recall, 82.1% strict ([results](docs/results-stage1-2026-08-04.md)) |
 | Hosted transcribers (Qwen3-VL 8B / 32B) | **Run + scored** — 1,162/1,162 parsed, 0 fail; 32B ties DocStrange on checkboxes at ~1/8 the cost |

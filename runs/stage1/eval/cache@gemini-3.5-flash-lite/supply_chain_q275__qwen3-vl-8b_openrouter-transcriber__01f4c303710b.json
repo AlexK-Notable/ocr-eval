@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q275", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_94", "domain": "supply_chain", "answer": {"Vessel": "$TBD", "Cargo": "$0", "Facility": "$TBD", "Other": "$0"}, "field_matches": {"Vessel": true, "Cargo": true, "Facility": true, "Other": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

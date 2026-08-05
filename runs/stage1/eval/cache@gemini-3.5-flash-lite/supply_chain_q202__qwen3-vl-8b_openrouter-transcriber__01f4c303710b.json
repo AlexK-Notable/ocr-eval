@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q202", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_41", "domain": "supply_chain", "answer": {"INS": 380700, "GAL_VC": 3877, "GALS60": 30063, "WEIGHT": 125273}, "field_matches": {"INS": false, "GAL_VC": true, "GALS60": true, "WEIGHT": true}, "match": false, "extractor": "gemini-3.5-flash-lite"}

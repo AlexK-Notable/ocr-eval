@@ -1,0 +1,1 @@
+{"qid": "mortgage_q14", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_6", "domain": "mortgage", "answer": {"settlement_agent": "Sunshine Coast Settlements Inc"}, "field_matches": {"settlement_agent": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

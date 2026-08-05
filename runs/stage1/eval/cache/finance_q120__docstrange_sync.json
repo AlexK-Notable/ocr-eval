@@ -1,1 +1,1 @@
-{"qid": "finance_q120", "parser": "docstrange_sync", "source_file": "finance_60", "domain": "finance", "answer": {"continued_on_attached_sheet": true}, "field_matches": {"continued_on_attached_sheet": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q120", "parser": "docstrange_sync", "source_file": "finance_60", "domain": "finance", "answer": {"continued_on_attached_sheet": true}, "field_matches": {"continued_on_attached_sheet": true}, "match": true, "extractor": "gemini-3.6-flash"}

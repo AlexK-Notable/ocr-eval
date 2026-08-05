@@ -1,0 +1,1 @@
+{"qid": "finance_q366", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_103", "domain": "finance", "answer": {"labor_amount": 100.22}, "field_matches": {"labor_amount": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

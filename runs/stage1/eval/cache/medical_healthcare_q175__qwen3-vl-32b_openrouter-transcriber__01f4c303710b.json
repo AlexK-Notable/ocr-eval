@@ -1,1 +1,1 @@
-{"qid": "medical_healthcare_q175", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_72", "domain": "medical_healthcare", "answer": {"answer": []}, "field_matches": {"answer": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "medical_healthcare_q175", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_72", "domain": "medical_healthcare", "answer": {"answer": []}, "field_matches": {"answer": false}, "match": false, "extractor": "gemini-3.6-flash"}

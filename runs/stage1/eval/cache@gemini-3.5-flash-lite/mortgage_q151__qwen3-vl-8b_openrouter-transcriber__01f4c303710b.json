@@ -1,0 +1,1 @@
+{"qid": "mortgage_q151", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_66", "domain": "mortgage", "answer": {"core_heating_system_below_grade": true, "cooling_detail": "Centralized"}, "field_matches": {"core_heating_system_below_grade": true, "cooling_detail": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

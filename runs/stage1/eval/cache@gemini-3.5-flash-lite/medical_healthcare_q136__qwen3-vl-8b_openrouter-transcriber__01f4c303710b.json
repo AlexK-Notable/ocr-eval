@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q136", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_60", "domain": "medical_healthcare", "answer": {"acceptable_identification_checked": false}, "field_matches": {"acceptable_identification_checked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

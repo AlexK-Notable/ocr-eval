@@ -1,0 +1,1 @@
+{"qid": "finance_q110", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_55", "domain": "finance", "answer": {"approximate_date_of_application": "2020-04-19", "loan_amount": 600000}, "field_matches": {"approximate_date_of_application": true, "loan_amount": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

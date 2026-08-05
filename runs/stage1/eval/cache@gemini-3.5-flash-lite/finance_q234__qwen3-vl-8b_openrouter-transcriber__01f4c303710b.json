@@ -1,0 +1,1 @@
+{"qid": "finance_q234", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_109", "domain": "finance", "answer": {"first_column_header": "PAYMENT."}, "field_matches": {"first_column_header": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

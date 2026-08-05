@@ -1,1 +1,1 @@
-{"qid": "finance_q256", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_121", "domain": "finance", "answer": {"tan_or_pan_of_tenant": "AAAPA1234A"}, "field_matches": {"tan_or_pan_of_tenant": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q256", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_121", "domain": "finance", "answer": {"tan_or_pan_of_tenant": "AAAPA1234A"}, "field_matches": {"tan_or_pan_of_tenant": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q254", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_120", "domain": "finance", "answer": {"amount_invested_hii": null, "deduction_claimed_hiv": null}, "field_matches": {"amount_invested_hii": false, "deduction_claimed_hiv": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

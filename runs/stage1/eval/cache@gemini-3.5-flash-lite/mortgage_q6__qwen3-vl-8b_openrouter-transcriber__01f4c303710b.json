@@ -1,0 +1,1 @@
+{"qid": "mortgage_q6", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_3", "domain": "mortgage", "answer": {"purpose_purchase_checked": false}, "field_matches": {"purpose_purchase_checked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,1 +1,1 @@
-{"qid": "mortgage_q39", "parser": "docstrange_sync", "source_file": "mortgage_14", "domain": "mortgage", "answer": {"email_address": "t.whitmore.demo@email.com"}, "field_matches": {"email_address": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "mortgage_q39", "parser": "docstrange_sync", "source_file": "mortgage_14", "domain": "mortgage", "answer": {"email_address": "t.whitmore.demo@email.com"}, "field_matches": {"email_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

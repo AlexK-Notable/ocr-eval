@@ -1,1 +1,1 @@
-{"qid": "finance_q21", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_8", "domain": "finance", "answer": {"agency_customer_id": "FL20240517-001"}, "field_matches": {"agency_customer_id": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q21", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_8", "domain": "finance", "answer": {"agency_customer_id": "FL20240517-001"}, "field_matches": {"agency_customer_id": true}, "match": true, "extractor": "gemini-3.6-flash"}

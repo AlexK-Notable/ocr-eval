@@ -1,1 +1,1 @@
-{"qid": "mortgage_q6", "parser": "docstrange_sync", "source_file": "mortgage_3", "domain": "mortgage", "answer": {"purpose_purchase_checked": false}, "field_matches": {"purpose_purchase_checked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "mortgage_q6", "parser": "docstrange_sync", "source_file": "mortgage_3", "domain": "mortgage", "answer": {"purpose_purchase_checked": false}, "field_matches": {"purpose_purchase_checked": true}, "match": true, "extractor": "gemini-3.6-flash"}

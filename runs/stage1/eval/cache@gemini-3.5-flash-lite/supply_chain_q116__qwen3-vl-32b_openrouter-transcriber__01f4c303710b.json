@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q116", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_41", "domain": "supply_chain", "answer": {"Shipper": "SACRAMENTO ENERGY RESOURCES", "Consignee": "SACRAMENTO ENERGY RESOURCES LLC"}, "field_matches": {"Shipper": true, "Consignee": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

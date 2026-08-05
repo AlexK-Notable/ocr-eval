@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q289", "parser": "docstrange_sync", "source_file": "supply_chain_101", "domain": "supply_chain", "answer": {"Primary BOL TYPE": "Master", "Second BOL TYPE": "House"}, "field_matches": {"Primary BOL TYPE": true, "Second BOL TYPE": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

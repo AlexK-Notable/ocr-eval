@@ -1,0 +1,1 @@
+{"qid": "mortgage_q382", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_149", "domain": "mortgage", "answer": {"Broker2": "Morgan Y. Patel"}, "field_matches": {"Broker2": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

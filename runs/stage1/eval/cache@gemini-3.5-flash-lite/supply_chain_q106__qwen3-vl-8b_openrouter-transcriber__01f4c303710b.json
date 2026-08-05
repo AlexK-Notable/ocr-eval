@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q106", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_39", "domain": "supply_chain", "answer": {"Prepaid": "no", "Collect": "no", "3rd Party": "no"}, "field_matches": {"Prepaid": false, "Collect": true, "3rd Party": true}, "match": false, "extractor": "gemini-3.5-flash-lite"}

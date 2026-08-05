@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q129", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_44", "domain": "supply_chain", "answer": {"container": "MSMU7991839", "seal": 114227, "place_date": "MIAMI, FL 11/22/2024"}, "field_matches": {"container": true, "seal": true, "place_date": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

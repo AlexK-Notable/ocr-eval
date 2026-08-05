@@ -1,0 +1,1 @@
+{"qid": "finance_q264", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_127", "domain": "finance", "answer": {"ni_trading_losses_against_uk_profits_856": 1250000.0}, "field_matches": {"ni_trading_losses_against_uk_profits_856": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

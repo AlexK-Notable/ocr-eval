@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q21", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_10", "domain": "supply_chain", "answer": {"exporter_country_territory": "United States"}, "field_matches": {"exporter_country_territory": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

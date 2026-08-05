@@ -1,1 +1,1 @@
-{"qid": "finance_q239", "parser": "docstrange_sync", "source_file": "finance_112", "domain": "finance", "answer": {"month": "18", "year": "50"}, "field_matches": {"month": true, "year": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q239", "parser": "docstrange_sync", "source_file": "finance_112", "domain": "finance", "answer": {"month": "18", "year": "50"}, "field_matches": {"month": true, "year": true}, "match": true, "extractor": "gemini-3.6-flash"}

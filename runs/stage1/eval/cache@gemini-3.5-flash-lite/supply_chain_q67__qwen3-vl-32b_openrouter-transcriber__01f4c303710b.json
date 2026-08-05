@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q67", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_28", "domain": "supply_chain", "answer": {"zip_code": null, "delivery_method": null}, "field_matches": {"zip_code": false, "delivery_method": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

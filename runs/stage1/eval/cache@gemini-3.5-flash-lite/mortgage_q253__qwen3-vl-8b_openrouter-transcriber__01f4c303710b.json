@@ -1,0 +1,1 @@
+{"qid": "mortgage_q253", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_112", "domain": "mortgage", "answer": {"Completed": "unchecked", "Jointly": "unchecked", "Not Jointly": "checked"}, "field_matches": {"Completed": true, "Jointly": true, "Not Jointly": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

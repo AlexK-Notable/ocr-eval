@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q138", "parser": "docstrange_sync", "source_file": "supply_chain_47", "domain": "supply_chain", "answer": {"container": "MSMU6637435", "packages": 4, "seal": "114217", "weight": 8000, "tare": 3700}, "field_matches": {"container": true, "packages": true, "seal": true, "weight": true, "tare": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

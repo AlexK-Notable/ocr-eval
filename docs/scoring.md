@@ -26,7 +26,7 @@ the *only* fields eligible for fuzzy comparison.
   `score.py`) — short strings (IDs, amounts) never get fuzzy tolerance, since a 90+ ratio would
   forgive a single wrong digit.
 
-For transcriber rows, the extractor is **`gemini-3.5-flash-lite`** (`score.py`'s `DEFAULT_MODEL`)
+For transcriber rows, the extractor is **`gemini-3.6-flash`** (`score.py`'s `DEFAULT_MODEL`)
 — one call per (question, parser), reading the transcript markdown and the typed template, never
 outside knowledge. The construction is upstream's; nothing about it is reimplemented.
 
@@ -69,6 +69,22 @@ Full table in [`results-stage1-2026-08-04.md`](results-stage1-2026-08-04.md#d11-
 was misread as evidence of interchangeability. A non-significant result at small n rejects a *large*
 difference; it does not establish equivalence. Quantify power before treating a null as a green
 light.
+
+**D11 rev 3 (2026-08-05, user-decided) — `gemini-3.6-flash`.** A third grading pass over the same
+4,068 cells settles the question the n=300 A/B could not. Fully-correct counts: **3.6-flash 3206**,
+3.1-flash-lite 3105, 3.5-flash-lite 3069 — 3.6 ahead of both at p=4.7e-09 (vs 3.1) and p=3.4e-16
+(vs 3.5). Unlike rev 2, this **is** an accuracy decision, and it retires D11's original
+"nothing separates them" premise.
+
+Because 3.6-flash post-dates `CONTAMINATION_CUTOFF`, the memorization question was tested rather
+than assumed: with the answer removed from the transcript (empty body, or an unrelated decoy page) it
+scores **0.0%**, identical to the pre-cutoff 3.5-flash-lite control, while both score 76–80% on real
+transcripts. It reads its input; it does not recite the bank. See
+`scripts/extractor_memorization_probe.py` and
+[`results-stage1-2026-08-04.md`](results-stage1-2026-08-04.md#d11-rev-3-2026-08-05-gemini-36-flash-and-the-three-way-result).
+
+Operationally 3.6-flash is ~12x slower per leg and quota-tighter — 16 workers sustains 429s, so the
+re-score driver runs at 6.
 
 **What it costs us:** DoD #2 compares our absolute numbers against upstream's published Table 3,
 which upstream produced with `gemini-3-flash-preview` — so a reproduction gap now carries one

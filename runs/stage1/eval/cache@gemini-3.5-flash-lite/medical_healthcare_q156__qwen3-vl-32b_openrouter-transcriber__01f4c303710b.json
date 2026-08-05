@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q156", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_68", "domain": "medical_healthcare", "answer": {"other_genetic_history": "Type 2 Diabetes – maternal grandmother, paternal grandfather"}, "field_matches": {"other_genetic_history": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

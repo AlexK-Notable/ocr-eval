@@ -1,0 +1,1 @@
+{"qid": "mortgage_q201", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_92", "domain": "mortgage", "answer": {"year_built": "2018", "front_door_elevation": "Ground Level"}, "field_matches": {"year_built": true, "front_door_elevation": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

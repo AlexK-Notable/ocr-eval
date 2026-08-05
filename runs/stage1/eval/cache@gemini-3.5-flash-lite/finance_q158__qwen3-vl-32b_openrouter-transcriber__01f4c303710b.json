@@ -1,0 +1,1 @@
+{"qid": "finance_q158", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_78", "domain": "finance", "answer": {"credits_cancelled_totaled": "22,500 metric tons", "serial_number": "CAFR5037-H"}, "field_matches": {"credits_cancelled_totaled": true, "serial_number": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

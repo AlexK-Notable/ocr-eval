@@ -1,0 +1,1 @@
+{"qid": "mortgage_q168", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_74", "domain": "mortgage", "answer": {"barn_defect_location": null, "barn_defect_feature": "Outbuilding - Barn"}, "field_matches": {"barn_defect_location": false, "barn_defect_feature": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

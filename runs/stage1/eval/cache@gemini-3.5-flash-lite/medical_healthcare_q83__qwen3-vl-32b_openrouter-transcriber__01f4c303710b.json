@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q83", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_36", "domain": "medical_healthcare", "answer": {"reviewer_job_title": "Supervising Criminalist I"}, "field_matches": {"reviewer_job_title": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

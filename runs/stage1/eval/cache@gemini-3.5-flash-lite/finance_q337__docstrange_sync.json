@@ -1,0 +1,1 @@
+{"qid": "finance_q337", "parser": "docstrange_sync", "source_file": "finance_166", "domain": "finance", "answer": {"chart_title": "YEARS OF EXCEPTIONAL (≥18%) ROTCE¹ PERFORMANCE", "year_column_headers": "2016, '17, '18, '19, '20, '21, '22, '23, '24, '25"}, "field_matches": {"chart_title": true, "year_column_headers": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

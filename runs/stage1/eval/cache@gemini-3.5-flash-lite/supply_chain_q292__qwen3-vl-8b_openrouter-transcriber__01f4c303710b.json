@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q292", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_103", "domain": "supply_chain", "answer": {"A-31A": "unchecked", "A-31B": "checked", "B-31A": "unchecked", "B-31B": "checked"}, "field_matches": {"A-31A": true, "A-31B": true, "B-31A": true, "B-31B": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

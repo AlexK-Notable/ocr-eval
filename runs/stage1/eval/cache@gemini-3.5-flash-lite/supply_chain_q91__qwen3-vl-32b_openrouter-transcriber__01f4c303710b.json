@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q91", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "supply_chain_35", "domain": "supply_chain", "answer": {"1001 Labor QTY": 8, "1002 Labor QTY": 7, "1003 Labor QTY": 0}, "field_matches": {"1001 Labor QTY": true, "1002 Labor QTY": false, "1003 Labor QTY": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q36", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_14", "domain": "finance", "answer": {"bodily_injury_amount": 2500, "per_claim_marked": true}, "field_matches": {"bodily_injury_amount": true, "per_claim_marked": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

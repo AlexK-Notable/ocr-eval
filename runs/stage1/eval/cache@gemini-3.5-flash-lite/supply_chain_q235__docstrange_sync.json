@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q235", "parser": "docstrange_sync", "source_file": "supply_chain_72", "domain": "supply_chain", "answer": {"32": "01, 03, 06", "33": 1, "35": 1, "36": 3, "37": 3}, "field_matches": {"32": true, "33": true, "35": true, "36": true, "37": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

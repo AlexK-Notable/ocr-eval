@@ -1,1 +1,1 @@
-{"qid": "finance_q374", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_5", "domain": "finance", "answer": {"street_address": "987 Maple Drive, Dallas, TX 75201"}, "field_matches": {"street_address": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q374", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_5", "domain": "finance", "answer": {"street_address": "987 Maple Drive"}, "field_matches": {"street_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q411", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_183", "domain": "mortgage", "answer": {"Deposit Accounts": 31522.8, "Loans Outstanding": 2415.0}, "field_matches": {"Deposit Accounts": true, "Loans Outstanding": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

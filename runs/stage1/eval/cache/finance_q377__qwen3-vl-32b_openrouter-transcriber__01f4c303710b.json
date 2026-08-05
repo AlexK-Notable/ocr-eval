@@ -1,1 +1,1 @@
-{"qid": "finance_q377", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_40", "domain": "finance", "answer": {"firm_name": "WithumSmith+Brown, P.C."}, "field_matches": {"firm_name": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q377", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "finance_40", "domain": "finance", "answer": {"firm_name": "WithumSmith+Brown, P.C."}, "field_matches": {"firm_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

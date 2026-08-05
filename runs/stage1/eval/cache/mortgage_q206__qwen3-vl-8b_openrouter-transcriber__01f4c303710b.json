@@ -1,1 +1,1 @@
-{"qid": "mortgage_q206", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_94", "domain": "mortgage", "answer": {"level": "Certified Residential"}, "field_matches": {"level": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "mortgage_q206", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_94", "domain": "mortgage", "answer": {"level": "Certified Residential"}, "field_matches": {"level": true}, "match": true, "extractor": "gemini-3.6-flash"}

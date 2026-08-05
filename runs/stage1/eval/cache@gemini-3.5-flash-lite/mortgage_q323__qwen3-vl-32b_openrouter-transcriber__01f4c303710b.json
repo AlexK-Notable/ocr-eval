@@ -1,0 +1,1 @@
+{"qid": "mortgage_q323", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_152", "domain": "mortgage", "answer": {"Signature of Applicant": "Oliver J. Mercer", "Date": "2025-03-06"}, "field_matches": {"Signature of Applicant": true, "Date": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

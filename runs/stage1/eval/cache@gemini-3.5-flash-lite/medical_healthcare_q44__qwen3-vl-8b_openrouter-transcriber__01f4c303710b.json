@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q44", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_21", "domain": "medical_healthcare", "answer": {"decedent_name": "GUARDADO PINEDA, ANDRES F", "classification": "HOMI"}, "field_matches": {"decedent_name": true, "classification": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q81", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_35", "domain": "mortgage", "answer": {"title_policy_expense_party": "Buyer's"}, "field_matches": {"title_policy_expense_party": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

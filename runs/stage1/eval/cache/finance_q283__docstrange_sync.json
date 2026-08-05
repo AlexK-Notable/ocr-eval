@@ -1,1 +1,1 @@
-{"qid": "finance_q283", "parser": "docstrange_sync", "source_file": "finance_135", "domain": "finance", "answer": {"line_16_value": 3200}, "field_matches": {"line_16_value": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q283", "parser": "docstrange_sync", "source_file": "finance_135", "domain": "finance", "answer": {"line_16_value": 3200}, "field_matches": {"line_16_value": true}, "match": true, "extractor": "gemini-3.6-flash"}

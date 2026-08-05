@@ -1,0 +1,1 @@
+{"qid": "mortgage_q190", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_87", "domain": "mortgage", "answer": {"appraisal_version": "Appraisal Version #1", "organization_text": "Fannie Mae | Freddie Mac"}, "field_matches": {"appraisal_version": true, "organization_text": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

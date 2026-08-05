@@ -1,0 +1,1 @@
+{"qid": "mortgage_q429", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_198", "domain": "mortgage", "answer": {"Amount Paid": "$0.00", "Debenture Interest": "$0.00"}, "field_matches": {"Amount Paid": true, "Debenture Interest": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

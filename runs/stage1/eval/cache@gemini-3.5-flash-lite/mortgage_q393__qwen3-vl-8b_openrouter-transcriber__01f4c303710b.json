@@ -1,0 +1,1 @@
+{"qid": "mortgage_q393", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_160", "domain": "mortgage", "answer": {"K1": "checked", "K2": "unchecked", "K3": "checked", "K4": "unchecked", "K5": "checked"}, "field_matches": {"K1": true, "K2": true, "K3": true, "K4": true, "K5": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

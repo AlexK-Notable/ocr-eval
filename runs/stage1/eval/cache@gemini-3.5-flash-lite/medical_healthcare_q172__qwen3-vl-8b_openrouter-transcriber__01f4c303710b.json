@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q172", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_71", "domain": "medical_healthcare", "answer": {"8-2A": "OUT", "8-2B": "IN", "9-2": "OUT"}, "field_matches": {"8-2A": false, "8-2B": true, "9-2": false}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q36", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_17", "domain": "medical_healthcare", "answer": {"epsdt_family_plan_99213": "X"}, "field_matches": {"epsdt_family_plan_99213": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q230", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_107", "domain": "finance", "answer": {"amount_received": 10.0, "date_received": "1940-03-23"}, "field_matches": {"amount_received": true, "date_received": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

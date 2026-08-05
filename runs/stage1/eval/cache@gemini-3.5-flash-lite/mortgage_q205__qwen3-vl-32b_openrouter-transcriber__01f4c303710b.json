@@ -1,0 +1,1 @@
+{"qid": "mortgage_q205", "parser": "qwen3-vl-32b_openrouter-transcriber__01f4c303710b", "source_file": "mortgage_93", "domain": "mortgage", "answer": {"appraisal_version_number": "2", "client_reference_id": "231495234K"}, "field_matches": {"appraisal_version_number": true, "client_reference_id": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

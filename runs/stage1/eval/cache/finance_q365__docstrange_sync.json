@@ -1,1 +1,1 @@
-{"qid": "finance_q365", "parser": "docstrange_sync", "source_file": "finance_53", "domain": "finance", "answer": {"pension_restricted": 37450095}, "field_matches": {"pension_restricted": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
+{"qid": "finance_q365", "parser": "docstrange_sync", "source_file": "finance_53", "domain": "finance", "answer": {"pension_restricted": 37450095}, "field_matches": {"pension_restricted": true}, "match": true, "extractor": "gemini-3.6-flash"}

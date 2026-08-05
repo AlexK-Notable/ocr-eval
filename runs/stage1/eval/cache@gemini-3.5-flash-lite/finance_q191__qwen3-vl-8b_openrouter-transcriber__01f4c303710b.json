@@ -1,0 +1,1 @@
+{"qid": "finance_q191", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_90", "domain": "finance", "answer": {"note_text": "*Earmarked Contribution: See Below*", "receipt_for_primary_checked": true}, "field_matches": {"note_text": true, "receipt_for_primary_checked": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

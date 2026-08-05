@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Full re-score of all three transcriber legs under the D11-rev2 extractor
-# (gemini-3.5-flash-lite). Kept in-repo per the no-/tmp rule; safe to re-run — completed cells are
+# (gemini-3.6-flash). Kept in-repo per the no-/tmp rule; safe to re-run — completed cells are
 # cache hits and cost nothing, so an interrupted run resumes for free.
 set -euo pipefail
 cd /home/alexk/repos/ocr-eval

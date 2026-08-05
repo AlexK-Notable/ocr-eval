@@ -1,0 +1,1 @@
+{"qid": "finance_q204", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "finance_96", "domain": "finance", "answer": {"pittsburgh_national_bank_address": "P.O. Box 747\nPittsburgh, Pa. 15230"}, "field_matches": {"pittsburgh_national_bank_address": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}

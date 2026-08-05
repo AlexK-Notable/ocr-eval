@@ -1,0 +1,1 @@
+{"qid": "finance_q289", "parser": "docstrange_sync", "source_file": "finance_139", "domain": "finance", "answer": {"line_14_yes_checkbox": null, "line_14_no_checkbox": false}, "field_matches": {"line_14_yes_checkbox": false, "line_14_no_checkbox": true}, "match": false, "extractor": "gemini-3.5-flash-lite"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q90", "parser": "qwen3-vl-8b_openrouter-transcriber__01f4c303710b", "source_file": "medical_healthcare_40", "domain": "medical_healthcare", "answer": {"buprenorphine_free_matrix_source": "001 - Heart Blood"}, "field_matches": {"buprenorphine_free_matrix_source": true}, "match": true, "extractor": "gemini-3.5-flash-lite"}
