@@ -38,29 +38,38 @@ from realdoc_bench.evaluate.runs import RunLayout
 
 
 # ── Constants — tunable scoring knobs ──────────────────────────────────────
-DEFAULT_MODEL = "gemini-3.1-flash-lite"
-# FORK DIVERGENCE (D11, 2026-08-04) — upstream and this project's own spec both pin
-# `gemini-3-flash-preview` here, ratified "exactly as upstream — required for published-number
-# comparability" (specs/2026-08-01-ocr-eval-pipeline-design.md:79). Overridden by user decision
-# on two grounds:
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+# FORK DIVERGENCE (D11) — upstream and this project's own spec both pin `gemini-3-flash-preview`
+# here, ratified "exactly as upstream — required for published-number comparability"
+# (specs/2026-08-01-ocr-eval-pipeline-design.md:79). Overridden by user decision on two grounds:
 #   1. DURABILITY. The instrument must outlive the project. `gemini-3-flash-preview` is a PREVIEW
 #      endpoint; preview/older models get retired, demonstrated the same day when
 #      `gemini-2.0-flash-lite` returned HTTP 404 "no longer available". An extractor that
 #      disappears mid-project destroys reproducibility far more completely than a judge swap.
-#      `gemini-3.1-flash-lite` is GA.
 #   2. EQUIVALENCE IS MEASURED, NOT ASSUMED. Paired A/B over 300 real bank items on real
 #      DocStrange transcripts, identical items for every model (McNemar on discordant pairs):
 #        gemini-3.1-flash-lite   244/300 (81.3%)  +14/-11 vs incumbent, p=0.690
 #        gemini-3-flash-preview  241/300 (80.3%)  — incumbent
 #        gemini-3.5-flash-lite   240/300 (80.0%)  +13/-14, p=1.000
 #        gemini-2.5-flash        235/300 (78.3%)  +12/-18, p=0.362
-#      Nothing separates them. Cost falls $1.83 -> $0.91 per full-corpus transcriber row and
-#      per-call latency drops roughly an order of magnitude.
+#      Nothing separates them, which is what makes the choice among them free on accuracy grounds.
+#
+# REVISION 2026-08-05 (user decision): the pin moves 3.1-flash-lite -> `gemini-3.5-flash-lite`,
+# the newest GA flash-lite generation. Both are GA and the A/B above cannot separate them
+# (p=1.000), so this is a generation-currency choice, not an accuracy one.
+# DELIBERATELY NOT `gemini-flash-lite-latest`: a floating alias resolves to a different model over
+# time, so two runs months apart would silently use different graders while `run_meta.json` stamped
+# the same name — the exact reproducibility failure ground 1 above exists to prevent. A moving
+# instrument is worse than an old one.
 # NOTE the 5-fixture `selftest --extractor` gate does NOT discriminate between these models
 # (all score 5/5) — it is a floor, not evidence of equivalence. The n=300 paired run is.
 # COST OF THE CHANGE: DoD #2 compares our absolute numbers against upstream's published Table 3,
 # which upstream produced with `gemini-3-flash-preview`. A repro gap now carries one extra
 # uncontrolled variable. Re-pin the constant above to reproduce upstream exactly.
+# Changing this constant on a run dir that already has scored transcriber rows requires
+# `ocr-eval score --new-extractor-generation`, which archives the extractor-dependent rows first
+# (cli.py's `_enforce_extractor_generation`); `vlm__*` direct-QA rows carry no extractor
+# dependency and are left live.
 FUZZ_THRESHOLD = 92      # rapidfuzz ratio above which strings count as equal
 FUZZ_MIN_WORDS = 5       # min word count on EITHER side for fuzzy to apply
 
@@ -503,9 +512,17 @@ def _worker(item: dict, parser: str, layout: RunLayout, *,
                 return base
             time.sleep(2 + attempt * 3)
     fm, allc = score_typed(ans, item["gold_dict"], item["str_keys"])
+    # FORK ADDITION (2026-08-05): stamp WHICH extractor produced this answer. Previously the
+    # grader's identity lived only in `run_meta.json`, so a row could not be attributed on its own
+    # — when two people disagreed about which extractor had scored 4,068 existing rows, the data
+    # itself could not settle it and the archive-and-re-score had to be run to be sure. Rows are
+    # keyed per (question, parser) and outlive any single run's metadata, so provenance belongs
+    # here. Absence of the key now means "scored before this stamp existed", never "scored by the
+    # currently-pinned model" — deliberately NOT backfilled on the cache-hit path above, since
+    # labelling an old row with today's pin would assert exactly the false provenance this fixes.
     rec = {"qid": qid, "parser": parser, "source_file": sf,
            "domain": item.get("domain", ""), "answer": ans,
-           "field_matches": fm, "match": allc}
+           "field_matches": fm, "match": allc, "extractor": DEFAULT_MODEL}
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(rec, ensure_ascii=False))
     return ScoreRecord(qid, parser, sf, item.get("domain", ""),

@@ -1054,6 +1054,72 @@ def test_score_cli_writes_results_and_records_extractor_id(tmp_path, monkeypatch
     assert meta["extractor_id"] == score_mod.DEFAULT_MODEL
 
 
+def test_scored_row_stamps_the_extractor_that_produced_it(tmp_path, monkeypatch):
+    """Provenance belongs in the ROW, not only in run_meta.json.
+
+    Regression for a real ambiguity: two people disagreed about which extractor had scored 4,068
+    existing transcriber rows, and the rows themselves could not settle it — they carried only
+    qid/parser/source_file/domain/answer/field_matches/match. Cache rows are keyed per
+    (question, parser) and outlive any single run's metadata, so the grader's identity has to live
+    with the answer it produced."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    import realdoc_bench.evaluate.score as score_mod
+    monkeypatch.setattr(score_mod, "gemini_extract", lambda *a, **k: {"a": "42"})
+
+    result = _run_score_cli(layout, registry_yaml, parser_name)
+    assert result.exit_code == 0, result.output
+    rec = json.loads(layout.cache_path("q1", parser_name).read_text())
+    assert rec["extractor"] == score_mod.DEFAULT_MODEL
+
+
+def test_cache_hit_does_not_backfill_the_extractor_stamp(tmp_path, monkeypatch):
+    """The complement, and the part that makes the stamp trustworthy: an already-answered row must
+    NOT acquire today's pin on a rescore. Stamping it would assert precisely the false provenance
+    this field exists to prevent — absence means "scored before the stamp existed", never "scored
+    by whatever is pinned now"."""
+    monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr(cli_mod.st, "run_extractor", lambda: [])
+    layout = _make_transcriber_run_dir(tmp_path)
+    parser_name = "t1_local__abc123"
+    parser_dir = layout.parser_dir(parser_name)
+    parser_dir.mkdir(parents=True)
+    (parser_dir / "doc_1.md").write_text("## Page 1\n\n**Value:** 42")
+    registry_yaml = tmp_path / "registry.yaml"
+    _write_registry(registry_yaml, [])
+
+    # A pre-existing row from an unknown extractor generation — no `extractor` key.
+    legacy = {"qid": "q1", "parser": parser_name, "source_file": "doc_1", "domain": "test",
+              "answer": {"a": "42"}, "field_matches": {"a": True}, "match": True}
+    cpath = layout.cache_path("q1", parser_name)
+    cpath.parent.mkdir(parents=True, exist_ok=True)
+    cpath.write_text(json.dumps(legacy))
+
+    import realdoc_bench.evaluate.score as score_mod
+    called = {"n": 0}
+
+    def _boom(*a, **k):
+        called["n"] += 1
+        return {"a": "42"}
+
+    monkeypatch.setattr(score_mod, "gemini_extract", _boom)
+    result = _run_score_cli(layout, registry_yaml, parser_name)
+    assert result.exit_code == 0, result.output
+    assert called["n"] == 0                       # cache hit: no extractor call
+    rec = json.loads(cpath.read_text())
+    assert "extractor" not in rec                  # provenance not invented
+
+
 def test_score_cli_refuses_to_mix_extractor_generations(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "check_bank", lambda items: {})
     monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
