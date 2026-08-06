@@ -1,0 +1,1 @@
+{"qid": "mortgage_q319", "parser": "mistral_ocr_4", "source_file": "mortgage_151", "domain": "mortgage", "answer": {"Borrower 1": "Marcus D. Ellison", "Date 1": "2024-11-19", "Borrower 2": "Renee K. Ellison", "Date 2": "2024-11-19"}, "field_matches": {"Borrower 1": true, "Date 1": true, "Borrower 2": true, "Date 2": true}, "match": true, "extractor": "gemini-3.6-flash"}

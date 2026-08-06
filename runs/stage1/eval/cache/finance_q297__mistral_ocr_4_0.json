@@ -1,0 +1,1 @@
+{"qid": "finance_q297", "parser": "mistral_ocr_4_0", "source_file": "finance_144", "domain": "finance", "answer": {"figure_title": "Figure 2: Fort Myers, Florida, neighborhood after Hurricane Irma", "sign_post_text": null}, "field_matches": {"figure_title": true, "sign_post_text": false}, "match": false, "extractor": "gemini-3.6-flash"}

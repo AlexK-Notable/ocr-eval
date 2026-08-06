@@ -1,0 +1,1 @@
+{"qid": "mortgage_q267", "parser": "mistral_ocr_4_0", "source_file": "mortgage_116", "domain": "mortgage", "answer": {"12A Frequency": "Hourly", "14 Overtime Checked": "Yes", "14 Bonus Checked": "No"}, "field_matches": {"12A Frequency": true, "14 Overtime Checked": true, "14 Bonus Checked": true}, "match": true, "extractor": "gemini-3.6-flash"}

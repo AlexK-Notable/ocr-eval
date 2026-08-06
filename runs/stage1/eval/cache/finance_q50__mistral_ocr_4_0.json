@@ -1,0 +1,1 @@
+{"qid": "finance_q50", "parser": "mistral_ocr_4_0", "source_file": "finance_19", "domain": "finance", "answer": {"other_carrier_effective_date": "2025-01-01"}, "field_matches": {"other_carrier_effective_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

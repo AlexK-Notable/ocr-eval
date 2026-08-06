@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q18", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_8", "domain": "supply_chain", "answer": {"subtotal_label": "SUBTOTAL FOR THIS PAGE:", "subtotal_value": 0, "revision_code": "REV. 04.10.13-1.08"}, "field_matches": {"subtotal_label": true, "subtotal_value": true, "revision_code": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q472", "parser": "mistral_ocr_4_0", "source_file": "mortgage_195", "domain": "mortgage", "answer": {"K1": 2473.56, "K2": 1800, "K3": 412.25, "K4": 206.13, "K5": null, "K6": null}, "field_matches": {"K1": true, "K2": true, "K3": true, "K4": true, "K5": true, "K6": true}, "match": true, "extractor": "gemini-3.6-flash"}

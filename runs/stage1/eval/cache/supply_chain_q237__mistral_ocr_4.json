@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q237", "parser": "mistral_ocr_4", "source_file": "supply_chain_74", "domain": "supply_chain", "answer": {"Yes": "no", "No": "no", "Not at this Time": "no"}, "field_matches": {"Yes": false, "No": true, "Not at this Time": true}, "match": false, "extractor": "gemini-3.6-flash"}

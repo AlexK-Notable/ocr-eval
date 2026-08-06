@@ -1,0 +1,1 @@
+{"qid": "mortgage_q36", "parser": "mistral_ocr_4_0", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"filed_for_bankruptcy_no": "Yes"}, "field_matches": {"filed_for_bankruptcy_no": true}, "match": true, "extractor": "gemini-3.6-flash"}

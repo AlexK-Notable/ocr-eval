@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q1", "parser": "mistral_ocr_4", "source_file": "supply_chain_1", "domain": "supply_chain", "answer": {"shipper_checkbox": false, "consignee_checkbox": false}, "field_matches": {"shipper_checkbox": true, "consignee_checkbox": true}, "match": true, "extractor": "gemini-3.6-flash"}

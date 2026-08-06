@@ -1,0 +1,1 @@
+{"qid": "mortgage_q110", "parser": "mistral_ocr_4_0", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"heating_detail": "Typical for Market"}, "field_matches": {"heating_detail": true}, "match": true, "extractor": "gemini-3.6-flash"}

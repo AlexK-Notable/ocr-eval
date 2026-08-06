@@ -1,0 +1,1 @@
+{"qid": "finance_q41", "parser": "mistral_ocr_4_0", "source_file": "finance_15", "domain": "finance", "answer": {"type_of_business": "Limited Liability Company"}, "field_matches": {"type_of_business": true}, "match": true, "extractor": "gemini-3.6-flash"}

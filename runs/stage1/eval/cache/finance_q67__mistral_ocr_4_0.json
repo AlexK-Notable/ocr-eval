@@ -1,0 +1,1 @@
+{"qid": "finance_q67", "parser": "mistral_ocr_4_0", "source_file": "finance_25", "domain": "finance", "answer": {"property_category_limit_labels": "BUILDING AMT, PERS PROP AMT", "bottom_block_limit_label": "LIMIT"}, "field_matches": {"property_category_limit_labels": true, "bottom_block_limit_label": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q80", "parser": "mistral_ocr_4_0", "source_file": "finance_32", "domain": "finance", "answer": {"nevada_guilty_of": "a felony"}, "field_matches": {"nevada_guilty_of": true}, "match": true, "extractor": "gemini-3.6-flash"}

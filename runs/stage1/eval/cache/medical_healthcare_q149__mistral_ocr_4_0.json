@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q149", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_65", "domain": "medical_healthcare", "answer": {"subscriber_last_name": "Rodriguez", "subscriber_date_of_birth": "1989-09-22"}, "field_matches": {"subscriber_last_name": true, "subscriber_date_of_birth": true}, "match": true, "extractor": "gemini-3.6-flash"}

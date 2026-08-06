@@ -1,0 +1,1 @@
+{"qid": "mortgage_q266", "parser": "mistral_ocr_4", "source_file": "mortgage_115", "domain": "mortgage", "answer": {"Overtime Year To Date": 0, "Bonus Year To Date": 4000}, "field_matches": {"Overtime Year To Date": false, "Bonus Year To Date": true}, "match": false, "extractor": "gemini-3.6-flash"}

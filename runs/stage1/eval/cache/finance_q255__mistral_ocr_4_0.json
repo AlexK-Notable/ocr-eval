@@ -1,0 +1,1 @@
+{"qid": "finance_q255", "parser": "mistral_ocr_4_0", "source_file": "finance_121", "domain": "finance", "answer": {"tan": "CALC12345A", "tax_deducted": 84000}, "field_matches": {"tan": true, "tax_deducted": true}, "match": true, "extractor": "gemini-3.6-flash"}

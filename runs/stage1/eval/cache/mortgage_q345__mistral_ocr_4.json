@@ -1,0 +1,1 @@
+{"qid": "mortgage_q345", "parser": "mistral_ocr_4", "source_file": "mortgage_169", "domain": "mortgage", "answer": {"Borrower Self Employed": "yes", "Co-Borrower Self Employed": "yes", "Completed": "Jointly"}, "field_matches": {"Borrower Self Employed": true, "Co-Borrower Self Employed": true, "Completed": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q341", "parser": "mistral_ocr_4_0", "source_file": "mortgage_166", "domain": "mortgage", "answer": {"Borrower Signature": "Caleb J. Morton", "Lender's Officer Signature": "Jordan P. Lacey"}, "field_matches": {"Borrower Signature": true, "Lender's Officer Signature": true}, "match": true, "extractor": "gemini-3.6-flash"}

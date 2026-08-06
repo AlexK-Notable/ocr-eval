@@ -1,0 +1,1 @@
+{"qid": "finance_q226", "parser": "mistral_ocr_4", "source_file": "finance_105", "domain": "finance", "answer": {"collector_name": "BURNS POE"}, "field_matches": {"collector_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

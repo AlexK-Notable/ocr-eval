@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q275", "parser": "mistral_ocr_4", "source_file": "supply_chain_94", "domain": "supply_chain", "answer": {"Vessel": "$TBD", "Cargo": "$0", "Facility": "$TBD", "Other": "$0"}, "field_matches": {"Vessel": true, "Cargo": true, "Facility": true, "Other": true}, "match": true, "extractor": "gemini-3.6-flash"}

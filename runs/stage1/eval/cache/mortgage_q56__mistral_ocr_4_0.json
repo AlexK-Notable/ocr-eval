@@ -1,0 +1,1 @@
+{"qid": "mortgage_q56", "parser": "mistral_ocr_4_0", "source_file": "mortgage_21", "domain": "mortgage", "answer": {"label_above_total_assets": null}, "field_matches": {"label_above_total_assets": true}, "match": true, "extractor": "gemini-3.6-flash"}

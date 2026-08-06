@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q119", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_42", "domain": "supply_chain", "answer": {"Carrier": "UNION PACIFIC RAILROAD", "Route": "UP-ESTL-NS", "Origin": "Pasadena TX", "Incoterm": "Prepaid"}, "field_matches": {"Carrier": true, "Route": true, "Origin": true, "Incoterm": true}, "match": true, "extractor": "gemini-3.6-flash"}

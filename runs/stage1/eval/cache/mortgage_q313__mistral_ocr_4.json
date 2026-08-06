@@ -1,0 +1,1 @@
+{"qid": "mortgage_q313", "parser": "mistral_ocr_4", "source_file": "mortgage_147", "domain": "mortgage", "answer": {"Purchaser (Borrower)": "Marcus D. Ellison", "Purchaser (Co-Borrower)": "Renee K. Ellison"}, "field_matches": {"Purchaser (Borrower)": true, "Purchaser (Co-Borrower)": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,11 @@
+{
+  "parser": "mistral_ocr_4_0",
+  "stem": "medical_healthcare_46",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 3.9426378150001256,
+  "cost_usd": 0.004,
+  "md_length": 4022,
+  "elapsed_total": 3.94441819190979,
+  "error": ""
+}

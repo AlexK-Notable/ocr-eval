@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q85", "parser": "mistral_ocr_4", "source_file": "supply_chain_34", "domain": "supply_chain", "answer": {"Quantity": 10.3, "Price per Gallon": 5.73, "Line Total": 59.13}, "field_matches": {"Quantity": true, "Price per Gallon": true, "Line Total": true}, "match": true, "extractor": "gemini-3.6-flash"}

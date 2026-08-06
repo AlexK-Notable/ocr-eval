@@ -1,0 +1,1 @@
+{"qid": "finance_q322", "parser": "mistral_ocr_4", "source_file": "finance_156", "domain": "finance", "answer": {"convenience_store_authorized_count": 115709}, "field_matches": {"convenience_store_authorized_count": true}, "match": true, "extractor": "gemini-3.6-flash"}

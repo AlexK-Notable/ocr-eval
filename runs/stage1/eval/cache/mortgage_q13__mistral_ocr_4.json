@@ -1,0 +1,1 @@
+{"qid": "mortgage_q13", "parser": "mistral_ocr_4", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"closing_costs_right_column_text": "in Loan Costs + in Other Costs –"}, "field_matches": {"closing_costs_right_column_text": true}, "match": true, "extractor": "gemini-3.6-flash"}

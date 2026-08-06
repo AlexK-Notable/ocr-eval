@@ -1,0 +1,1 @@
+{"qid": "mortgage_q469", "parser": "mistral_ocr_4_0", "source_file": "mortgage_217", "domain": "mortgage", "answer": {"Physical": null, "Functional": null, "External": null}, "field_matches": {"Physical": true, "Functional": true, "External": true}, "match": true, "extractor": "gemini-3.6-flash"}

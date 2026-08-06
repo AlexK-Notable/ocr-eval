@@ -1,0 +1,1 @@
+{"qid": "mortgage_q82", "parser": "mistral_ocr_4", "source_file": "mortgage_36", "domain": "mortgage", "answer": {"selected_survey_option": null}, "field_matches": {"selected_survey_option": false}, "match": false, "extractor": "gemini-3.6-flash"}

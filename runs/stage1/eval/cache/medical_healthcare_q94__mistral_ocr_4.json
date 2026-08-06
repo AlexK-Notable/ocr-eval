@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q94", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_41", "domain": "medical_healthcare", "answer": {"sars_cov_2_naat_results": "REQUEST CREDITED.\n\nDUPLICATE ORDER. THE RESPIRATORY PCR\n\nPANEL ALSO TESTS FOR SARSCOV2."}, "field_matches": {"sars_cov_2_naat_results": true}, "match": true, "extractor": "gemini-3.6-flash"}

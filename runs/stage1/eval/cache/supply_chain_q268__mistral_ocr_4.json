@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q268", "parser": "mistral_ocr_4", "source_file": "supply_chain_89", "domain": "supply_chain", "answer": {"Motor Coach": 2, "School Bus 1-8": null, "Mini-bus 16+": null}, "field_matches": {"Motor Coach": true, "School Bus 1-8": true, "Mini-bus 16+": true}, "match": true, "extractor": "gemini-3.6-flash"}

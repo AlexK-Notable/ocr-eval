@@ -1,0 +1,1 @@
+{"qid": "finance_q254", "parser": "mistral_ocr_4", "source_file": "finance_120", "domain": "finance", "answer": {"amount_invested_hii": 0, "deduction_claimed_hiv": 0}, "field_matches": {"amount_invested_hii": true, "deduction_claimed_hiv": true}, "match": true, "extractor": "gemini-3.6-flash"}

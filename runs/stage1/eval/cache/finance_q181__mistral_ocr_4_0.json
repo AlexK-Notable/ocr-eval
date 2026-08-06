@@ -1,0 +1,1 @@
+{"qid": "finance_q181", "parser": "mistral_ocr_4_0", "source_file": "finance_87", "domain": "finance", "answer": {"occupation": "Physician", "receipt_for_primary_checked": true}, "field_matches": {"occupation": true, "receipt_for_primary_checked": true}, "match": true, "extractor": "gemini-3.6-flash"}

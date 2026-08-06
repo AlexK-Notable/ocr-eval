@@ -1,0 +1,1 @@
+{"qid": "mortgage_q167", "parser": "mistral_ocr_4", "source_file": "mortgage_74", "domain": "mortgage", "answer": {"appraisal_version_number": "3", "fannie_mae_freddie_mac_date": "September 2024"}, "field_matches": {"appraisal_version_number": true, "fannie_mae_freddie_mac_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

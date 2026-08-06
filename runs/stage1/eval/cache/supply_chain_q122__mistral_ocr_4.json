@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q122", "parser": "mistral_ocr_4", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Cr?": null, "Aircraft": "N764CD", "Quantity": 26, "Units": "Gallon", "Extended": 110.57}, "field_matches": {"Cr?": true, "Aircraft": true, "Quantity": true, "Units": true, "Extended": true}, "match": true, "extractor": "gemini-3.6-flash"}

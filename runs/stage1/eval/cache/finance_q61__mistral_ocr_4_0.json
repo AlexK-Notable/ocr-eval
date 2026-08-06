@@ -1,0 +1,1 @@
+{"qid": "finance_q61", "parser": "mistral_ocr_4_0", "source_file": "finance_23", "domain": "finance", "answer": {"billing_plan": "AGENCY BILL", "payment_plan": "ANNUAL"}, "field_matches": {"billing_plan": true, "payment_plan": true}, "match": true, "extractor": "gemini-3.6-flash"}

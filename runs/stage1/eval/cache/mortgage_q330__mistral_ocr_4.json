@@ -1,0 +1,1 @@
+{"qid": "mortgage_q330", "parser": "mistral_ocr_4", "source_file": "mortgage_157", "domain": "mortgage", "answer": {"PROPERTY ADDRESS": "123 Willow Lane", "City": "Greenville", "Zip": 29601}, "field_matches": {"PROPERTY ADDRESS": true, "City": true, "Zip": true}, "match": true, "extractor": "gemini-3.6-flash"}

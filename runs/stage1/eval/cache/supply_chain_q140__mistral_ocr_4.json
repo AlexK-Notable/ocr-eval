@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q140", "parser": "mistral_ocr_4", "source_file": "supply_chain_47", "domain": "supply_chain", "answer": {"carrier": "MSCU", "vessel": "MSC BOSPHORUS", "voyage": "FR447W", "lloyds": 9247742}, "field_matches": {"carrier": true, "vessel": true, "voyage": true, "lloyds": true}, "match": true, "extractor": "gemini-3.6-flash"}

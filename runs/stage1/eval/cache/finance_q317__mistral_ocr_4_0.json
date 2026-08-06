@@ -1,0 +1,1 @@
+{"qid": "finance_q317", "parser": "mistral_ocr_4_0", "source_file": "finance_154", "domain": "finance", "answer": {"inspection_report_number": "27801-0002-23"}, "field_matches": {"inspection_report_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

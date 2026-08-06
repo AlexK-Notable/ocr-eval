@@ -1,0 +1,1 @@
+{"qid": "mortgage_q79", "parser": "mistral_ocr_4_0", "source_file": "mortgage_34", "domain": "mortgage", "answer": {"seller_initials": "500", "buyer_initials": "False Daniel", "buyer_initials_line_value": "False Daniel"}, "field_matches": {"seller_initials": true, "buyer_initials": true, "buyer_initials_line_value": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q14", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_6", "domain": "supply_chain", "answer": {"first_item_unit_value": "PCS"}, "field_matches": {"first_item_unit_value": true}, "match": true, "extractor": "gemini-3.6-flash"}

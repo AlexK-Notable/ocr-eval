@@ -1,0 +1,1 @@
+{"qid": "mortgage_q156", "parser": "mistral_ocr_4", "source_file": "mortgage_68", "domain": "mortgage", "answer": {"footer_centered_text": "Fannie Mae | Freddie Mac\nSeptember 2024"}, "field_matches": {"footer_centered_text": false}, "match": false, "extractor": "gemini-3.6-flash"}

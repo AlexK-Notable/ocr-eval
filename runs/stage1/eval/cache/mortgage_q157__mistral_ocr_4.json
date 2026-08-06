@@ -1,0 +1,1 @@
+{"qid": "mortgage_q157", "parser": "mistral_ocr_4", "source_file": "mortgage_69", "domain": "mortgage", "answer": {"retailer_name": "Good Deal Manufactured Homes", "purchased_from_retailer": true}, "field_matches": {"retailer_name": true, "purchased_from_retailer": true}, "match": true, "extractor": "gemini-3.6-flash"}

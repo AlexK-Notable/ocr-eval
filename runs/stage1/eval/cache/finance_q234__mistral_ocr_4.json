@@ -1,0 +1,1 @@
+{"qid": "finance_q234", "parser": "mistral_ocr_4", "source_file": "finance_109", "domain": "finance", "answer": {"first_column_header": "PAYMENT."}, "field_matches": {"first_column_header": true}, "match": true, "extractor": "gemini-3.6-flash"}

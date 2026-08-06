@@ -1,0 +1,1 @@
+{"qid": "mortgage_q222", "parser": "mistral_ocr_4_0", "source_file": "mortgage_9", "domain": "mortgage", "answer": {"description": "Includes Closing Costs. See 'Calculating Cash to Close' on page 3 for details. *See 'Calculating Cash to Close' on page 3 for details.*"}, "field_matches": {"description": true}, "match": true, "extractor": "gemini-3.6-flash"}

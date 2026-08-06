@@ -1,0 +1,1 @@
+{"qid": "finance_q229", "parser": "mistral_ocr_4_0", "source_file": "finance_107", "domain": "finance", "answer": {"corporation_name": "Gulf Coast Development Co", "organization_state": "South Dakota"}, "field_matches": {"corporation_name": true, "organization_state": true}, "match": true, "extractor": "gemini-3.6-flash"}

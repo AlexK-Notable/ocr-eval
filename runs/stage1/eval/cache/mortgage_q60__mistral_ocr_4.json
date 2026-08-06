@@ -1,0 +1,1 @@
+{"qid": "mortgage_q60", "parser": "mistral_ocr_4", "source_file": "mortgage_24", "domain": "mortgage", "answer": {"primary_phone_number_value": "True", "alternate_phone_type": "Home"}, "field_matches": {"primary_phone_number_value": true, "alternate_phone_type": true}, "match": true, "extractor": "gemini-3.6-flash"}

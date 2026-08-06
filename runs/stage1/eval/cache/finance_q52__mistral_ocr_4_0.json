@@ -1,0 +1,1 @@
+{"qid": "finance_q52", "parser": "mistral_ocr_4_0", "source_file": "finance_19", "domain": "finance", "answer": {"privacy_notice_checkbox_status": null, "applicant_signature_name": "Maria Gonzalez"}, "field_matches": {"privacy_notice_checkbox_status": false, "applicant_signature_name": true}, "match": false, "extractor": "gemini-3.6-flash"}

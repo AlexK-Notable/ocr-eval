@@ -1,0 +1,1 @@
+{"qid": "mortgage_q301", "parser": "mistral_ocr_4", "source_file": "mortgage_136", "domain": "mortgage", "answer": {"First Signature": "Harold P. McCray", "Second Signature": "Ruth E. McCray", "Date": "2025-03-11"}, "field_matches": {"First Signature": true, "Second Signature": true, "Date": true}, "match": true, "extractor": "gemini-3.6-flash"}

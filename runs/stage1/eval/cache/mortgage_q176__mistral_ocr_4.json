@@ -1,0 +1,1 @@
+{"qid": "mortgage_q176", "parser": "mistral_ocr_4", "source_file": "mortgage_79", "domain": "mortgage", "answer": {"condominium_no_marked": true, "condop_no_marked": true, "highest_best_use_present_use": "Yes"}, "field_matches": {"condominium_no_marked": true, "condop_no_marked": true, "highest_best_use_present_use": true}, "match": true, "extractor": "gemini-3.6-flash"}

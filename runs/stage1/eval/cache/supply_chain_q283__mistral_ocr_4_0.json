@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q283", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_98", "domain": "supply_chain", "answer": {"Name": "Pacific Med Imaging Distributors, Inc.", "State": "CA", "ID": null}, "field_matches": {"Name": true, "State": true, "ID": false}, "match": false, "extractor": "gemini-3.6-flash"}

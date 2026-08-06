@@ -1,0 +1,1 @@
+{"qid": "finance_q336", "parser": "mistral_ocr_4_0", "source_file": "finance_165", "domain": "finance", "answer": {"class_a_shares_outstanding": 585848, "class_b_shares_outstanding": 1295970861}, "field_matches": {"class_a_shares_outstanding": true, "class_b_shares_outstanding": true}, "match": true, "extractor": "gemini-3.6-flash"}

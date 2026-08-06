@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q292", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_103", "domain": "supply_chain", "answer": {"A-31A": null, "A-31B": null, "B-31A": null, "B-31B": null}, "field_matches": {"A-31A": false, "A-31B": false, "B-31A": false, "B-31B": false}, "match": false, "extractor": "gemini-3.6-flash"}

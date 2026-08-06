@@ -1,0 +1,1 @@
+{"qid": "mortgage_q15", "parser": "mistral_ocr_4", "source_file": "mortgage_6", "domain": "mortgage", "answer": {"borrower_address": "5612 Oceanview Terrace Miami, FL 33139"}, "field_matches": {"borrower_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

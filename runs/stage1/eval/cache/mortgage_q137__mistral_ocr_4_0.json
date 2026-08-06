@@ -1,0 +1,1 @@
+{"qid": "mortgage_q137", "parser": "mistral_ocr_4_0", "source_file": "mortgage_60", "domain": "mortgage", "answer": {"lender_company_address": "400 Apple Ln Anytown, IL 54321"}, "field_matches": {"lender_company_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

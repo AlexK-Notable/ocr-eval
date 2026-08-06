@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q141", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_62", "domain": "medical_healthcare", "answer": {"footer_date": "12/23", "c360_number": "002486"}, "field_matches": {"footer_date": true, "c360_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

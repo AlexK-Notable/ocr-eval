@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q246", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_79", "domain": "supply_chain", "answer": {"Shipper": "MAINFREIGHT VIETNAM COMPANY LIMITED", "Reference number(s)": "BN12102023", "Carrier": null}, "field_matches": {"Shipper": true, "Reference number(s)": true, "Carrier": true}, "match": true, "extractor": "gemini-3.6-flash"}

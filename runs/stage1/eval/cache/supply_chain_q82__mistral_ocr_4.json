@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q82", "parser": "mistral_ocr_4", "source_file": "supply_chain_33", "domain": "supply_chain", "answer": {"Corporate Name": "Scapadas Magicas, LLC.", "DBA": null}, "field_matches": {"Corporate Name": true, "DBA": false}, "match": false, "extractor": "gemini-3.6-flash"}

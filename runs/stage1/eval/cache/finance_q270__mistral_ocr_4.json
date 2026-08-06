@@ -1,0 +1,1 @@
+{"qid": "finance_q270", "parser": "mistral_ocr_4", "source_file": "finance_129", "domain": "finance", "answer": {"company_name": "ABC Manufacturing Ltd"}, "field_matches": {"company_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

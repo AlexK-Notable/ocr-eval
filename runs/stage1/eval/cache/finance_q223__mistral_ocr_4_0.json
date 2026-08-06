@@ -1,0 +1,1 @@
+{"qid": "finance_q223", "parser": "mistral_ocr_4_0", "source_file": "finance_104", "domain": "finance", "answer": {"date_quarter_ended": "1943-09-30", "leonard_pearson_taxable_wages": 562}, "field_matches": {"date_quarter_ended": true, "leonard_pearson_taxable_wages": true}, "match": true, "extractor": "gemini-3.6-flash"}

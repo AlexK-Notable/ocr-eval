@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q40", "parser": "mistral_ocr_4", "source_file": "supply_chain_16", "domain": "supply_chain", "answer": {"payment_method_instruction": "Check one"}, "field_matches": {"payment_method_instruction": false}, "match": false, "extractor": "gemini-3.6-flash"}

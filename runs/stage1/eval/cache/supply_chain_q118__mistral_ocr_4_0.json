@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q118", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_42", "domain": "supply_chain", "answer": {"BOL": "8106253193-010", "Vehicle ID": "SHPX211226", "Customer PO": 4500694101}, "field_matches": {"BOL": true, "Vehicle ID": true, "Customer PO": true}, "match": true, "extractor": "gemini-3.6-flash"}

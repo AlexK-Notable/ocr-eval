@@ -1,0 +1,1 @@
+{"qid": "mortgage_q320", "parser": "mistral_ocr_4", "source_file": "mortgage_152", "domain": "mortgage", "answer": {"1": "checked", "2": "unchecked", "3": "unchecked"}, "field_matches": {"1": true, "2": true, "3": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q148", "parser": "mistral_ocr_4", "source_file": "finance_74", "domain": "finance", "answer": {"methane_ch4": true, "nitrous_oxide_n2o": true}, "field_matches": {"methane_ch4": true, "nitrous_oxide_n2o": true}, "match": true, "extractor": "gemini-3.6-flash"}

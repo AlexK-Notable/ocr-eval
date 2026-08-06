@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q168", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_5", "domain": "medical_healthcare", "answer": {"date_initiated": "Pperacillin-Tazobacts"}, "field_matches": {"date_initiated": false}, "match": false, "extractor": "gemini-3.6-flash"}

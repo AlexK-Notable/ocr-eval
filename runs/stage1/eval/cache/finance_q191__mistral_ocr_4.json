@@ -1,0 +1,1 @@
+{"qid": "finance_q191", "parser": "mistral_ocr_4", "source_file": "finance_90", "domain": "finance", "answer": {"note_text": "* Earmarked Contribution: See Below", "receipt_for_primary_checked": false}, "field_matches": {"note_text": true, "receipt_for_primary_checked": false}, "match": false, "extractor": "gemini-3.6-flash"}

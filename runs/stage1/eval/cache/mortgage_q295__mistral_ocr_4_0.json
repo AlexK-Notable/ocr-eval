@@ -1,0 +1,1 @@
+{"qid": "mortgage_q295", "parser": "mistral_ocr_4_0", "source_file": "mortgage_132", "domain": "mortgage", "answer": {"Borrower Sex": "Female", "Co-Borrower Sex": "Male"}, "field_matches": {"Borrower Sex": true, "Co-Borrower Sex": true}, "match": true, "extractor": "gemini-3.6-flash"}

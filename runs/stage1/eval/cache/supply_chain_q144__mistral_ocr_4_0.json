@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q144", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_48", "domain": "supply_chain", "answer": {"ref": "954189317", "contact": null, "phone": null}, "field_matches": {"ref": false, "contact": false, "phone": false}, "match": false, "extractor": "gemini-3.6-flash"}

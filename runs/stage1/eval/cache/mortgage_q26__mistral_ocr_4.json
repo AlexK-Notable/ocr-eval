@@ -1,0 +1,1 @@
+{"qid": "mortgage_q26", "parser": "mistral_ocr_4", "source_file": "mortgage_10", "domain": "mortgage", "answer": {"lender_name_and_address": "Pacific International Mortgage Inc 555 California Street Floor 50 San Francisco, CA 94104"}, "field_matches": {"lender_name_and_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q256", "parser": "mistral_ocr_4_0", "source_file": "finance_121", "domain": "finance", "answer": {"tan_or_pan_of_tenant": "AAAPA1234A"}, "field_matches": {"tan_or_pan_of_tenant": true}, "match": true, "extractor": "gemini-3.6-flash"}

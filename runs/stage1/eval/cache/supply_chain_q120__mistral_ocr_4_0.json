@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q120", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_42", "domain": "supply_chain", "answer": {"CHEMTREC primary": "1-800-424-9300", "CHEMTREC alternate": "703-527-3887", "CCN": 13495}, "field_matches": {"CHEMTREC primary": true, "CHEMTREC alternate": true, "CCN": true}, "match": true, "extractor": "gemini-3.6-flash"}

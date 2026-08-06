@@ -1,0 +1,1 @@
+{"qid": "mortgage_q313", "parser": "mistral_ocr_4_0", "source_file": "mortgage_147", "domain": "mortgage", "answer": {"Purchaser (Borrower)": null, "Purchaser (Co-Borrower)": null}, "field_matches": {"Purchaser (Borrower)": false, "Purchaser (Co-Borrower)": false}, "match": false, "extractor": "gemini-3.6-flash"}

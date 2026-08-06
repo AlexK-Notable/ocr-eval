@@ -1,0 +1,1 @@
+{"qid": "finance_q366", "parser": "mistral_ocr_4", "source_file": "finance_103", "domain": "finance", "answer": {"labor_amount": 182.24}, "field_matches": {"labor_amount": false}, "match": false, "extractor": "gemini-3.6-flash"}

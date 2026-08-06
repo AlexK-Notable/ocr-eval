@@ -1,0 +1,1 @@
+{"qid": "mortgage_q48", "parser": "mistral_ocr_4", "source_file": "mortgage_17", "domain": "mortgage", "answer": {"monthly_hoa_fee_amount": 0}, "field_matches": {"monthly_hoa_fee_amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

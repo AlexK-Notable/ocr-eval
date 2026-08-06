@@ -1,0 +1,1 @@
+{"qid": "finance_q149", "parser": "mistral_ocr_4", "source_file": "finance_75", "domain": "finance", "answer": {"top_page_number": "56550"}, "field_matches": {"top_page_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

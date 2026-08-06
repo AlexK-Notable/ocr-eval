@@ -1,0 +1,1 @@
+{"qid": "finance_q57", "parser": "mistral_ocr_4", "source_file": "finance_21", "domain": "finance", "answer": {"entity_type": "LLC"}, "field_matches": {"entity_type": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q40", "parser": "mistral_ocr_4", "source_file": "mortgage_15", "domain": "mortgage", "answer": {"payment_includes_taxes_yes": "Yes", "payment_includes_hoa_fees_yes": "Yes"}, "field_matches": {"payment_includes_taxes_yes": true, "payment_includes_hoa_fees_yes": true}, "match": true, "extractor": "gemini-3.6-flash"}

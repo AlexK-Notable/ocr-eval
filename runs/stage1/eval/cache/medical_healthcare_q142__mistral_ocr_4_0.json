@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q142", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_62", "domain": "medical_healthcare", "answer": {"signature_name": "Robert James Mitchell"}, "field_matches": {"signature_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

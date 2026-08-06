@@ -1,0 +1,1 @@
+{"qid": "mortgage_q440", "parser": "mistral_ocr_4", "source_file": "mortgage_204", "domain": "mortgage", "answer": {"Total Income": "$ 127,200", "County Max Income": "$ 120,000"}, "field_matches": {"Total Income": true, "County Max Income": true}, "match": true, "extractor": "gemini-3.6-flash"}

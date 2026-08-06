@@ -1,0 +1,1 @@
+{"qid": "mortgage_q77", "parser": "mistral_ocr_4_0", "source_file": "mortgage_33", "domain": "mortgage", "answer": {"buyer_handwritten_name": "Robert"}, "field_matches": {"buyer_handwritten_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

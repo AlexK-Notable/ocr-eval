@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q33", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_14", "domain": "supply_chain", "answer": {"consignee_country_territory": "United Arab Emirates"}, "field_matches": {"consignee_country_territory": true}, "match": true, "extractor": "gemini-3.6-flash"}

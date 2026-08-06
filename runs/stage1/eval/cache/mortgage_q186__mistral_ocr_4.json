@@ -1,0 +1,1 @@
+{"qid": "mortgage_q186", "parser": "mistral_ocr_4", "source_file": "mortgage_84", "domain": "mortgage", "answer": {"appraisal_version": "#1", "single_family_scenario": "Single Family Scenario 3 (SF3)", "footer_date": "September 2024"}, "field_matches": {"appraisal_version": true, "single_family_scenario": true, "footer_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

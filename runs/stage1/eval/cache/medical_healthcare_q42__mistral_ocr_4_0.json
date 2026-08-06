@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q42", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_20", "domain": "medical_healthcare", "answer": {"report_type": "AUTOPSY REPORT", "page_number": "-2-"}, "field_matches": {"report_type": true, "page_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

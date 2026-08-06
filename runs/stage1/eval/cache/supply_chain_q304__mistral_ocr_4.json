@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q304", "parser": "mistral_ocr_4", "source_file": "supply_chain_107", "domain": "supply_chain", "answer": {"VIN": "1FTEX1EP7HKD92341", "Title Restriction": "N"}, "field_matches": {"VIN": true, "Title Restriction": true}, "match": true, "extractor": "gemini-3.6-flash"}

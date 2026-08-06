@@ -1,0 +1,1 @@
+{"qid": "mortgage_q359", "parser": "mistral_ocr_4", "source_file": "mortgage_180", "domain": "mortgage", "answer": {"Electricity": "yes", "Gas": "yes", "Street": "yes"}, "field_matches": {"Electricity": true, "Gas": true, "Street": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q206", "parser": "mistral_ocr_4", "source_file": "mortgage_94", "domain": "mortgage", "answer": {"level": "Certified Residential"}, "field_matches": {"level": true}, "match": true, "extractor": "gemini-3.6-flash"}

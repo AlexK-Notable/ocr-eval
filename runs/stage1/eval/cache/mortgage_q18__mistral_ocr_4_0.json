@@ -1,0 +1,1 @@
+{"qid": "mortgage_q18", "parser": "mistral_ocr_4_0", "source_file": "mortgage_7", "domain": "mortgage", "answer": {"total_loan_costs_at_closing": 1536.75}, "field_matches": {"total_loan_costs_at_closing": true}, "match": true, "extractor": "gemini-3.6-flash"}

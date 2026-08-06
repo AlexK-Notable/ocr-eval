@@ -1,0 +1,1 @@
+{"qid": "mortgage_q365", "parser": "mistral_ocr_4", "source_file": "mortgage_124", "domain": "mortgage", "answer": {"Soil_stability": "NO", "Drainage": "YES", "Erosion": "NO", "SFHA": "NO", "Basin": "YES"}, "field_matches": {"Soil_stability": true, "Drainage": true, "Erosion": true, "SFHA": true, "Basin": true}, "match": true, "extractor": "gemini-3.6-flash"}

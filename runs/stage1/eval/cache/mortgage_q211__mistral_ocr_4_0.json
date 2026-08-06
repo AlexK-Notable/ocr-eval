@@ -1,0 +1,1 @@
+{"qid": "mortgage_q211", "parser": "mistral_ocr_4_0", "source_file": "mortgage_96", "domain": "mortgage", "answer": {"uad_version_date": "9/2011", "software_info_text": "Form UADOERINE - \"TOTAL\" appraisal software by a la mode, inc. - 1-800-ALAMODE"}, "field_matches": {"uad_version_date": true, "software_info_text": true}, "match": true, "extractor": "gemini-3.6-flash"}

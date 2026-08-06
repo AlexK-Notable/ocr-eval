@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q44", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_21", "domain": "medical_healthcare", "answer": {"decedent_name": "GUARDADO PINEDA, ANDRES", "classification": "HOMI 195"}, "field_matches": {"decedent_name": false, "classification": false}, "match": false, "extractor": "gemini-3.6-flash"}

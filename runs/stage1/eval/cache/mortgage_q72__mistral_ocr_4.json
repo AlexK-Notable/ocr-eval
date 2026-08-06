@@ -1,0 +1,1 @@
+{"qid": "mortgage_q72", "parser": "mistral_ocr_4", "source_file": "mortgage_31", "domain": "mortgage", "answer": {"buyer_initials": "DB/VB", "revised_date": "7/2024"}, "field_matches": {"buyer_initials": true, "revised_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

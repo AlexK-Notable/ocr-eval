@@ -1,0 +1,1 @@
+{"qid": "mortgage_q3", "parser": "mistral_ocr_4_0", "source_file": "mortgage_2", "domain": "mortgage", "answer": {"item_02_recipient": "Beta Card Inc.", "total_payoffs_amount": 151000}, "field_matches": {"item_02_recipient": false, "total_payoffs_amount": true}, "match": false, "extractor": "gemini-3.6-flash"}

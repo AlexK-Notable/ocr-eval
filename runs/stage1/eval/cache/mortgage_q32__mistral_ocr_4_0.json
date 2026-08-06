@@ -1,0 +1,1 @@
+{"qid": "mortgage_q32", "parser": "mistral_ocr_4_0", "source_file": "mortgage_12", "domain": "mortgage", "answer": {"marital_status": "Widowed"}, "field_matches": {"marital_status": true}, "match": true, "extractor": "gemini-3.6-flash"}

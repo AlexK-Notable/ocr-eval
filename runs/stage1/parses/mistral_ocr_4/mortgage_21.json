@@ -1,0 +1,11 @@
+{
+  "parser": "mistral_ocr_4",
+  "stem": "mortgage_21",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 3.271474152999872,
+  "cost_usd": 0.004,
+  "md_length": 1555,
+  "elapsed_total": 3.2728891372680664,
+  "error": ""
+}

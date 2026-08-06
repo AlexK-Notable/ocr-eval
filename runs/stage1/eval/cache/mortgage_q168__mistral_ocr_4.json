@@ -1,0 +1,1 @@
+{"qid": "mortgage_q168", "parser": "mistral_ocr_4", "source_file": "mortgage_74", "domain": "mortgage", "answer": {"barn_defect_location": "Entire Exterior", "barn_defect_feature": "Exterior Walls and Trim"}, "field_matches": {"barn_defect_location": true, "barn_defect_feature": true}, "match": true, "extractor": "gemini-3.6-flash"}

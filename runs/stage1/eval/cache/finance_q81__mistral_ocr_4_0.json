@@ -1,0 +1,1 @@
+{"qid": "finance_q81", "parser": "mistral_ocr_4_0", "source_file": "finance_32", "domain": "finance", "answer": {"ohio_crime_type": "insurance fraud"}, "field_matches": {"ohio_crime_type": true}, "match": true, "extractor": "gemini-3.6-flash"}

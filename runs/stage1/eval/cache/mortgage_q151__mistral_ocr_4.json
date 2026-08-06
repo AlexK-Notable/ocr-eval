@@ -1,0 +1,1 @@
+{"qid": "mortgage_q151", "parser": "mistral_ocr_4", "source_file": "mortgage_66", "domain": "mortgage", "answer": {"core_heating_system_below_grade": null, "cooling_detail": null}, "field_matches": {"core_heating_system_below_grade": false, "cooling_detail": true}, "match": false, "extractor": "gemini-3.6-flash"}

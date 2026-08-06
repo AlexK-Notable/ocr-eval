@@ -1,0 +1,1 @@
+{"qid": "mortgage_q97", "parser": "mistral_ocr_4", "source_file": "mortgage_42", "domain": "mortgage", "answer": {"company_selected_by": "both"}, "field_matches": {"company_selected_by": true}, "match": true, "extractor": "gemini-3.6-flash"}

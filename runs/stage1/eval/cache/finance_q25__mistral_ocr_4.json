@@ -1,0 +1,1 @@
+{"qid": "finance_q25", "parser": "mistral_ocr_4", "source_file": "finance_9", "domain": "finance", "answer": {"total_area_in_square_feet": null}, "field_matches": {"total_area_in_square_feet": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q131", "parser": "mistral_ocr_4_0", "source_file": "finance_65", "domain": "finance", "answer": {"paragraph_65_line": "1", "first_tran_name_line": "15", "footnote_line": null}, "field_matches": {"paragraph_65_line": true, "first_tran_name_line": false, "footnote_line": false}, "match": false, "extractor": "gemini-3.6-flash"}

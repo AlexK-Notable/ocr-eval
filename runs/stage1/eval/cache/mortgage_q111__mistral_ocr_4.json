@@ -1,0 +1,1 @@
+{"qid": "mortgage_q111", "parser": "mistral_ocr_4", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"foundation_detail": "Metal", "roof_detail": "Metal Estimated Age: 20 or more years"}, "field_matches": {"foundation_detail": false, "roof_detail": true}, "match": false, "extractor": "gemini-3.6-flash"}

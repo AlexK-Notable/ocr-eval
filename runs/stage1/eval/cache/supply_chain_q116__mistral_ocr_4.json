@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q116", "parser": "mistral_ocr_4", "source_file": "supply_chain_41", "domain": "supply_chain", "answer": {"Shipper": "SACRAMENTO ENERGY RESOURCES", "Consignee": "SACRAMENTO ENERGY RESOURCES LLC"}, "field_matches": {"Shipper": true, "Consignee": true}, "match": true, "extractor": "gemini-3.6-flash"}

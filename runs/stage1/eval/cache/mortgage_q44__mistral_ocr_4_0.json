@@ -1,0 +1,1 @@
+{"qid": "mortgage_q44", "parser": "mistral_ocr_4_0", "source_file": "mortgage_16", "domain": "mortgage", "answer": {"zip_code": "97229", "city": "Portland"}, "field_matches": {"zip_code": true, "city": true}, "match": true, "extractor": "gemini-3.6-flash"}

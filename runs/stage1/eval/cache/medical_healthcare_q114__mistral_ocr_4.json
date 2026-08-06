@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q114", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_50", "domain": "medical_healthcare", "answer": {"live_with_pet_yes_checked": "Yes"}, "field_matches": {"live_with_pet_yes_checked": true}, "match": true, "extractor": "gemini-3.6-flash"}

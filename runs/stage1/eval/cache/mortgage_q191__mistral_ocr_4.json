@@ -1,0 +1,1 @@
+{"qid": "mortgage_q191", "parser": "mistral_ocr_4", "source_file": "mortgage_87", "domain": "mortgage", "answer": {"appraiser_name": "Agatha Appraiser"}, "field_matches": {"appraiser_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q354", "parser": "mistral_ocr_4_0", "source_file": "mortgage_176", "domain": "mortgage", "answer": {"Principal": "checked", "Interest": "checked", "Mortgage Insurance": "checked"}, "field_matches": {"Principal": true, "Interest": true, "Mortgage Insurance": true}, "match": true, "extractor": "gemini-3.6-flash"}

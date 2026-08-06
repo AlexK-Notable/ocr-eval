@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q26", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_14", "domain": "medical_healthcare", "answer": {"esa_system_numbers": "ESA-5, ESA-6, ESA-12, ESA-13, ESA-30"}, "field_matches": {"esa_system_numbers": true}, "match": true, "extractor": "gemini-3.6-flash"}

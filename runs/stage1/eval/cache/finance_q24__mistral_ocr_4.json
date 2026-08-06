@@ -1,0 +1,1 @@
+{"qid": "finance_q24", "parser": "mistral_ocr_4", "source_file": "finance_9", "domain": "finance", "answer": {"interest_owner_selected": null, "interest_tenant_selected": null}, "field_matches": {"interest_owner_selected": false, "interest_tenant_selected": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q342", "parser": "mistral_ocr_4", "source_file": "finance_168", "domain": "finance", "answer": {"percentage_of_profits_paid_definition": "3-year average annual CEO compensation divided by 3-year average net income"}, "field_matches": {"percentage_of_profits_paid_definition": false}, "match": false, "extractor": "gemini-3.6-flash"}

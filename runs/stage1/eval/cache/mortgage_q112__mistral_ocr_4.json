@@ -1,0 +1,1 @@
+{"qid": "mortgage_q112", "parser": "mistral_ocr_4", "source_file": "mortgage_47", "domain": "mortgage", "answer": {"year_built": "1985"}, "field_matches": {"year_built": true}, "match": true, "extractor": "gemini-3.6-flash"}

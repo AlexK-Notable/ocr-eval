@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q26", "parser": "mistral_ocr_4", "source_file": "supply_chain_12", "domain": "supply_chain", "answer": {"purchase_order_no": "GVAC-EXP-2024-0892", "purpose_of_shipment": null}, "field_matches": {"purchase_order_no": false, "purpose_of_shipment": false}, "match": false, "extractor": "gemini-3.6-flash"}

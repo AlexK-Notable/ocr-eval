@@ -1,0 +1,1 @@
+{"qid": "mortgage_q314", "parser": "mistral_ocr_4_0", "source_file": "mortgage_148", "domain": "mortgage", "answer": {"Seller 1": "Ashley R. Bennett", "Seller 2": "Marcus T. Bennett", "Broker 1": "Tracy L. Hines"}, "field_matches": {"Seller 1": true, "Seller 2": true, "Broker 1": true}, "match": true, "extractor": "gemini-3.6-flash"}

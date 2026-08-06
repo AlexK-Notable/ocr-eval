@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q161", "parser": "mistral_ocr_4", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"BOV gasket replaced?": "NO", "Manway gasket replaced?": "NO"}, "field_matches": {"BOV gasket replaced?": true, "Manway gasket replaced?": true}, "match": true, "extractor": "gemini-3.6-flash"}

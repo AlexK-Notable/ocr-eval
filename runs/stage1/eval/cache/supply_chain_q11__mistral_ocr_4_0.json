@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q11", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_5", "domain": "supply_chain", "answer": {"consignee_country_territory": "United States", "payment_terms": "United States"}, "field_matches": {"consignee_country_territory": true, "payment_terms": true}, "match": true, "extractor": "gemini-3.6-flash"}

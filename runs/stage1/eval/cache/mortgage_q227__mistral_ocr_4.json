@@ -1,0 +1,1 @@
+{"qid": "mortgage_q227", "parser": "mistral_ocr_4", "source_file": "mortgage_99", "domain": "mortgage", "answer": {"Location": null, "Built-Up": null, "Property Values": null, "Demand/Supply": null}, "field_matches": {"Location": false, "Built-Up": false, "Property Values": false, "Demand/Supply": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q185", "parser": "mistral_ocr_4", "source_file": "mortgage_83", "domain": "mortgage", "answer": {"appraisal_version_number": "#1"}, "field_matches": {"appraisal_version_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

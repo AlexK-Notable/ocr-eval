@@ -1,0 +1,1 @@
+{"qid": "mortgage_q413", "parser": "mistral_ocr_4_0", "source_file": "mortgage_188", "domain": "mortgage", "answer": {"Certification": "DE-TX-21847", "Section III": "DE-TX-55201", "Section IV": "DE-TX-55201"}, "field_matches": {"Certification": true, "Section III": true, "Section IV": true}, "match": true, "extractor": "gemini-3.6-flash"}

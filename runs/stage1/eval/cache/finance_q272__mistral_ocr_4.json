@@ -1,0 +1,1 @@
+{"qid": "finance_q272", "parser": "mistral_ocr_4", "source_file": "finance_131", "domain": "finance", "answer": {"traditional_accounting_checkbox": false}, "field_matches": {"traditional_accounting_checkbox": false}, "match": false, "extractor": "gemini-3.6-flash"}

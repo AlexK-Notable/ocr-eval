@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q172", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_71", "domain": "medical_healthcare", "answer": {"8-2A": "NA", "8-2B": "IN", "9-2": null}, "field_matches": {"8-2A": true, "8-2B": true, "9-2": false}, "match": false, "extractor": "gemini-3.6-flash"}

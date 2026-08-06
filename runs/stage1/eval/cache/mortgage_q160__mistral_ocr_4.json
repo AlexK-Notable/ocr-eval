@@ -1,0 +1,1 @@
+{"qid": "mortgage_q160", "parser": "mistral_ocr_4", "source_file": "mortgage_70", "domain": "mortgage", "answer": {"first_exhibit_title": "Deck - Deck 1"}, "field_matches": {"first_exhibit_title": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q17", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_9", "domain": "medical_healthcare", "answer": {"row_2_medication": "Staphylococcus aureus (MRSA)"}, "field_matches": {"row_2_medication": true}, "match": true, "extractor": "gemini-3.6-flash"}

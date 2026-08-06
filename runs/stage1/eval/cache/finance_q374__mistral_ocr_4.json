@@ -1,0 +1,1 @@
+{"qid": "finance_q374", "parser": "mistral_ocr_4", "source_file": "finance_5", "domain": "finance", "answer": {"street_address": "987 Maple Drive"}, "field_matches": {"street_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

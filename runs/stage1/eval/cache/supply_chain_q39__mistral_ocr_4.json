@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q39", "parser": "mistral_ocr_4", "source_file": "supply_chain_16", "domain": "supply_chain", "answer": {"weight_unit_header": "lb / kg", "total_weight_value": 62.5}, "field_matches": {"weight_unit_header": true, "total_weight_value": true}, "match": true, "extractor": "gemini-3.6-flash"}

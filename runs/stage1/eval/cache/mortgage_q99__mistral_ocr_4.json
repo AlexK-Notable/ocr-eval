@@ -1,0 +1,1 @@
+{"qid": "mortgage_q99", "parser": "mistral_ocr_4", "source_file": "mortgage_43", "domain": "mortgage", "answer": {"washers_checkbox_state": false}, "field_matches": {"washers_checkbox_state": true}, "match": true, "extractor": "gemini-3.6-flash"}

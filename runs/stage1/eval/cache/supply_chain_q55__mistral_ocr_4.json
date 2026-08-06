@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q55", "parser": "mistral_ocr_4", "source_file": "supply_chain_22", "domain": "supply_chain", "answer": {"signature_line_labels": "Your Signature, Street Address, Print Your Name, City, State, ZIP, Telephone"}, "field_matches": {"signature_line_labels": true}, "match": true, "extractor": "gemini-3.6-flash"}

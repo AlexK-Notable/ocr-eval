@@ -1,0 +1,1 @@
+{"qid": "finance_q2", "parser": "mistral_ocr_4_0", "source_file": "finance_1", "domain": "finance", "answer": {"check_if_none": false, "nexus_tech_amount_paid": null}, "field_matches": {"check_if_none": true, "nexus_tech_amount_paid": false}, "match": false, "extractor": "gemini-3.6-flash"}

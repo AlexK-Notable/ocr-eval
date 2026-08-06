@@ -1,0 +1,1 @@
+{"qid": "finance_q261", "parser": "mistral_ocr_4_0", "source_file": "finance_124", "domain": "finance", "answer": {"income_tax_accounts_included_yes": null}, "field_matches": {"income_tax_accounts_included_yes": false}, "match": false, "extractor": "gemini-3.6-flash"}

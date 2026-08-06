@@ -1,0 +1,60 @@
+# GENERAL INFORMATION
+
+|  EXPLAIN ALL "YES" RESPONSES IN REMARKS |   | YES | NO | EXPLAIN ALL "YES" RESPONSES IN REMARKS (Except question 15, 16 and 17) |   |   | YES | NO  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|  1. | ANY FARMING OR OTHER BUSINESS CONDUCTED ON PREMISES (including day/child care) |  |  | 14. DURING THE LAST FIVE YEARS (TEN YEARS IN RHODE ISLAND), HAS ANY APPLICANT BEEN CONVICTED OF ANY DEGREE OF THE CRIME OF ARSON? (In RI, failure to disclose the existence of an arson conviction is a misdemeanor punishable by a sentence of up to one year of imprisonment) |  |   |   |   |
+|  2. | ANY RESIDENCE EMPLOYEES? (Number and type of full and part time employees) |  |  |   |   |   |  |   |
+|  3. | ANY FLOODING, BRUSH, FOREST FIRE HAZARD, LANDSLIDE, ETC? |  |  |   |   |   |  |   |
+|  4. | ANY OTHER RESIDENCE OWNED, OCCUPIED OR RENTED? |  |  | RENTERS AND CONDOS ONLY: | 15. IS THERE A MANAGER ON THE PREMISES? |  |   |   |
+|  5. | ANY OTHER INSURANCE WITH THIS COMPANY? (List policy numbers) |  |  |   |   | 16. IS THERE A SECURITY ATTENDANT? |  |   |
+|  6. | HAS INSURANCE BEEN TRANSFERRED WITHIN AGENCY? |  |  |   |   | 17. IS THE BUILDING ENTRANCE LOCKED? |  |   |
+|  7. | ANY COVERAGE DECLINED, CANCELLED OR NON-RENEWED DURING THE LAST 3 YEARS? NOT APPLICABLE IN MO |  |  | 18. ANY UNCORRECTED FIRE OR BUILDING CODE VIOLATIONS? |   |   |  |   |
+|  8. | HAS APPLICANT HAD A FORECLOSURE, REPOSSESSION OR BANKRUPTCY DURING THE PAST FIVE YEARS? |  |  | 19. IS BUILDING UNDERGOING RENOVATION OR RECONSTRUCTION? (Give estimated completion date and dollar value) |   |   |  |   |
+|  9. | ARE THERE ANY ANIMALS OR EXOTIC PETS KEPT ON PREMISES? (Note breed and bite history) |  |  | 20. IS HOUSE FOR SALE? |   |   |  |   |
+|  10. | IS PROPERTY LOCATED WITHIN TWO MILES OF TIDAL WATER? |  |  | 21. IS PROPERTY W/IN 300 FT OF A COMMERCIAL OR NON-RESIDENTIAL PROPERTY? |   |   |  |   |
+|  11. | IS PROPERTY SITUATED ON MORE THAN FIVE ACRES? (If yes, describe land use) |  |  | 22. IS THERE A TRAMPOLINE ON THE PREMISES? |   |   |  |   |
+|  12. | DOES APPLICANT OWN ANY RECREATIONAL VEHICLES (SNOW MOBILES, DUNE BUGGYS, MINI BIKES, ATVS, ETC)? (List year, type, make, model) |  |  | 23. WAS THE STRUCTURE ORIGINALLY BUILT FOR OTHER THAN A PRIVATE RESIDENCE AND THEN CONVERTED? |   |   |  |   |
+|  13. | IS BUILDING RETROFITTED FOR EARTHQUAKE (If applicable) |  |  | 24. ANY LEAD PAINT HAZARD? |   |   |  |   |
+|   |  |  |  | 25. IF A FUEL OIL TANK IS ON PREMISES, HAS OTHER INSURANCE BEEN OBTAINED FOR THE TANK? (Give First Party and limit, and Third Party and limit) |   |   |  |   |
+|  LOSS HISTORY ANY LOSSES, WHETHER OR NOT PAID BY INSURANCE, DURING THE LAST 3 YEARS, AT THIS OR AT ANY OTHER LOCATION? |   |   |   | YES | NO | IF YES, INDICATE BELOW | APPLICANT'S INITIALS:  |   |
+|  DATE | TYPE | DESCRIPTION OF LOSS |   |   |   |   |   | AMOUNT  |
+
+# PRIOR COVERAGE
+
+|  PRIOR CARRIER | PRIOR POLICY NUMBER | EXPIRATION DATE | RISK NEW TO AGENCY ☐ YES ☐ NO  |
+| --- | --- | --- | --- |
+
+# ADDITIONAL INTEREST
+
+|  INT # ☐ MORTG'E ☐ ADDL INT | NAME AND ADDRESS | LOAN NUMBER  |
+| --- | --- | --- |
+|  INT # ☐ MORTG'E ☐ ADDL INT | NAME AND ADDRESS | LOAN NUMBER  |
+
+# REMARKS
+
+# ATTACHMENTS
+
+|   |  | STATE SUPPLEMENT(S)(If applicable) |  | PROTECTION DEVICE CERTIFICATE  |
+| --- | --- | --- | --- | --- |
+|   |   | INLAND MARINE APPLICATION |  | PERS EXCESS/UMBRELLA APP  |
+|   |   | REPLACEMENT COST ESTIMATE |  | RECREATIONAL VEHICLE APP  |
+|   |   | PHOTOGRAPH |  | WATERCRAFT APPLICATION  |
+|   |   | SOLID FUEL SUPPLEMENT |  | LEAD FREE PAINT CERTIFICATION  |
+|   |   | EARTHQUAKE APPLICATION |  | HOME BASED BUSINESS SUPP  |
+|  FOR COMPANY USE ONLY |   |  |  |   |
+
+# BINDER/SIGNATURE
+
+|  INSURANCE BINDER |   | IF THE "BINDER" BOX TO THE LEFT IS COMPLETED, THE FOLLOWING CONDITIONS APPLY: THIS COMPANY BINDS THE KIND(S) OF INSURANCE STIPULATED ON THIS APPLICATION. THIS INSURANCE IS SUBJECT TO THE TERMS, CONDITIONS AND LIMITATIONS OF THE POLICY(IES) IN CURRENT USE BY THE COMPANY. THIS BINDER MAY BE CANCELLED BY THE INSURED BY SURRENDER OF THIS BINDER OR BY WRITTEN NOTICE TO THE COMPANY STATING WHEN CANCELLATION WILL BE EFFECTIVE. THIS BINDER MAY BE CANCELLED BY THE COMPANY BY NOTICE TO THE INSURED IN ACCORDANCE WITH THE POLICY CONDITIONS. THIS BINDER IS CANCELLED WHEN REPLACED BY A POLICY. IF THIS BINDER IS NOT REPLACED BY A POLICY, THE COMPANY IS ENTITLED TO CHARGE A PREMIUM FOR THE BINDER ACCORDING TO THE RULES AND RATES IN USE BY THE COMPANY. THE QUOTED PREMIUM IS SUBJECT TO VERIFICATION AND ADJUSTMENT, WHEN NECESSARY, BY THE COMPANY.  |   |   |
+| --- | --- | --- | --- | --- |
+|  EFFECTIVE DATE | EXPIRATION DATE  |   |   |   |
+|  TIME | 12:01 AM  |   |   |   |
+|   |  NOON  |   |   |   |
+|  COVERAGE IS NOT BOUND  |   |   |   |   |
+|  Notice of Insurance Information Practices PERSONAL INFORMATION ABOUT YOU, INCLUDING INFORMATION FROM A CREDIT REPORT, MAY BE COLLECTED FROM PERSONS OTHER THAN YOU IN CONNECTION WITH THIS APPLICATION AND SUBSEQUENT RENEWALS. SUCH INFORMATION AS WELL AS OTHER PERSONAL AND PRIVILEGED INFORMATION COLLECTED BY US OR OUR AGENTS MAY IN CERTAIN CIRCUMSTANCES BE DISCLOSED TO THIRD PARTIES. YOU HAVE THE RIGHT TO REVIEW YOUR PERSONAL INFORMATION IN OUR FILES AND CAN REQUEST CORRECTION OF ANY INACCURACIES. A MORE DETAILED DESCRIPTION OF YOUR RIGHTS AND OUR PRACTICES REGARDING SUCH INFORMATION IS AVAILABLE UPON REQUEST. CONTACT YOUR AGENT OR BROKER FOR INSTRUCTION ON HOW TO SUBMIT A REQUEST TO US.  |   |   |   |   |
+|   | Copy of the notice of information practices (privacy) has been given to the applicant. (Not applicable in all states)  |   |   |   |
+|  Any person who knowingly and with intent to defraud any insurance company or another person files an application for insurance or statement of claim containing any materially false information, or conceals for the purpose of misleading information concerning any fact material thereto, commits a fraudulent insurance act, which is a crime and subjects the person to criminal and [NY: substantial] civil penalties. (Not applicable in CO, HI, NE, OH, OK, OR, or VT; in DC, LA, ME, and VA, insurance benefits may also be denied)  |   |   |   |   |
+|  Applicant's Statement: I have read the above application and any attachments. I declare that the information provided in them is true, complete and correct to the best of my knowledge and belief. This information is being offered to the company as an inducement to issue the policy for which I am applying.  |   |   |   |   |
+|  APPLICANT'S SIGNATURE | David Thompson | DATE 05/28/2024 | PRODUCER'S SIGNATURE | Michael R. Adams  |
+
+ACORD 80 (2001/04)

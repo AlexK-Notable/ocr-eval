@@ -1,0 +1,1 @@
+{"qid": "mortgage_q192", "parser": "mistral_ocr_4_0", "source_file": "mortgage_88", "domain": "mortgage", "answer": {"appraiser_name": "John Appraiser"}, "field_matches": {"appraiser_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

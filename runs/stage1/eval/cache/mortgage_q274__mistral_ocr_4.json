@@ -1,0 +1,1 @@
+{"qid": "mortgage_q274", "parser": "mistral_ocr_4", "source_file": "mortgage_120", "domain": "mortgage", "answer": {"02-Assignment": "unchecked", "06-CWCOT": "checked", "33-Partial Claim": null}, "field_matches": {"02-Assignment": true, "06-CWCOT": true, "33-Partial Claim": false}, "match": false, "extractor": "gemini-3.6-flash"}

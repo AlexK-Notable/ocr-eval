@@ -1,0 +1,1 @@
+{"qid": "finance_q210", "parser": "mistral_ocr_4", "source_file": "finance_99", "domain": "finance", "answer": {"taxpayer_name": null, "home_street_address": "712 AUDUBON DR"}, "field_matches": {"taxpayer_name": false, "home_street_address": true}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q19", "parser": "mistral_ocr_4", "source_file": "mortgage_7", "domain": "mortgage", "answer": {"lender_credits_paid_by_others": null}, "field_matches": {"lender_credits_paid_by_others": true}, "match": true, "extractor": "gemini-3.6-flash"}

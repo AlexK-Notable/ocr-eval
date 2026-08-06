@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q87", "parser": "mistral_ocr_4", "source_file": "supply_chain_34", "domain": "supply_chain", "answer": {"AvGas 100": 62.43, "StateTax-Avgas": 1.05, "FET-Avgas": 2.27, "Flowage-Avgas": 1.4}, "field_matches": {"AvGas 100": true, "StateTax-Avgas": true, "FET-Avgas": true, "Flowage-Avgas": true}, "match": true, "extractor": "gemini-3.6-flash"}

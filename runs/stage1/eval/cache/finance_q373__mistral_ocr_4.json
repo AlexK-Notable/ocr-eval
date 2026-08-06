@@ -1,0 +1,1 @@
+{"qid": "finance_q373", "parser": "mistral_ocr_4", "source_file": "finance_5", "domain": "finance", "answer": {"us_citizen": null}, "field_matches": {"us_citizen": false}, "match": false, "extractor": "gemini-3.6-flash"}

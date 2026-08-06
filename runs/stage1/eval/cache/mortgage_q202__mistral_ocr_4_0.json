@@ -1,0 +1,1 @@
+{"qid": "mortgage_q202", "parser": "mistral_ocr_4_0", "source_file": "mortgage_92", "domain": "mortgage", "answer": {"client_reference_id": "23149S234K", "appraiser_reference_id": "4321123H"}, "field_matches": {"client_reference_id": false, "appraiser_reference_id": true}, "match": false, "extractor": "gemini-3.6-flash"}

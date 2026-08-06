@@ -1,0 +1,1 @@
+{"qid": "finance_q91", "parser": "mistral_ocr_4", "source_file": "finance_41", "domain": "finance", "answer": {"financials_2021_percentage": null, "energy_2023_percentage": null}, "field_matches": {"financials_2021_percentage": false, "energy_2023_percentage": false}, "match": false, "extractor": "gemini-3.6-flash"}

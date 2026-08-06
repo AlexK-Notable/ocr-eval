@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q248", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_80", "domain": "supply_chain", "answer": {"LOA": 199.9, "Displacement": 38720, "Bulbous Bow": "Y", "Lateral Windage Area": 6253}, "field_matches": {"LOA": true, "Displacement": true, "Bulbous Bow": true, "Lateral Windage Area": true}, "match": true, "extractor": "gemini-3.6-flash"}

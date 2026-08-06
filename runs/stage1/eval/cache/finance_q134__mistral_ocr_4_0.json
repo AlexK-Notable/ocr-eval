@@ -1,0 +1,1 @@
+{"qid": "finance_q134", "parser": "mistral_ocr_4_0", "source_file": "finance_67", "domain": "finance", "answer": {"case_number": "3:21-cr-00271-TAD-KDM", "filed_date": "2021-10-27"}, "field_matches": {"case_number": true, "filed_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

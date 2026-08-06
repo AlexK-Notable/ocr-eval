@@ -1,0 +1,1 @@
+{"qid": "finance_q16", "parser": "mistral_ocr_4", "source_file": "finance_6", "domain": "finance", "answer": {"primary_phone_bus_marked": true, "secondary_phone_cell_marked": true}, "field_matches": {"primary_phone_bus_marked": true, "secondary_phone_cell_marked": true}, "match": true, "extractor": "gemini-3.6-flash"}

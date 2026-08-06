@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q317", "parser": "mistral_ocr_4", "source_file": "supply_chain_113", "domain": "supply_chain", "answer": {"answer": ["Fight Fire", "Wreck Removal", "Controlled pit fire for 6 LPG tankers", "Investigation"]}, "field_matches": {"answer": true}, "match": true, "extractor": "gemini-3.6-flash"}

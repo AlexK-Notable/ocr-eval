@@ -1,0 +1,1 @@
+{"qid": "mortgage_q17", "parser": "mistral_ocr_4", "source_file": "mortgage_6", "domain": "mortgage", "answer": {"property_taxes_in_escrow": false}, "field_matches": {"property_taxes_in_escrow": true}, "match": true, "extractor": "gemini-3.6-flash"}

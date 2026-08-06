@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q20", "parser": "mistral_ocr_4", "source_file": "supply_chain_9", "domain": "supply_chain", "answer": {"total_pkgs": 105.0, "terms_of_sale": "DDU Buenos Aires 2.5"}, "field_matches": {"total_pkgs": true, "terms_of_sale": false}, "match": false, "extractor": "gemini-3.6-flash"}

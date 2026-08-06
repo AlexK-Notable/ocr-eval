@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q66", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_27", "domain": "supply_chain", "answer": {"telephone_label": "Telephone"}, "field_matches": {"telephone_label": true}, "match": true, "extractor": "gemini-3.6-flash"}

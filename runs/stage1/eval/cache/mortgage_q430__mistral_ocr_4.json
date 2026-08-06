@@ -1,0 +1,1 @@
+{"qid": "mortgage_q430", "parser": "mistral_ocr_4", "source_file": "mortgage_184", "domain": "mortgage", "answer": {"Date Paid": "207. 12-28-2025", "Line 264 Amount Paid": 1325.0, "Line 264 Debenture Interest": 18.05}, "field_matches": {"Date Paid": true, "Line 264 Amount Paid": true, "Line 264 Debenture Interest": true}, "match": true, "extractor": "gemini-3.6-flash"}

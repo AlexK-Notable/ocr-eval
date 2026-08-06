@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q161", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_70", "domain": "medical_healthcare", "answer": {"vaccination_time_pm_selected": false}, "field_matches": {"vaccination_time_pm_selected": true}, "match": true, "extractor": "gemini-3.6-flash"}

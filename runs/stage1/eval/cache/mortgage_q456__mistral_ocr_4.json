@@ -1,0 +1,1 @@
+{"qid": "mortgage_q456", "parser": "mistral_ocr_4", "source_file": "mortgage_212", "domain": "mortgage", "answer": {"Borrower_Name": "Renee K. Alvarez", "Co_Borrower_Name": "Thomas J. Alvarez", "Date_Signed": "03/21/2024"}, "field_matches": {"Borrower_Name": true, "Co_Borrower_Name": true, "Date_Signed": true}, "match": true, "extractor": "gemini-3.6-flash"}

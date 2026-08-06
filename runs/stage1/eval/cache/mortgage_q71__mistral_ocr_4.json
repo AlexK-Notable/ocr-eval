@@ -1,0 +1,1 @@
+{"qid": "mortgage_q71", "parser": "mistral_ocr_4", "source_file": "mortgage_30", "domain": "mortgage", "answer": {"buyer_initials": "MJ EW", "seller_initials": "RM SM"}, "field_matches": {"buyer_initials": true, "seller_initials": true}, "match": true, "extractor": "gemini-3.6-flash"}

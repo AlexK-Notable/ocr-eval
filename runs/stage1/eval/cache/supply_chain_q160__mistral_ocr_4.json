@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q160", "parser": "mistral_ocr_4", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"# Replaced?": 2, "Initials": "U"}, "field_matches": {"# Replaced?": true, "Initials": false}, "match": false, "extractor": "gemini-3.6-flash"}

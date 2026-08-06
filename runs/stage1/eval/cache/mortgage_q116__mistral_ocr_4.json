@@ -1,0 +1,1 @@
+{"qid": "mortgage_q116", "parser": "mistral_ocr_4", "source_file": "mortgage_49", "domain": "mortgage", "answer": {"appraisal_version": "#3", "client_reference_id": "34205-UH"}, "field_matches": {"appraisal_version": true, "client_reference_id": true}, "match": true, "extractor": "gemini-3.6-flash"}

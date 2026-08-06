@@ -1,0 +1,1 @@
+{"qid": "mortgage_q159", "parser": "mistral_ocr_4", "source_file": "mortgage_69", "domain": "mortgage", "answer": {"bottom_right_exhibit_label": "HUD Certification Label"}, "field_matches": {"bottom_right_exhibit_label": true}, "match": true, "extractor": "gemini-3.6-flash"}

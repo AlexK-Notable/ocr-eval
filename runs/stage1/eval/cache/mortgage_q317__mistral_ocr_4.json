@@ -1,0 +1,1 @@
+{"qid": "mortgage_q317", "parser": "mistral_ocr_4", "source_file": "mortgage_150", "domain": "mortgage", "answer": {"answer": ["Part 1 – General Information", "Part 2 – Borrower Authorization"]}, "field_matches": {"answer": true}, "match": true, "extractor": "gemini-3.6-flash"}

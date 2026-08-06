@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q155", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_68", "domain": "medical_healthcare", "answer": {"total_c_sections": 0, "total_pregnancies": 1}, "field_matches": {"total_c_sections": true, "total_pregnancies": true}, "match": true, "extractor": "gemini-3.6-flash"}

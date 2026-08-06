@@ -1,0 +1,1 @@
+{"qid": "finance_q211", "parser": "mistral_ocr_4", "source_file": "finance_99", "domain": "finance", "answer": {"row_g_column_b_value": 21537.9}, "field_matches": {"row_g_column_b_value": false}, "match": false, "extractor": "gemini-3.6-flash"}

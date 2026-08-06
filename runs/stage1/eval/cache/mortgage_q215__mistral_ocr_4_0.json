@@ -1,0 +1,1 @@
+{"qid": "mortgage_q215", "parser": "mistral_ocr_4_0", "source_file": "mortgage_98", "domain": "mortgage", "answer": {"email_or_internet": false, "fax_or_mail": false}, "field_matches": {"email_or_internet": true, "fax_or_mail": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q281", "parser": "mistral_ocr_4", "source_file": "supply_chain_97", "domain": "supply_chain", "answer": {"Row 1": "CBP Assigned - RNCFA64580", "Row 2": "81-4490326-00", "Row 3": "81-4490326-00", "Row 4": "CBP Assigned - RNCFA64580"}, "field_matches": {"Row 1": true, "Row 2": true, "Row 3": true, "Row 4": true}, "match": true, "extractor": "gemini-3.6-flash"}

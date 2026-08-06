@@ -1,0 +1,1 @@
+{"qid": "mortgage_q130", "parser": "mistral_ocr_4", "source_file": "mortgage_56", "domain": "mortgage", "answer": {"highest_best_use_present_use_yes": null}, "field_matches": {"highest_best_use_present_use_yes": false}, "match": false, "extractor": "gemini-3.6-flash"}

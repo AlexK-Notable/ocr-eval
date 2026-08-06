@@ -1,0 +1,1 @@
+{"qid": "finance_q380", "parser": "mistral_ocr_4", "source_file": "finance_107", "domain": "finance", "answer": {"director_name": "L. C. West."}, "field_matches": {"director_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

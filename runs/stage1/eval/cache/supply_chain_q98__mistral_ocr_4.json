@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q98", "parser": "mistral_ocr_4", "source_file": "supply_chain_37", "domain": "supply_chain", "answer": {"Invoice": "14-004031", "Date": "6/07/2014", "Sales Person": "Jocelyn H"}, "field_matches": {"Invoice": true, "Date": true, "Sales Person": true}, "match": true, "extractor": "gemini-3.6-flash"}

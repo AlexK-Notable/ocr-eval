@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q40", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_19", "domain": "medical_healthcare", "answer": {"document_title": "AUTOPSY REPORT", "page_number": "-3-", "individual_name": "WILLIAM DEBOSE"}, "field_matches": {"document_title": true, "page_number": true, "individual_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

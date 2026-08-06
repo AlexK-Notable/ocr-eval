@@ -1,0 +1,1 @@
+{"qid": "finance_q107", "parser": "mistral_ocr_4_0", "source_file": "finance_54", "domain": "finance", "answer": {"case_no": "20-6318-Hunt"}, "field_matches": {"case_no": true}, "match": true, "extractor": "gemini-3.6-flash"}

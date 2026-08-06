@@ -1,0 +1,1 @@
+{"qid": "mortgage_q34", "parser": "mistral_ocr_4", "source_file": "mortgage_13", "domain": "mortgage", "answer": {"is_primary_residence": true}, "field_matches": {"is_primary_residence": true}, "match": true, "extractor": "gemini-3.6-flash"}

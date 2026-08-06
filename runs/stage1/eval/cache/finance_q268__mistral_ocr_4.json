@@ -1,0 +1,1 @@
+{"qid": "finance_q268", "parser": "mistral_ocr_4", "source_file": "finance_128", "domain": "finance", "answer": {"trading_profits_box_155": 2845000, "interest_and_non_trading_profits_box_170": 42500}, "field_matches": {"trading_profits_box_155": true, "interest_and_non_trading_profits_box_170": true}, "match": true, "extractor": "gemini-3.6-flash"}

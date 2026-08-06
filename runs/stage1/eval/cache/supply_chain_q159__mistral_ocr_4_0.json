@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q159", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"Car Number": "PPRX 17360", "Customer": "P66", "Date": "2020-12-17", "Spot": null}, "field_matches": {"Car Number": true, "Customer": true, "Date": true, "Spot": false}, "match": false, "extractor": "gemini-3.6-flash"}

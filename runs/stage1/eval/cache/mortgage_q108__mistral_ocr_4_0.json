@@ -1,0 +1,1 @@
+{"qid": "mortgage_q108", "parser": "mistral_ocr_4_0", "source_file": "mortgage_46", "domain": "mortgage", "answer": {"map_title": "Hazard Zone - USGS Lava Flow Zone", "property_label": null, "body_of_water": null}, "field_matches": {"map_title": true, "property_label": false, "body_of_water": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q428", "parser": "mistral_ocr_4", "source_file": "mortgage_187", "domain": "mortgage", "answer": {"Amount Paid": 3510.0, "Debenture Interest": 39.65}, "field_matches": {"Amount Paid": true, "Debenture Interest": true}, "match": true, "extractor": "gemini-3.6-flash"}

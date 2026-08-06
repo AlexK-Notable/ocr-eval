@@ -1,0 +1,1 @@
+{"qid": "finance_q257", "parser": "mistral_ocr_4", "source_file": "finance_122", "domain": "finance", "answer": {"e1a_description": "Through a/c payee cheque or a/c payee bank draft or bank electronic clearing system received or prescribed electronic modes received before specified date"}, "field_matches": {"e1a_description": true}, "match": true, "extractor": "gemini-3.6-flash"}

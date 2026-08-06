@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q60", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_24", "domain": "supply_chain", "answer": {"left_column_signature_labels": "Your Signature, Print Your Name"}, "field_matches": {"left_column_signature_labels": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q119", "parser": "mistral_ocr_4", "source_file": "mortgage_50", "domain": "mortgage", "answer": {"foundation_type_text": "Gab", "foundation_slab_checked": true}, "field_matches": {"foundation_type_text": false, "foundation_slab_checked": true}, "match": false, "extractor": "gemini-3.6-flash"}

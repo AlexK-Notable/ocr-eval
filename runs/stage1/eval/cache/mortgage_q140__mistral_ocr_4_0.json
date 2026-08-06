@@ -1,0 +1,1 @@
+{"qid": "mortgage_q140", "parser": "mistral_ocr_4_0", "source_file": "mortgage_61", "domain": "mortgage", "answer": {"level": "Certified Residential", "expires": "2027-06-30"}, "field_matches": {"level": true, "expires": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q36", "parser": "mistral_ocr_4", "source_file": "supply_chain_15", "domain": "supply_chain", "answer": {"bill_of_lading": null, "payment_terms": "Letter of Credit - 30 days"}, "field_matches": {"bill_of_lading": false, "payment_terms": false}, "match": false, "extractor": "gemini-3.6-flash"}

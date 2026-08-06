@@ -1,0 +1,1 @@
+{"qid": "mortgage_q92", "parser": "mistral_ocr_4", "source_file": "mortgage_41", "domain": "mortgage", "answer": {"page_numbering": "Page 3 of 6 pages", "buyers_initials": "LLC"}, "field_matches": {"page_numbering": true, "buyers_initials": true}, "match": true, "extractor": "gemini-3.6-flash"}

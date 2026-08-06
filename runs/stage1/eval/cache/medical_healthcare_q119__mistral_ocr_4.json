@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q119", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_53", "domain": "medical_healthcare", "answer": {"memory_coordination_disabilities_sequence": "2, 1, 1", "learning_disabilities": 1}, "field_matches": {"memory_coordination_disabilities_sequence": true, "learning_disabilities": true}, "match": true, "extractor": "gemini-3.6-flash"}

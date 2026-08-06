@@ -1,0 +1,1 @@
+{"qid": "finance_q228", "parser": "mistral_ocr_4_0", "source_file": "finance_106", "domain": "finance", "answer": {"contributions_paid": 83, "interest": 240, "net_income": 3212.46}, "field_matches": {"contributions_paid": true, "interest": true, "net_income": false}, "match": false, "extractor": "gemini-3.6-flash"}

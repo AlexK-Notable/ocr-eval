@@ -1,0 +1,1 @@
+{"qid": "mortgage_q282", "parser": "mistral_ocr_4_0", "source_file": "mortgage_124", "domain": "mortgage", "answer": {"Category I": "N/A", "item c": "NO", "Name of Servicer": "LFUCG Division of Water Quality"}, "field_matches": {"Category I": true, "item c": true, "Name of Servicer": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q218", "parser": "mistral_ocr_4_0", "source_file": "finance_102", "domain": "finance", "answer": {"date_quarter_ended": "June 30-43"}, "field_matches": {"date_quarter_ended": true}, "match": true, "extractor": "gemini-3.6-flash"}

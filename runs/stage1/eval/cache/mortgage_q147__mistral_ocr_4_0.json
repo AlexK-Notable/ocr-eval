@@ -1,0 +1,1 @@
+{"qid": "mortgage_q147", "parser": "mistral_ocr_4_0", "source_file": "mortgage_64", "domain": "mortgage", "answer": {"company_address": "238 Sand St, SW Washington, DC 20210"}, "field_matches": {"company_address": true}, "match": true, "extractor": "gemini-3.6-flash"}

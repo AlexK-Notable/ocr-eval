@@ -1,0 +1,1 @@
+{"qid": "mortgage_q391", "parser": "mistral_ocr_4_0", "source_file": "mortgage_159", "domain": "mortgage", "answer": {"j": "Yes", "k": "No", "l": "No", "m": "Yes"}, "field_matches": {"j": true, "k": true, "l": true, "m": true}, "match": true, "extractor": "gemini-3.6-flash"}

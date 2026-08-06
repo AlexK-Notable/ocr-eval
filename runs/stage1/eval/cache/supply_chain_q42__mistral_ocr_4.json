@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q42", "parser": "mistral_ocr_4", "source_file": "supply_chain_17", "domain": "supply_chain", "answer": {"total_weight": null}, "field_matches": {"total_weight": false}, "match": false, "extractor": "gemini-3.6-flash"}

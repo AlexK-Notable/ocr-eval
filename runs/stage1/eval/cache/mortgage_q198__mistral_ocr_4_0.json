@@ -1,0 +1,1 @@
+{"qid": "mortgage_q198", "parser": "mistral_ocr_4_0", "source_file": "mortgage_90", "domain": "mortgage", "answer": {"electricity_source": "Public"}, "field_matches": {"electricity_source": true}, "match": true, "extractor": "gemini-3.6-flash"}

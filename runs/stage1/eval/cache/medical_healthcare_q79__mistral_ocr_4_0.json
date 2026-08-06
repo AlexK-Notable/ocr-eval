@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q79", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_35", "domain": "medical_healthcare", "answer": {"first_diagnosis_condition": "Emphysema", "first_diagnosis_organ": "lungs"}, "field_matches": {"first_diagnosis_condition": true, "first_diagnosis_organ": true}, "match": true, "extractor": "gemini-3.6-flash"}

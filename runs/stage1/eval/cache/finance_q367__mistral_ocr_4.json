@@ -1,0 +1,1 @@
+{"qid": "finance_q367", "parser": "mistral_ocr_4", "source_file": "finance_103", "domain": "finance", "answer": {"bad_debts_amount": 257.2}, "field_matches": {"bad_debts_amount": false}, "match": false, "extractor": "gemini-3.6-flash"}

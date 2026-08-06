@@ -1,0 +1,1 @@
+{"qid": "finance_q7", "parser": "mistral_ocr_4", "source_file": "finance_3", "domain": "finance", "answer": {"selected_attachment": "VEHICLE SCHEDULE"}, "field_matches": {"selected_attachment": true}, "match": true, "extractor": "gemini-3.6-flash"}

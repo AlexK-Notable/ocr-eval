@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q106", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_47", "domain": "medical_healthcare", "answer": {"is_signed": true, "name_and_date": null, "patient_name": "Emily R. Thompson"}, "field_matches": {"is_signed": true, "name_and_date": false, "patient_name": true}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q350", "parser": "mistral_ocr_4_0", "source_file": "finance_15", "domain": "finance", "answer": {"applicant_name": "Margaret"}, "field_matches": {"applicant_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

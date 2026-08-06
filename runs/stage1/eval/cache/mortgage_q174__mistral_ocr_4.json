@@ -1,0 +1,1 @@
+{"qid": "mortgage_q174", "parser": "mistral_ocr_4", "source_file": "mortgage_78", "domain": "mortgage", "answer": {"broadband_internet_available": "Yes", "gas_public_checkbox": true, "electricity_source": "Public"}, "field_matches": {"broadband_internet_available": true, "gas_public_checkbox": true, "electricity_source": true}, "match": true, "extractor": "gemini-3.6-flash"}

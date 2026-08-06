@@ -1,0 +1,1 @@
+{"qid": "mortgage_q387", "parser": "mistral_ocr_4", "source_file": "mortgage_150", "domain": "mortgage", "answer": {"LenderName": "Palmetto Home Mortgage", "LenderZip": "29201"}, "field_matches": {"LenderName": true, "LenderZip": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q128", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_56", "domain": "medical_healthcare", "answer": {"symptom_below_bowel_incontinence": "Rectal Pain"}, "field_matches": {"symptom_below_bowel_incontinence": true}, "match": true, "extractor": "gemini-3.6-flash"}

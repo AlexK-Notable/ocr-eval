@@ -1,0 +1,69 @@
+AGENCY CUSTOMER ID: TX-EXC-4429
+
+ACORD®
+
+# COMMERCIAL GENERAL LIABILITY SECTION
+
+DATE (MM/DD/YYYY)
+
+03/18/2024
+
+|  AGENCY Lone Star Commercial Insurance |   | CARRIER Travelers Indemnity Company |   | NAIC CODE 25674  |
+| --- | --- | --- | --- | --- |
+|  POLICY NUMBER CGL-TX-990847 | EFFECTIVE DATE 05/01/2024 | APPLICANT / FIRST NAMED INSURED Rio Grande Excavation & Grading Inc  |   |   |
+|  IMPORTANT - If CLAIMS MADE is checked in the COVERAGE / LIMITS section below, this is an application for a claims-made policy. Read all provisions of the policy carefully.  |   |   |   |   |
+
+COVERAGES
+
+LIMITS
+
+|  COMMERCIAL GENERAL LIABILITY | GENERAL AGGREGATE $ 5000000 | PREMIUMS  |
+| --- | --- | --- |
+|  ☐ CLAIMS MADE ☑ OCCURRENCE | LIMIT APPLIES PER: ☐ POLICY ☐ LOCATION | PREMISES/OPERATIONS  |
+|  OWNER'S & CONTRACTOR'S PROTECTIVE | ☑ PROJECT ☐ OTHER: | 45800  |
+|  DEDUCTIBLES | PRODUCTS & COMPLETED OPERATIONS AGGREGATE $ 5000000 | PRODUCTS  |
+|  ☐ PROPERTY DAMAGE $ 2500 | PERSONAL & ADVERTISING INJURY $ 2000000 | 18200  |
+|  ☐ BODILY INJURY $ 2500 | EACH OCCURRENCE $ 2000000 | OTHER  |
+|  ☐ PER CLAIM PER OCCURRENCE | DAMAGE TO RENTED PREMISES (each occurrence) $ 500000 | 3500  |
+|   | MEDICAL EXPENSE (Any one person) $ 10000 | TOTAL  |
+|   | EMPLOYEE BENEFITS $ | 67500  |
+|   | $ |   |
+|  OTHER COVERAGES, RESTRICTIONS AND/OR ENDORSEMENTS (For hired/non-owned auto coverages attach the applicable state Business Auto Section, ACORD 137)  |   |   |
+|  APPLICABLE ONLY IN WISCONSIN: IF NON-OWNED ONLY AUTO COVERAGE IS TO BE PROVIDED UNDER THE POLICY:  |   |   |
+|  1. UM / UIM COVERAGE ☐ IS ☑ IS NOT AVAILABLE. 2. MEDICAL PAYMENTS COVERAGE ☐ IS ☑ IS NOT AVAILABLE.  |   |   |
+
+SCHEDULE OF HAZARDS
+
+|  LOC # | HAZ # | CLASSIFICATION | CLASS CODE | PREMIUM BASIS | EXPOSURE | TERR | RATE |   | PREMIUM  |   |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|   |   |   |   |   |   |   |  PREM/OPS | PRODUCTS | PREM/OPS | PRODUCTS  |
+|  1 | 1 | Excavation & Grading | 91581 | Receipts | 6400000 | 12 | 0.72 | 0.28 | 45800 | 18200  |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  |   |   |   |   |   |   |   |   |   |   |
+|  RATING AND PREMIUM BASIS (P) PAYROLL - PER $1,000/PAY (C) TOTAL COST - PER $1,000/COST (U) UNIT - PER UNIT (S) GROSS SALES - PER $1,000/SALES (A) AREA - PER 1,000/SQ FT (M) ADMISSIONS - PER 1,000/ADM (T) OTHER  |   |   |   |   |   |   |   |   |   |   |
+
+CLAIMS MADE (Explain all "Yes" responses)
+
+|  EXPLAIN ALL "YES" RESPONSES | Y / N  |
+| --- | --- |
+|  1. PROPOSED RETROACTIVE DATE:  |   |
+|  2. ENTRY DATE INTO UNINTERRUPTED CLAIMS MADE COVERAGE:  |   |
+|  3. HAS ANY PRODUCT, WORK, ACCIDENT, OR LOCATION BEEN EXCLUDED, UNINSURED OR SELF-INSURED FROM ANY PREVIOUS COVERAGE? |   |
+|  Michael Torres |   |
+|  4. WAS TAIL COVERAGE PURCHASED UNDER ANY PREVIOUS POLICY? |   |
+
+EMPLOYEE BENEFITS LIABILITY
+
+|  1. DEDUCTIBLE PER CLAIM: $ | 3. NUMBER OF EMPLOYEES COVERED BY EMPLOYEE BENEFITS PLANS:  |
+| --- | --- |
+|  2. NUMBER OF EMPLOYEES: | 4. RETROACTIVE DATE:  |
+
+ACORD 126 (2016/03)
+
+Attach to ACORD 125 © 1993-2015 ACORD CORPORATION. All rights reserved.
+
+The ACORD name and logo are registered marks of ACORD

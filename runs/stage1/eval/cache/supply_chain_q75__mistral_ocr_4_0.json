@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q75", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"column_header": "Class or Rate Ref. (For Info. Only)"}, "field_matches": {"column_header": true}, "match": true, "extractor": "gemini-3.6-flash"}

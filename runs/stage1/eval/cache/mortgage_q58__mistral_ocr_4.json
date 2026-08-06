@@ -1,0 +1,1 @@
+{"qid": "mortgage_q58", "parser": "mistral_ocr_4", "source_file": "mortgage_22", "domain": "mortgage", "answer": {"owner_occupied_checked": true, "keep_property_checked": true}, "field_matches": {"owner_occupied_checked": true, "keep_property_checked": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q17", "parser": "mistral_ocr_4", "source_file": "supply_chain_8", "domain": "supply_chain", "answer": {"payment_terms": "United States", "bill_of_lading": "Net 60 days"}, "field_matches": {"payment_terms": true, "bill_of_lading": true}, "match": true, "extractor": "gemini-3.6-flash"}

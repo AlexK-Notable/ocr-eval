@@ -1,0 +1,1 @@
+{"qid": "mortgage_q375", "parser": "mistral_ocr_4_0", "source_file": "mortgage_138", "domain": "mortgage", "answer": {"LenderName": "Atlantic Coastal Home Loans, Inc.", "CodeNumber": 18432, "Type": "DE"}, "field_matches": {"LenderName": true, "CodeNumber": true, "Type": true}, "match": true, "extractor": "gemini-3.6-flash"}

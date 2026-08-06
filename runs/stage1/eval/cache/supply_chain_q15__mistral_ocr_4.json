@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q15", "parser": "mistral_ocr_4", "source_file": "supply_chain_7", "domain": "supply_chain", "answer": {"invoice_no": "INV-2024-00387", "payment_terms": "United States"}, "field_matches": {"invoice_no": true, "payment_terms": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q230", "parser": "mistral_ocr_4", "source_file": "finance_107", "domain": "finance", "answer": {"amount_received": 1000, "date_received": "1940-03-23"}, "field_matches": {"amount_received": false, "date_received": true}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q49", "parser": "mistral_ocr_4", "source_file": "mortgage_17", "domain": "mortgage", "answer": {"third_other_asset_amount": 0}, "field_matches": {"third_other_asset_amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

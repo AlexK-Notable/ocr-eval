@@ -1,0 +1,1 @@
+{"qid": "finance_q265", "parser": "mistral_ocr_4", "source_file": "finance_127", "domain": "finance", "answer": {"repayment_of_income_tax_870": "£1200000·00", "payable_rd_expenditure_credit_880": 7500000}, "field_matches": {"repayment_of_income_tax_870": true, "payable_rd_expenditure_credit_880": true}, "match": true, "extractor": "gemini-3.6-flash"}

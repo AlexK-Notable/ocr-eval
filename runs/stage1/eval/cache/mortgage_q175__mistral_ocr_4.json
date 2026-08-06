@@ -1,0 +1,1 @@
+{"qid": "mortgage_q175", "parser": "mistral_ocr_4", "source_file": "mortgage_79", "domain": "mortgage", "answer": {"borrower_name": "Betty Borrower\nBob Borrower", "market_value_condition": "Subject to Inspection\nSubject to Repair"}, "field_matches": {"borrower_name": true, "market_value_condition": true}, "match": true, "extractor": "gemini-3.6-flash"}

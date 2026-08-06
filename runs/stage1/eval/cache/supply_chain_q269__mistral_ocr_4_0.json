@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q269", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_90", "domain": "supply_chain", "answer": {"21": "A Interstate Carrier", "23": "A Authorized For-Hire", "24": "M PASSENGERS"}, "field_matches": {"21": false, "23": false, "24": false}, "match": false, "extractor": "gemini-3.6-flash"}

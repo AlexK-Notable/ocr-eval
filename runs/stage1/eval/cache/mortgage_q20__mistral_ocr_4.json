@@ -1,0 +1,1 @@
+{"qid": "mortgage_q20", "parser": "mistral_ocr_4", "source_file": "mortgage_8", "domain": "mortgage", "answer": {"cash_to_close": 10850, "lender_credits": 5300}, "field_matches": {"cash_to_close": true, "lender_credits": false}, "match": false, "extractor": "gemini-3.6-flash"}

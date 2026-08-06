@@ -1,0 +1,1 @@
+{"qid": "mortgage_q55", "parser": "mistral_ocr_4_0", "source_file": "mortgage_21", "domain": "mortgage", "answer": {"first_mortgage_payment": 2340}, "field_matches": {"first_mortgage_payment": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q252", "parser": "mistral_ocr_4_0", "source_file": "finance_119", "domain": "finance", "answer": {"unclaimed_tcs_first_sub_column_label": "Fin. Year in"}, "field_matches": {"unclaimed_tcs_first_sub_column_label": true}, "match": true, "extractor": "gemini-3.6-flash"}

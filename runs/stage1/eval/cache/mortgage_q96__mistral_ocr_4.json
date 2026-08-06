@@ -1,0 +1,1 @@
+{"qid": "mortgage_q96", "parser": "mistral_ocr_4", "source_file": "mortgage_42", "domain": "mortgage", "answer": {"deposit_amount": 200000, "delivery_obligation": "both"}, "field_matches": {"deposit_amount": true, "delivery_obligation": true}, "match": true, "extractor": "gemini-3.6-flash"}

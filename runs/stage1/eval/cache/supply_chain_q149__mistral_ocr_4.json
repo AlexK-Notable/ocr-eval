@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q149", "parser": "mistral_ocr_4", "source_file": "supply_chain_49", "domain": "supply_chain", "answer": {"TOTAL NUMBER OF PACKAGES": 4}, "field_matches": {"TOTAL NUMBER OF PACKAGES": true}, "match": true, "extractor": "gemini-3.6-flash"}

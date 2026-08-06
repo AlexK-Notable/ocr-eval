@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q294", "parser": "mistral_ocr_4", "source_file": "supply_chain_103", "domain": "supply_chain", "answer": {"A-31D": "N/A (truck) - Tractor TXP-4421", "A-31E": "N/A", "B-31D": "N/A (truck) - Tractor TXP-4421", "B-31E": "N/A"}, "field_matches": {"A-31D": true, "A-31E": true, "B-31D": true, "B-31E": true}, "match": true, "extractor": "gemini-3.6-flash"}

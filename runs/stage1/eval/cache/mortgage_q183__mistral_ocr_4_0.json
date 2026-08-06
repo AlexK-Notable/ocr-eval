@@ -1,0 +1,1 @@
+{"qid": "mortgage_q183", "parser": "mistral_ocr_4_0", "source_file": "mortgage_82", "domain": "mortgage", "answer": {"fannie_mae_freddie_mac_date": "September 2024"}, "field_matches": {"fannie_mae_freddie_mac_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

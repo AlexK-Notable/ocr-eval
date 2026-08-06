@@ -1,0 +1,1 @@
+{"qid": "finance_q170", "parser": "mistral_ocr_4", "source_file": "finance_83", "domain": "finance", "answer": {"transaction_id": "7394773", "receipt_for_primary_marked": false, "date_of_receipt": null}, "field_matches": {"transaction_id": true, "receipt_for_primary_marked": false, "date_of_receipt": false}, "match": false, "extractor": "gemini-3.6-flash"}

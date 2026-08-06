@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q28", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_15", "domain": "medical_healthcare", "answer": {"system_no": "09-70-0501", "federal_register_date": "Wed. Sept. 12, 1990"}, "field_matches": {"system_no": true, "federal_register_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

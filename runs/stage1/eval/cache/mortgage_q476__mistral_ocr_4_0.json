@@ -1,0 +1,1 @@
+{"qid": "mortgage_q476", "parser": "mistral_ocr_4_0", "source_file": "mortgage_220", "domain": "mortgage", "answer": {"Underwriter Comments": "Income verified via VOE and W-2s; reserves sourced; gift letter and transfer evidence in file."}, "field_matches": {"Underwriter Comments": true}, "match": true, "extractor": "gemini-3.6-flash"}

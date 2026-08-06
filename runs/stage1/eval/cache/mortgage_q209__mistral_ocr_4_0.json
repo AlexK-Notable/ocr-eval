@@ -1,0 +1,1 @@
+{"qid": "mortgage_q209", "parser": "mistral_ocr_4_0", "source_file": "mortgage_95", "domain": "mortgage", "answer": {"comp1_exterior_quality_condition": "Q4, C3"}, "field_matches": {"comp1_exterior_quality_condition": true}, "match": true, "extractor": "gemini-3.6-flash"}

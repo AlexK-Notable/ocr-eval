@@ -1,0 +1,1 @@
+{"qid": "finance_q227", "parser": "mistral_ocr_4_0", "source_file": "finance_106", "domain": "finance", "answer": {"salaries_and_compensation": 3925.0, "dividends": 50.0}, "field_matches": {"salaries_and_compensation": false, "dividends": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q150", "parser": "mistral_ocr_4_0", "source_file": "mortgage_65", "domain": "mortgage", "answer": {"project_blanket_financing_yes_marked": "No"}, "field_matches": {"project_blanket_financing_yes_marked": false}, "match": false, "extractor": "gemini-3.6-flash"}

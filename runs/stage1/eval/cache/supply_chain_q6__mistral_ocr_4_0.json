@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q6", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_3", "domain": "supply_chain", "answer": {"from_name": "9500 Assembly Line Road Building C", "from_street": "9500 Assembly Line F"}, "field_matches": {"from_name": true, "from_street": true}, "match": true, "extractor": "gemini-3.6-flash"}

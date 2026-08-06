@@ -1,0 +1,1 @@
+{"qid": "mortgage_q91", "parser": "mistral_ocr_4_0", "source_file": "mortgage_40", "domain": "mortgage", "answer": {"fha_va_loan_addendum_marked": true}, "field_matches": {"fha_va_loan_addendum_marked": true}, "match": true, "extractor": "gemini-3.6-flash"}

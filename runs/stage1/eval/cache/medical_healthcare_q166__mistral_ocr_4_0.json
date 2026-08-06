@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q166", "parser": "mistral_ocr_4_0", "source_file": "medical_healthcare_6", "domain": "medical_healthcare", "answer": {"admission_date": "Liberia"}, "field_matches": {"admission_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

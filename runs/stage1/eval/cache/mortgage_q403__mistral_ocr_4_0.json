@@ -1,0 +1,1 @@
+{"qid": "mortgage_q403", "parser": "mistral_ocr_4_0", "source_file": "mortgage_169", "domain": "mortgage", "answer": {"CapitalOne_MonthsLeftToPay": 18, "CreditUnion_MonthsLeftToPay": 28}, "field_matches": {"CapitalOne_MonthsLeftToPay": true, "CreditUnion_MonthsLeftToPay": true}, "match": true, "extractor": "gemini-3.6-flash"}

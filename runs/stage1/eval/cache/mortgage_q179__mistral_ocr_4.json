@@ -1,0 +1,1 @@
+{"qid": "mortgage_q179", "parser": "mistral_ocr_4", "source_file": "mortgage_81", "domain": "mortgage", "answer": {"comp_4_heating_and_adjustment": "Natural Gas / Forced Warm Air"}, "field_matches": {"comp_4_heating_and_adjustment": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q266", "parser": "mistral_ocr_4_0", "source_file": "finance_127", "domain": "finance", "answer": {"amount_to_be_surrendered_900": 6500000.0}, "field_matches": {"amount_to_be_surrendered_900": true}, "match": true, "extractor": "gemini-3.6-flash"}

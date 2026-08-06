@@ -1,0 +1,1 @@
+{"qid": "mortgage_q351", "parser": "mistral_ocr_4_0", "source_file": "mortgage_174", "domain": "mortgage", "answer": {"Termite inspection": 110.0, "Survey": 510.0}, "field_matches": {"Termite inspection": true, "Survey": true}, "match": true, "extractor": "gemini-3.6-flash"}

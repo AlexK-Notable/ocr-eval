@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q80", "parser": "mistral_ocr_4_0", "source_file": "supply_chain_32", "domain": "supply_chain", "answer": {"Form Template": "WorkOrderEstimate.rpt", "Form Version": "v204", "Reference": 68}, "field_matches": {"Form Template": false, "Form Version": true, "Reference": true}, "match": false, "extractor": "gemini-3.6-flash"}

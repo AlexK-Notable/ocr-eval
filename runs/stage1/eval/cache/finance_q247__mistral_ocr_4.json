@@ -1,0 +1,1 @@
+{"qid": "finance_q247", "parser": "mistral_ocr_4", "source_file": "finance_117", "domain": "finance", "answer": {"total_tax_payable_line_770": 170800.0, "total_payments_tax_withheld_line_801": 34860.0}, "field_matches": {"total_tax_payable_line_770": true, "total_payments_tax_withheld_line_801": true}, "match": true, "extractor": "gemini-3.6-flash"}

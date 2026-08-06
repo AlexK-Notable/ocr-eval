@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q34", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_17", "domain": "medical_healthcare", "answer": {"telephone": null, "city_state": null}, "field_matches": {"telephone": false, "city_state": false}, "match": false, "extractor": "gemini-3.6-flash"}

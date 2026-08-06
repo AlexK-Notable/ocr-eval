@@ -1,0 +1,11 @@
+{
+  "parser": "mistral_ocr_4",
+  "stem": "finance_146",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 3.0969030859996565,
+  "cost_usd": 0.004,
+  "md_length": 1671,
+  "elapsed_total": 3.0986156463623047,
+  "error": ""
+}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q171", "parser": "mistral_ocr_4", "source_file": "mortgage_76", "domain": "mortgage", "answer": {"construction_method": "Manufactured"}, "field_matches": {"construction_method": true}, "match": true, "extractor": "gemini-3.6-flash"}

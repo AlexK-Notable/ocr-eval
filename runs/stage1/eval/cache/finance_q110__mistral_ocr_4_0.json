@@ -1,0 +1,1 @@
+{"qid": "finance_q110", "parser": "mistral_ocr_4_0", "source_file": "finance_55", "domain": "finance", "answer": {"approximate_date_of_application": "2020-04-19", "loan_amount": 600000}, "field_matches": {"approximate_date_of_application": true, "loan_amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

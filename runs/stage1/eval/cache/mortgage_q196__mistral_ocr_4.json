@@ -1,0 +1,1 @@
+{"qid": "mortgage_q196", "parser": "mistral_ocr_4", "source_file": "mortgage_89", "domain": "mortgage", "answer": {"comp_2_energy_efficient_adjustment": null}, "field_matches": {"comp_2_energy_efficient_adjustment": false}, "match": false, "extractor": "gemini-3.6-flash"}

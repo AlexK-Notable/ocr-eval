@@ -1,0 +1,1 @@
+{"qid": "finance_q179", "parser": "mistral_ocr_4_0", "source_file": "finance_86", "domain": "finance", "answer": {"occupation": "Conduit total listed in Agg. field"}, "field_matches": {"occupation": true}, "match": true, "extractor": "gemini-3.6-flash"}

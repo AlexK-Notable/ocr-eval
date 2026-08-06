@@ -1,0 +1,1 @@
+{"qid": "mortgage_q23", "parser": "mistral_ocr_4", "source_file": "mortgage_9", "domain": "mortgage", "answer": {"loan_term": "30 yr. 0 mo."}, "field_matches": {"loan_term": true}, "match": true, "extractor": "gemini-3.6-flash"}

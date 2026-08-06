@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q39", "parser": "mistral_ocr_4", "source_file": "medical_healthcare_18", "domain": "medical_healthcare", "answer": {"anatomical_landmarks_lines_1_2": "L 7th ICS\nAortu"}, "field_matches": {"anatomical_landmarks_lines_1_2": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q217", "parser": "mistral_ocr_4_0", "source_file": "mortgage_98", "domain": "mortgage", "answer": {"military_service_no": null}, "field_matches": {"military_service_no": true}, "match": true, "extractor": "gemini-3.6-flash"}

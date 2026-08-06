@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q295", "parser": "mistral_ocr_4", "source_file": "supply_chain_103", "domain": "supply_chain", "answer": {"31A": "Mexico (MX) ☐ Disclaimed", "31C": "N/A (truck shipment)", "31F": "Disclaimed"}, "field_matches": {"31A": false, "31C": true, "31F": true}, "match": false, "extractor": "gemini-3.6-flash"}

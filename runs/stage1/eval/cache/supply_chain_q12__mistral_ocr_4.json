@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q12", "parser": "mistral_ocr_4", "source_file": "supply_chain_5", "domain": "supply_chain", "answer": {"speaker_no_of_packages": 3, "speaker_no_of_units": 3, "blank_desc_row_unit_value": "EA"}, "field_matches": {"speaker_no_of_packages": true, "speaker_no_of_units": true, "blank_desc_row_unit_value": true}, "match": true, "extractor": "gemini-3.6-flash"}
