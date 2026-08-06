@@ -1078,10 +1078,13 @@ def test_registry_mistral_tos_note_carries_the_gate3_zero_retention_finding():
     from ocr_eval_ext.config import get_entry, load_registry
 
     entries = load_registry(Path(__file__).resolve().parents[1] / "configs" / "registry.yaml")
-    mistral = get_entry(entries, "mistral-ocr@mistral")
-    assert "zero-retention" in mistral.tos_note.lower()
-    stamp = _tos_stamp(mistral)
-    assert "zero-retention" in stamp.lower()   # survives the 60-char truncation
+    # Both OCR 4 pins carry it: the note describes Mistral's contractual posture, which is a
+    # property of the provider, not of the point release.
+    for eid in ("mistral-ocr-4-1@mistral", "mistral-ocr-4-0@mistral"):
+        mistral = get_entry(entries, eid)
+        assert "zero-retention" in mistral.tos_note.lower()
+        stamp = _tos_stamp(mistral)
+        assert "zero-retention" in stamp.lower()   # survives the 60-char truncation
 
 
 # ── F6: mixed-precision caveat treats "unknown (not asserted)" as its own distinct value ───────

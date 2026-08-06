@@ -1,4 +1,26 @@
-# Gemini native-API registry (transport: gemini-native) — six vlm-chat candidates.
+# Gemini native-API registry (transport: gemini-native) — three 3.x vlm-chat candidates.
+#
+# ── SCOPE CHANGE 2026-08-06: THE 2.5 TIER WAS DROPPED ───────────────────────────────────────
+# gemini-2.5-flash-lite / 2.5-flash / 2.5-pro were removed at the user's direction, on the grounds
+# that they will be deprecated sooner rather than later (Google has already retired 2.0-flash-lite
+# mid-project — it returned HTTP 404 "no longer available" — so this is a demonstrated risk, not a
+# hypothetical one).
+#
+# TWO CONSEQUENCES A READER MUST NOT MISS:
+#
+#  1. **This registry no longer contains a single CLEAN comparative row.** All three surviving
+#     entries post-date CONTAMINATION_CUTOFF or are preview endpoints; see the contamination block
+#     below. The 2.5 tier was carrying every clean Gemini data point. Any "Gemini vs Haiku" reading
+#     from this file alone therefore compares a contamination-flagged model against a clean one.
+#     The clean Gemini anchor that remains is `gemini-3.5-flash@google-vlmchat` in
+#     configs/registry.yaml (release 2026-05-19, pre-cutoff) — on the compat shim, so at an
+#     UNPINNED media_resolution. It is not condition-comparable with the rows here.
+#
+#  2. **The empirical case for this whole transport was the 2.5-vs-3.x gap** (below), and that
+#     comparison can no longer be made from this file. The parameter still needs pinning — an
+#     unpinned budget is an unrecorded condition regardless of how many generations are present,
+#     and a future 3.x point release could change its own default — but the measurement that
+#     JUSTIFIED it now lives only in this comment and in the rows deleted on 2026-08-05.
 #
 # ── WHY A SEPARATE TRANSPORT, NOT `openai-compat` ────────────────────────────────────────────
 # `configs/registry.yaml` already has `gemini-3.5-flash@google-vlmchat` on the OpenAI-compat shim,
@@ -25,23 +47,25 @@
 # unlucky — `thinking_config` at that same path IS accepted (it fails on the VALUE), proving the
 # path resolves and this field simply is not a member.
 #
-# ── CONTAMINATION: FOUR OF SIX ARE FLAGGED ──────────────────────────────────────────────────
+# ── CONTAMINATION: NO CLEAN ROW REMAINS IN THIS FILE ────────────────────────────────────────
 # CONTAMINATION_CUTOFF is 2026-05-24 (RealDoc-Bench's HF createdAt — first public availability).
 # Release dates below are Wikipedia's Gemini version history, the only source that carries them:
 # ai.google.dev's model page and deepmind.google list no dates at all (checked 2026-08-05). They
 # are therefore "verified-as-published-third-party", NOT vendor-confirmed — a reader recomputing
 # `entry.contaminated` should know the input is a secondary source.
 #
-#     gemini-2.5-flash-lite    2025-06-17   clean  (11 months pre-cutoff)
-#     gemini-2.5-flash         2025-04-17   clean
-#     gemini-2.5-pro           2025-03-25   clean
-#     gemini-3.1-pro-preview   2026-02-19   clean  (3 months pre-cutoff)
+#     gemini-3.1-pro-preview   2026-02-19   pre-cutoff, but a PREVIEW endpoint (withdrawable)
 #     gemini-3.5-flash-lite    2026-07-21   CONTAMINATED (2 months post-cutoff)
 #     gemini-3.6-flash         2026-07-21   CONTAMINATED (2 months post-cutoff)
 #
-# So the 2.5 tier and 3.1-pro are legitimate comparative rows; the two newest 3.x models are
-# ceiling anchors only and must never be presented as clean baselines. `report.md` stamps
-# `contaminated: yes` on them automatically.
+#     dropped 2026-08-06:
+#     gemini-2.5-flash-lite    2025-06-17   was clean (11 months pre-cutoff)
+#     gemini-2.5-flash         2025-04-17   was clean
+#     gemini-2.5-pro           2025-03-25   was clean
+#
+# So 3.1-pro-preview is the only non-contaminated row here, and its durability is not guaranteed.
+# The two 3.x flash models are ceiling anchors ONLY and must never be presented as clean baselines;
+# `report.md` stamps `contaminated: yes` on them automatically.
 #
 # ── gemini-3.6-flash IS ALSO THE PINNED EXTRACTOR ───────────────────────────────────────────
 # `score.py`'s DEFAULT_MODEL is `gemini-3.6-flash` (divergence D11 rev 3). For these VLM-CHAT rows
@@ -53,62 +77,16 @@
 # From ai.google.dev/gemini-api/docs/pricing. Unlike the Bedrock registry (unpriced because
 # Converse returns no cost field and pricing:GetProducts is IAM-denied), Google publishes rates, so
 # these entries are priced and `--dry-run`/`--max-spend` work normally.
-# NB the two Pro models are TIERED by prompt length: the rates below are the <=200k-token tier,
-# which is the only tier this corpus reaches (worst observed prompt ~2.5k tokens, three orders of
-# magnitude under the threshold). The >200k tier (3.1-pro $4/$18, 2.5-pro $2.50/$15) is therefore
-# unreachable here and is recorded in this comment rather than in the entries.
+# NB 3.1-pro is TIERED by prompt length: the rate below is the <=200k-token tier, which is the only
+# tier this corpus reaches (worst observed prompt ~2.5k tokens, three orders of magnitude under the
+# threshold). The >200k tier ($4/$18) is therefore unreachable here and is recorded in this comment
+# rather than in the entry.
 # Batch and Flex tiers are 50% off standard; not used, since batch changes latency semantics.
 #
 # ── PRECISION ───────────────────────────────────────────────────────────────────────────────
 # `provider-default` on every entry: Google documents no serving precision for these checkpoints.
 # This is a declaration of "not asserted" (renders as such in report.md), never a claim of bf16.
 # Treat every row here as a serving-stack measurement, not a clean weights comparison.
-
-# ── 2.5 tier (all pre-cutoff, all clean) ────────────────────────────────────────────────────
-- id: gemini-2.5-flash-lite@google-native
-  shape: vlm-chat
-  transport: gemini-native
-  model: gemini-2.5-flash-lite
-  api_key_env: GEMINI_API_KEY
-  precision: provider-default
-  pricing:
-    input_per_mtok: 0.10
-    output_per_mtok: 0.40
-  weights_licence: closed
-  provider_tos_commercial: ok
-  tos_note: "Google AI paid tier: inputs not used for training (ai.google.dev/gemini-api/terms)"
-  provenance: Google
-  release_date: "2025-06-17"           # Wikipedia Gemini version history; vendor docs list no date
-
-- id: gemini-2.5-flash@google-native
-  shape: vlm-chat
-  transport: gemini-native
-  model: gemini-2.5-flash
-  api_key_env: GEMINI_API_KEY
-  precision: provider-default
-  pricing:
-    input_per_mtok: 0.30
-    output_per_mtok: 2.50
-  weights_licence: closed
-  provider_tos_commercial: ok
-  tos_note: "Google AI paid tier: inputs not used for training (ai.google.dev/gemini-api/terms)"
-  provenance: Google
-  release_date: "2025-04-17"
-
-- id: gemini-2.5-pro@google-native
-  shape: vlm-chat
-  transport: gemini-native
-  model: gemini-2.5-pro
-  api_key_env: GEMINI_API_KEY
-  precision: provider-default
-  pricing:
-    input_per_mtok: 1.25              # <=200k-token prompt tier; >200k is $2.50 (unreachable here)
-    output_per_mtok: 10.00            # >200k output tier is $15.00
-  weights_licence: closed
-  provider_tos_commercial: ok
-  tos_note: "Google AI paid tier: inputs not used for training (ai.google.dev/gemini-api/terms)"
-  provenance: Google
-  release_date: "2025-03-25"
 
 # ── 3.x tier ────────────────────────────────────────────────────────────────────────────────
 - id: gemini-3.1-pro-preview@google-native

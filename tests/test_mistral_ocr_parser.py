@@ -61,7 +61,10 @@ def test_mistral_ocr_4_parser_posts_pdf_data_url(
     assert result.cost_estimate_usd == 0.008
     assert _FakeClient.last_url == "https://mistral.test/v1/ocr"
     assert _FakeClient.last_headers["Authorization"] == "Bearer test-key"
-    assert _FakeClient.last_payload["model"] == "mistral-ocr-latest"
+    # FORK CHANGE 2026-08-06: was "mistral-ocr-latest". That alias resolved to mistral-ocr-4-1,
+    # and 4-0/4-1 return measurably different markdown on the same page, so an alias could change
+    # a measured result with no code change. Asserting the alias here was pinning the bug.
+    assert _FakeClient.last_payload["model"] == "mistral-ocr-4-1"
     doc = _FakeClient.last_payload["document"]
     assert doc["type"] == "document_url"
     assert doc["document_url"] == (

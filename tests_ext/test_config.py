@@ -100,7 +100,10 @@ def test_registry_yaml_parses_and_satisfies_dod_categories():
     )
 
     # `contaminated` property coverage: one flagged (post-cutoff), one not (pre-cutoff).
-    assert get_entry(entries, "mistral-ocr@mistral").contaminated is True
+    # Renamed 2026-08-06: `mistral-ocr@mistral` -> `mistral-ocr-4-1@mistral`, because 4-0 and 4-1
+    # are both undeprecated and produce different markdown, so the id must name the version.
+    assert get_entry(entries, "mistral-ocr-4-1@mistral").contaminated is True
+    assert get_entry(entries, "mistral-ocr-4-0@mistral").contaminated is True
     assert get_entry(entries, "qwen3-vl-8b@openrouter").contaminated is False
 
 

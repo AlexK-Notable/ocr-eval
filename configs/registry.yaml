@@ -201,7 +201,14 @@
   provenance: Google
   release_date: "2026-05-19"           # approximate — see gemini-3.5-flash@google above
 
-- id: mistral-ocr@mistral
+# ── Mistral OCR 4: BOTH undeprecated pins, as two rows ──────────────────────────────────────
+# `mistral-ocr-4-0` and `mistral-ocr-4-1` are both live and NOT interchangeable. Probed on one
+# identical page 2026-08-06 (scripts/probe_mistral_ocr.py): 4-0 returned 4,248 chars, 4-1 returned
+# 4,608, and 4-0 kept `ACORD®` where 4-1 emitted `ACORD`. Text normalization is precisely what this
+# bench's string comparison is sensitive to, so the version is a measured condition, not a label.
+# `mistral-ocr-latest` resolved to 4-1 on that date — which means the previous `mistral-ocr-latest`
+# pin had ALREADY been moving underneath this entry.
+- id: mistral-ocr-4-1@mistral
   shape: transcriber
   transport: upstream-parser
   upstream_parser: mistral_ocr_4          # confirmed registered: `uv run realdoc-bench evaluate list`
@@ -225,6 +232,24 @@
                                         # OCR 4 is now contamination-flagged, the opposite of the
                                         # seed's implicit assumption. Flag this prominently in the
                                         # Stage 1 report.
+
+- id: mistral-ocr-4-0@mistral
+  shape: transcriber
+  transport: upstream-parser
+  upstream_parser: mistral_ocr_4_0        # separate parser NAME, not a config flag: upstream keys
+                                        # transcripts and cache rows by parser name, so one name
+                                        # for two model versions would overwrite transcripts.
+  promptable: false
+  api_key_env: MISTRAL_API_KEY
+  precision: provider-default
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "zero-retention by contract only (gate3); PDF-upload endpoint, no prompt accepted"
+  provenance: Mistral
+  release_date: "2026-06-23"           # same family announcement as 4-1 — no separate per-point-
+                                        # release date is published, so both carry the OCR 4 launch
+                                        # date and both are therefore contamination-flagged
+                                        # (post-2026-05-24). Ceiling anchors, not clean baselines.
 
 - id: docstrange@nanonets
   shape: transcriber

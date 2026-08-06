@@ -51,18 +51,78 @@ def _pages_to_markdown(response: dict[str, Any]) -> tuple[str, int]:
     return "\n\n---\n\n".join(chunks), len(pages)
 
 
-@register_parser("mistral_ocr_4", version="mistral-ocr-latest")
+@register_parser("mistral_ocr_4", version="mistral-ocr-4-1")
 class MistralOCR4Parser(ParseProvider):
-    """Mistral OCR 4 via ``POST /v1/ocr``."""
+    """Mistral OCR 4 via ``POST /v1/ocr``.
 
-    model: str = "mistral-ocr-latest"
+    FORK CHANGES (2026-08-06), all four driven by one probe
+    (``scripts/probe_mistral_ocr.py``) rather than by the docs:
+
+    1. **``model`` is pinned to an explicit version, never ``mistral-ocr-latest``.**
+       ``4-0`` and ``4-1`` are BOTH undeprecated, and on one identical page they
+       returned DIFFERENT markdown (4,248 vs 4,608 chars; ``ACORD®`` vs
+       ``ACORD`` — 4-1 strips the trademark glyph). So the two are not
+       interchangeable, and an alias that silently re-points would change what a
+       measured number means. OCR 1 and OCR 2 are already retired, so the
+       aliases demonstrably move.
+
+    2. **``include_blocks`` is sent explicitly.** The docs contradict themselves
+       (``true`` in the API reference, ``false`` in the capabilities page). The
+       probe settled it — blocks come back by default — but a default we cannot
+       pin from documentation must not be left implicit in a benchmark.
+
+    3. **``extract_header`` / ``extract_footer`` are exposed.** Both default
+       ``false``; turning them on moves ~150 chars out of ``markdown`` into
+       separate fields, so they change the transcript the grader sees.
+
+    4. **``table_format`` carries a warning.** Setting ``html`` moved table
+       content OUT of ``markdown`` and into a separate ``tables`` field, cutting
+       the observed transcript from 4,608 to 289 chars. Since only ``markdown``
+       reaches the extractor, ``html`` would hand the grader an almost empty
+       document while looking like catastrophic OCR failure. Left ``None``.
+    """
+
+    # Explicit pin. `mistral-ocr-4-1` is what `mistral-ocr-latest` resolved to on 2026-08-06.
+    model: str = "mistral-ocr-4-1"
     table_format: str | None = None
     confidence_scores_granularity: str | None = None
+    include_blocks: bool | None = None
+    extract_header: bool | None = None
+    extract_footer: bool | None = None
+
+    def __init__(self, **overrides: Any) -> None:
+        """Accept per-instance overrides for the request-shaping fields.
+
+        `ParseProvider` is a plain ABC, not a pydantic model, so class attributes alone are NOT
+        settable through `build(name, **kwargs)` — the base `object.__init__` rejects arguments.
+        Without this the new parameters would be reachable only by subclassing, which is how the
+        model pin itself is done (`MistralOCR40Parser`) but is far too heavy for a table format.
+
+        Unknown names are rejected rather than ignored: a silently-dropped `table_fmt=` typo would
+        produce rows that claim a configuration they were never served at, and `config_hash` would
+        agree with the claim.
+        """
+        allowed = {"model", "table_format", "confidence_scores_granularity",
+                   "include_blocks", "extract_header", "extract_footer"}
+        unknown = set(overrides) - allowed
+        if unknown:
+            raise TypeError(f"{type(self).__name__}: unknown parameter(s) {sorted(unknown)}; "
+                            f"allowed: {sorted(allowed)}")
+        for k, v in overrides.items():
+            setattr(self, k, v)
 
     def config_hash(self) -> str:
+        """EVERY request-shaping parameter must appear here.
+
+        Two configurations that hash the same would share one cache key, so the second
+        run would read the first's rows and silently report them as its own. `model` is
+        the load-bearing one now that 4-0 and 4-1 are both live and demonstrably differ.
+        """
         return sha256_text(
             f"{self.name}|{self.version}|model={self.model}"
             f"|table={self.table_format}|conf={self.confidence_scores_granularity}"
+            f"|blocks={self.include_blocks}"
+            f"|header={self.extract_header}|footer={self.extract_footer}"
         )[:7]
 
     def parse(self, pdf_path: Path, *, cache_dir: Path | None = None) -> ParseResult:
@@ -79,10 +139,17 @@ class MistralOCR4Parser(ParseProvider):
                 "document_url": _pdf_data_url(pdf_path),
             },
         }
-        if self.table_format is not None:
-            payload["table_format"] = self.table_format
-        if self.confidence_scores_granularity is not None:
-            payload["confidence_scores_granularity"] = self.confidence_scores_granularity
+        # Only send what was explicitly configured: an omitted key takes Mistral's default, and
+        # sending an explicit None is not the same thing (the API rejects some null values).
+        for key, value in (
+            ("table_format", self.table_format),
+            ("confidence_scores_granularity", self.confidence_scores_granularity),
+            ("include_blocks", self.include_blocks),
+            ("extract_header", self.extract_header),
+            ("extract_footer", self.extract_footer),
+        ):
+            if value is not None:
+                payload[key] = value
 
         t0 = time.perf_counter()
         with httpx.Client(timeout=None) as client:
@@ -105,5 +172,24 @@ class MistralOCR4Parser(ParseProvider):
             provider=self.name,
             version=self.version,
             config_hash=self.config_hash(),
+            # `model` is the SERVER-reported id, not `self.model` — the only way to catch an
+            # alias resolving somewhere other than where we pinned it.
             raw={"model": raw.get("model"), "usage_info": raw.get("usage_info")},
         )
+
+
+@register_parser("mistral_ocr_4_0", version="mistral-ocr-4-0")
+class MistralOCR40Parser(MistralOCR4Parser):
+    """The other undeprecated 4.x pin, as a SEPARATE parser name.
+
+    Not a config flag on one parser: upstream keys transcripts and cache rows by parser NAME
+    (``parses/<parser>/``, ``eval/cache/<qid>__<parser>.json``), so two model versions under one
+    name would overwrite each other's transcripts. Distinct names give each pin its own row set,
+    which is what makes a 4-0 vs 4-1 comparison legible in the report.
+
+    Measured difference on one page (2026-08-06): 4-0 produced 4,248 chars vs 4-1's 4,608, and
+    kept ``ACORD®`` where 4-1 emitted ``ACORD``. Text normalization is exactly what this bench's
+    string comparisons are sensitive to, so this is a real condition difference — not a label.
+    """
+
+    model: str = "mistral-ocr-4-0"
