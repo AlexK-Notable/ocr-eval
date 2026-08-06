@@ -88,6 +88,30 @@ DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse", "gemini-nati
 # cross-generation comparison partly a measurement of image budget. See gemini_native.py.
 GEMINI_MEDIA_RESOLUTION = "MEDIA_RESOLUTION_HIGH"
 
+# Gemini-native sampling: VENDOR DEFAULT, not this project's greedy default (user decision
+# 2026-08-05). `STAGE1_CONDITION` pins temperature 0.0 / top_p 1.0 for reproducibility, and every
+# other row in Section A (Haiku on Bedrock, the qwen family on OpenRouter) was measured that way.
+# Google's prompting-strategies doc is explicit that this is wrong for their models:
+#
+#   "we strongly recommend keeping them at their default values for Gemini 3.x models. Changing
+#    these parameters (for example, setting the temperature below 1.0) can cause unexpected
+#    behavior, such as looping or degraded performance"
+#
+# The named failure mode — looping — is the same one this repo already recorded for Qwen thinking
+# models under greedy decoding (docs/api.md), where it was observed live. Rather than run six models
+# against their vendor's explicit warning, these rows use temperature 1.0 / top_p 0.95.
+#
+# TWO COSTS, both real and both accepted deliberately:
+#  1. Gemini rows are NO LONGER directly comparable to the temperature-0 rows in the same section.
+#     The report renders the condition hash per row, so the difference is visible rather than
+#     implied — but a Gemini-vs-Haiku delta now spans two sampling regimes and must not be read as
+#     a pure capability gap.
+#  2. Reruns are no longer deterministic. The same cell can answer differently on a second pass, so
+#     a cache hit is not reproducible-on-demand the way a greedy row is. `sample_index` stays 0:
+#     this is one sample per cell, not a K-sample design.
+# Recorded in the condition dict (hence the condition hash), so no row can be misread as greedy.
+GEMINI_SAMPLING = {"temperature": 1.0, "top_p": 0.95}
+
 
 def condition_hash(condition: dict) -> str:
     return hashlib.sha256(json.dumps(condition, sort_keys=True).encode()).hexdigest()[:12]
@@ -100,17 +124,25 @@ def parser_key(entry_id: str, condition: dict) -> str:
 def _condition_for(entry: RegistryEntry, condition: dict) -> dict:
     """The condition as ACTUALLY served for this entry's transport.
 
-    Only `gemini-native` differs: it adds `media_resolution`, because that transport exists
-    specifically to control it and a row must record what it was served at. Folding the key in here
-    rather than into `STAGE1_CONDITION` keeps it out of every other transport's hash — adding a key
-    to the shared dict would change `condition_hash` for all rows on all transports at once and
-    orphan the entire existing cache for a parameter three quarters of it cannot even use.
+    Only `gemini-native` differs, in two ways, and both are recorded in the returned dict so they
+    land in the condition hash rather than being invisible wire-level behaviour:
+
+      * `media_resolution` — the whole reason the transport exists (per-generation defaults differ
+        4x, see GEMINI_MEDIA_RESOLUTION).
+      * `sampling` — overridden to Google's documented defaults, because Google explicitly warns
+        that temperature below 1.0 causes looping/degradation on Gemini 3.x (see GEMINI_SAMPLING).
+
+    Folding both in here rather than into `STAGE1_CONDITION` keeps them out of every other
+    transport's hash — editing the shared dict would change `condition_hash` for all rows on all
+    transports at once and orphan the entire existing cache.
 
     Every caller that computes a parser key or writes a row must go through this, or a row's stored
     `condition` and its cache-key hash will disagree — which `report`'s D3/label logic would then
     read as two different conditions."""
     if entry.transport == "gemini-native":
-        return {**condition, "media_resolution": GEMINI_MEDIA_RESOLUTION}
+        return {**condition,
+                "media_resolution": GEMINI_MEDIA_RESOLUTION,
+                "sampling": {**condition["sampling"], **GEMINI_SAMPLING}}
     return condition
 
 

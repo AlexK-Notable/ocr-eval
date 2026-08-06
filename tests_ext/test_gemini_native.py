@@ -17,6 +17,7 @@ from ocr_eval_ext import gemini_native as gn
 from ocr_eval_ext.config import RegistryEntry
 from ocr_eval_ext.direct import (
     GEMINI_MEDIA_RESOLUTION,
+    GEMINI_SAMPLING,
     STAGE1_CONDITION,
     _condition_for,
     _is_retryable,
@@ -304,6 +305,50 @@ def test_gemini_condition_gets_its_own_hash_and_leaves_others_untouched():
     assert "media_resolution" not in other              # untouched for every other transport
     assert other == STAGE1_CONDITION                     # ...byte-identical, not merely equivalent
     assert condition_hash(gem) != condition_hash(STAGE1_CONDITION)
+
+
+def test_gemini_uses_vendor_default_sampling_and_only_gemini_does():
+    """Google's prompting-strategies doc is explicit that sub-1.0 temperature "can cause unexpected
+    behavior, such as looping or degraded performance" on Gemini 3.x. STAGE1_CONDITION pins
+    temperature 0.0 for reproducibility — ratified for Qwen/Bedrock — and carrying that onto six
+    Gemini models WITHOUT checking Google's guidance cost ~$2 of spend and a whole abandoned tier.
+
+    Pinned here so the override cannot silently revert, and so it stays scoped to gemini-native:
+    flipping every transport to temperature 1.0 would invalidate the Haiku and qwen rows that were
+    measured greedily."""
+    gem = _condition_for(entry(), STAGE1_CONDITION)
+    assert gem["sampling"]["temperature"] == 1.0
+    assert gem["sampling"]["top_p"] == 0.95
+    # merged OVER the shared dict, not replacing it — max_tokens/seed must survive
+    assert gem["sampling"]["max_tokens"] == STAGE1_CONDITION["sampling"]["max_tokens"]
+    assert gem["sampling"]["seed"] == STAGE1_CONDITION["sampling"]["seed"]
+    # ...and the shared dict itself is untouched (a mutated STAGE1_CONDITION would rehash every
+    # existing row on every other transport)
+    assert STAGE1_CONDITION["sampling"]["temperature"] == 0.0
+    assert STAGE1_CONDITION["sampling"]["top_p"] == 1.0
+
+
+def test_vendor_sampling_hash_differs_from_both_baseline_and_the_abandoned_temp0_condition():
+    """The abandoned temp-0 gemini condition hashed to f7a267f691d0 and 3,624 rows were deleted under
+    it. If vendor-default sampling ever collided with that hash, re-running would read the deleted
+    condition's cache keys as current."""
+    gem = _condition_for(entry(), STAGE1_CONDITION)
+    abandoned = {**STAGE1_CONDITION, "media_resolution": GEMINI_MEDIA_RESOLUTION}
+    assert condition_hash(abandoned) == "f7a267f691d0"        # the recorded abandoned hash
+    assert condition_hash(gem) != condition_hash(abandoned)
+    assert condition_hash(gem) != condition_hash(STAGE1_CONDITION)
+    assert condition_hash(gem) == "872144e4aecb"              # the recorded live target
+
+
+def test_sampling_override_does_not_leak_into_other_transports():
+    bedrock = RegistryEntry(
+        id="b@bedrock", shape="vlm-chat", transport="bedrock-converse", model="m",
+        region="us-east-1", precision="provider-default", weights_licence="closed",
+        provider_tos_commercial="ok", provenance="X", release_date="2025-01-01")
+    out = _condition_for(bedrock, STAGE1_CONDITION)
+    assert out is STAGE1_CONDITION or out == STAGE1_CONDITION
+    assert out["sampling"]["temperature"] == 0.0
+    assert GEMINI_SAMPLING["temperature"] == 1.0      # the override exists but did not apply
 
 
 def test_media_resolution_change_produces_a_distinct_parser_key():
