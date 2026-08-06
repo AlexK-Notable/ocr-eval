@@ -17,7 +17,8 @@ class RegistryEntry(BaseModel):
 
     id: str
     shape: Literal["vlm-chat", "transcriber"]
-    transport: Literal["openai-compat", "upstream-parser", "bedrock-converse", "gemini-native"]
+    transport: Literal["openai-compat", "upstream-parser", "bedrock-converse", "gemini-native",
+                       "mistral-docqna"]
     base_url: str | None = None
     model: str | None = None
     upstream_parser: str | None = None
@@ -101,6 +102,28 @@ class RegistryEntry(BaseModel):
                 raise ValueError(
                     f"{self.id}: provider_pin is an OpenRouter routing concept — Gemini's native "
                     f"endpoint has one serving stack and nothing to pin")
+        if self.transport == "mistral-docqna":
+            # Chat-completions with a `document_url` part: Mistral runs its own OCR and passes the
+            # text PLUS the page image to the model. See ocr_eval_ext/mistral_docqna.py on why this
+            # is the only way to isolate markdown flattening from OCR quality.
+            if not self.model:
+                raise ValueError(f"{self.id}: mistral-docqna requires model (the Mistral model id)")
+            if not self.api_key_env:
+                raise ValueError(
+                    f"{self.id}: mistral-docqna requires api_key_env (e.g. MISTRAL_API_KEY)")
+            if self.region:
+                raise ValueError(f"{self.id}: mistral-docqna takes no region; got {self.region!r}")
+            if self.provider_pin:
+                raise ValueError(
+                    f"{self.id}: provider_pin is an OpenRouter routing concept — Mistral's API has "
+                    f"one serving stack and nothing to pin")
+            if self.input_mode not in (None, "pdf-direct"):
+                # The provider rasterizes internally, so the run's pinned dpi never applies. A
+                # `raster-png` label here would attach the wrong caveat set in report.md and hide
+                # the embedded-text-layer free-ride that pdf-direct rows genuinely get.
+                raise ValueError(
+                    f"{self.id}: mistral-docqna uploads the PDF itself — input_mode must be "
+                    f"'pdf-direct' (or unset); got {self.input_mode!r}")
         return self
 
     @property

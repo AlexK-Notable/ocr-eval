@@ -21,6 +21,7 @@ from PIL import Image
 
 from ocr_eval_ext import bedrock as _bedrock
 from ocr_eval_ext import gemini_native as _gemini
+from ocr_eval_ext import mistral_docqna as _docqna
 from ocr_eval_ext.config import RegistryEntry
 from ocr_eval_ext.preconditions import assert_single_page, ink_coverage
 from realdoc_bench.evaluate.parsers._vision_base import _render_pdf_pages
@@ -75,7 +76,13 @@ MAX_RETRY_WAIT_SEC = 60.0
 # precondition instead of restating it — they were allowed to drift once (the CLI kept rejecting
 # every `bedrock-converse` entry after `run_direct` learned to drive them) and one name is cheaper
 # than the next divergence.
-DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse", "gemini-native"})
+DIRECT_TRANSPORTS = frozenset({"openai-compat", "bedrock-converse", "gemini-native",
+                               "mistral-docqna"})
+
+# `transport: mistral-docqna` sends the PDF, never a render, so no dpi/render key in the condition
+# describes what the provider actually saw. Folded into the condition for these entries only (see
+# `_condition_for`) so the row's hash records that fact instead of implying a raster pipeline.
+DOCQNA_INPUT = "pdf-direct"
 
 # `transport: gemini-native` only — the image-detail budget, sent on every request. NOT part of
 # STAGE1_CONDITION, because adding a key to that dict would change `condition_hash` for every
@@ -143,6 +150,13 @@ def _condition_for(entry: RegistryEntry, condition: dict) -> dict:
         return {**condition,
                 "media_resolution": GEMINI_MEDIA_RESOLUTION,
                 "sampling": {**condition["sampling"], **GEMINI_SAMPLING}}
+    if entry.transport == "mistral-docqna":
+        # The PDF is uploaded whole and the provider rasterizes it internally, so the run's pinned
+        # `render` block describes nothing this row experienced. Dropping it and recording
+        # `input: pdf-direct` keeps the stored condition an honest description of what was served —
+        # leaving the dpi in would imply we controlled a resolution we never sent.
+        cond = {k: v for k, v in condition.items() if k != "render"}
+        return {**cond, "input": DOCQNA_INPUT}
     return condition
 
 
@@ -198,7 +212,7 @@ def _is_retryable(exc: Exception) -> bool:
     but a `GeminiCredentialError` carries no status at all, and treating it as unclassified (falling
     through to the JSONDecodeError line) would also read as permanent by accident. Named explicitly
     so the reason is the reason, not a coincidence."""
-    if isinstance(exc, _gemini.GeminiCredentialError):
+    if isinstance(exc, (_gemini.GeminiCredentialError, _docqna.MistralCredentialError)):
         return False                            # a rejected key will be rejected 4 more times
     if isinstance(exc, APIConnectionError):     # covers APITimeoutError (subclass)
         return True
@@ -206,7 +220,9 @@ def _is_retryable(exc: Exception) -> bool:
         return exc.status_code == 408 or exc.status_code == 429 or 500 <= exc.status_code < 600
     if _bedrock.is_botocore_error(exc):        # botocore: no .status_code, own taxonomy
         return _bedrock.is_retryable_bedrock(exc)
-    if isinstance(exc, httpx.HTTPStatusError):  # gemini-native
+    if isinstance(exc, httpx.HTTPStatusError):  # gemini-native and mistral-docqna
+        # Same taxonomy in both modules (408/429/5xx); either function classifies either transport,
+        # so there is nothing to branch on here.
         return _gemini.is_retryable_status(exc.response.status_code)
     if isinstance(exc, (httpx.TransportError, httpx.StreamError)):
         return True                             # no response obtained — same class as a 5xx
@@ -322,6 +338,7 @@ def _one(client, entry: RegistryEntry, item: dict, png: bytes | None,
     sampling = condition["sampling"]
     is_bedrock = entry.transport == "bedrock-converse"
     is_gemini = entry.transport == "gemini-native"
+    is_docqna = entry.transport == "mistral-docqna"
     send_image = not condition.get("no_image")
 
     t0 = time.perf_counter()
@@ -347,6 +364,14 @@ def _one(client, entry: RegistryEntry, item: dict, png: bytes | None,
                     temperature=sampling["temperature"], top_p=sampling["top_p"],
                     max_tokens=sampling["max_tokens"],
                     media_resolution=condition["media_resolution"])
+            elif is_docqna:
+                # `png` carries the raw PDF bytes for this transport, not a render — the provider
+                # rasterizes internally, which is the whole point (see mistral_docqna.py). There is
+                # no `no_image` variant: removing the document would remove the OCR step under test.
+                text, usage, provider = client.generate(
+                    system=SYSTEM, prompt=prompt, pdf=png,
+                    temperature=sampling["temperature"], top_p=sampling["top_p"],
+                    max_tokens=sampling["max_tokens"])
             else:
                 text, usage, provider = _openai_call(
                     client, entry, prompt, png if send_image else None, sampling)
@@ -407,6 +432,14 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                     f"{e.id}: transport='gemini-native' cannot honor sampling.seed="
                     f"{condition['sampling']['seed']!r} (Gemini generationConfig has no seed "
                     f"parameter); use a seed-free condition for Gemini-native entries.")
+        elif e.transport == "mistral-docqna":
+            # Mistral's chat completions DOES accept `random_seed`, but this transport does not send
+            # it, so the same rule applies: refuse rather than let the condition hash claim a
+            # reproducibility guarantee the wire never carried.
+            if condition["sampling"].get("seed") is not None:
+                raise ValueError(
+                    f"{e.id}: transport='mistral-docqna' does not send sampling.seed="
+                    f"{condition['sampling']['seed']!r}; use a seed-free condition.")
         else:
             raise ValueError(
                 f"{e.id}: run_direct supports transport in {sorted(DIRECT_TRANSPORTS)} "
@@ -491,6 +524,10 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
             assert e.model            # guaranteed by RegistryEntry's validator; makes the type local
             clients[e.id] = _gemini.GeminiNativeClient(key or "", model=e.model)
             continue
+        if e.transport == "mistral-docqna":
+            assert e.model            # guaranteed by RegistryEntry's validator
+            clients[e.id] = _docqna.MistralDocQnAClient(key or "", model=e.model)
+            continue
         # max_retries=0: this module owns retries end-to-end (_is_retryable / _retry_wait). The
         # SDK's own default retry-on-408/429/5xx would otherwise nest under ours — up to
         # MAX_RETRIES outer attempts x the SDK's own default retries each, observed as 12 real
@@ -525,6 +562,19 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
                 # nothing is rendered or sent — image_sha/image_px/image_bytes stay null, matching
                 # "nothing was sent" rather than reporting the hash of an image the model never saw
                 rec = _one(clients[e.id], e, it, None, ecos, base, prompt)
+            elif e.transport == "mistral-docqna":
+                # Send the PDF itself; the provider rasterizes. `image_px` stays null because no
+                # render happened and we do not know what the provider produced internally —
+                # image_sha here is the sha of the PDF BYTES, which is what D3 can actually verify
+                # for this transport.
+                try:
+                    pdf_bytes = (layout.docs_dir / f"{it['source_file']}.pdf").read_bytes()
+                except Exception as read_exc:
+                    rec = {**base, "error": str(read_exc)[:300], "error_class": "render_error"}
+                else:
+                    base = {**base, "image_sha": hashlib.sha256(pdf_bytes).hexdigest(),
+                            "image_bytes": len(pdf_bytes)}
+                    rec = _one(clients[e.id], e, it, pdf_bytes, ecos, base, prompt)
             else:
                 try:
                     png = _render_page(layout, it["source_file"], ecos, png_cache)

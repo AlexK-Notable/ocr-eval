@@ -489,7 +489,8 @@ def test_direct_gate_matches_run_direct_transports():
     would otherwise reproduce exactly the drift this pair of tests exists to catch."""
     from ocr_eval_ext.direct import DIRECT_TRANSPORTS
 
-    assert set(DIRECT_TRANSPORTS) == {"openai-compat", "bedrock-converse", "gemini-native"}
+    assert set(DIRECT_TRANSPORTS) == {"openai-compat", "bedrock-converse", "gemini-native",
+                                      "mistral-docqna"}
 
 
 def _write_vlm_chat_registry(path: Path) -> None:

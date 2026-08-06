@@ -1,0 +1,63 @@
+# Mistral Document QnA registry (transport: mistral-docqna) — vlm-chat shape, PDF uploaded direct.
+#
+# ── WHY THIS EXISTS: IT ISOLATES FLATTENING FROM OCR QUALITY ─────────────────────────────────
+# The two transcriber legs (mistral_ocr_4 = 4-1, mistral_ocr_4_0) scored 85.7% / 90.7% on checkbox
+# state where DocStrange scored 93.8% on the same corpus and the same gemini-3.6-flash extractor.
+# Diagnosing that gap on 2026-08-06 ruled out the obvious cause and found a subtler one:
+#
+#   NOT the glyph alphabet — DocStrange emits the SAME Unicode as Mistral (sampling 150 docs each:
+#   DocStrange had U+2610 in 78 and U+2611 in 75; Mistral 73 and 60). Converting one to `[x]` would
+#   change nothing.
+#
+#   IT IS glyph POSITION. On finance_4's STATUS OF TRANSACTION block DocStrange emits one line per
+#   row with the glyph BEFORE its label (`_ QUOTE  x ISSUE POLICY  _ RENEW`), while Mistral's OCR
+#   flattens the whole block into a single pipe-delimited table cell AND drops the leading glyph, so
+#   read with the ordinary glyph-before-label convention it states the exact inverse of gold. The
+#   extractor duly returned the inverse. POLARITY INVERSION is the specific failure this benchmark
+#   exists to catch, so this is not a cosmetic problem.
+#
+# A markdown-level fixup cannot answer the underlying question and would corrupt the measurement:
+# normalizing one provider's output before scoring measures the post-processor, not the provider.
+# Document QnA answers it directly — Mistral runs its OWN OCR and passes the text PLUS the page
+# image to a vision model, so glyph-label association can be resolved from layout instead of from a
+# flattened table. Same vendor, same OCR engine, no markdown bottleneck, no external extractor.
+#
+# ── NOT COMPARABLE WITH THE TRANSCRIBER ROWS ─────────────────────────────────────────────────
+# This is `vlm-chat`: one call per cell, answering directly, no extractor hop. Against the Mistral
+# transcriber rows it changes BOTH the reader and the number of hops, so a delta cannot be
+# attributed to flattening alone — it is evidence about the ceiling, not a controlled A/B.
+#
+# ── input_mode: pdf-direct, AND WHY THAT MATTERS ─────────────────────────────────────────────
+# The PDF is uploaded whole and Mistral rasterizes internally, so this run's pinned render dpi
+# describes nothing these rows experienced — `_condition_for` DROPS the render block and records
+# `input: pdf-direct` instead. These rows also get the embedded-text-layer free ride that report.md
+# already caveats for pdf-direct: a born-digital PDF may be read from its text layer rather than
+# from pixels, which is a different task from OCR-ing a scan.
+#
+# ── PRICING: published paid-tier rates, retrieved 2026-08-06 (mistral.ai/pricing/api) ────────
+# Mistral Small 4 is $0.15/$0.60 per Mtok. NB Document QnA is TOKEN-billed on chat completions, not
+# per-page like /v1/ocr's $4/1,000 — the internal OCR is not separately metered, so a full bank is
+# roughly $1 rather than the $2.32 the per-page legs cost.
+#
+# ── ALIAS DISCIPLINE ────────────────────────────────────────────────────────────────────────
+# Pinned to the datestamped `mistral-small-2603`, never `mistral-small-latest`. Verified live: the
+# aliases `mistral-small-latest`, `magistral-small-latest` and `mistral-vibe-cli-fast` ALL resolve to
+# this same checkpoint today, so the alias is a moving target with an unstable identity. NB this
+# means "Mistral Small" here IS the Magistral reasoning model.
+- id: mistral-small-4@mistral-docqna
+  shape: vlm-chat
+  transport: mistral-docqna
+  model: mistral-small-2603
+  api_key_env: MISTRAL_API_KEY
+  input_mode: pdf-direct
+  precision: provider-default          # Mistral documents no serving precision — "not asserted"
+  pricing:
+    input_per_mtok: 0.15
+    output_per_mtok: 0.60
+  weights_licence: apache-2.0          # Small 4 is Apache 2.0 per the pricing page
+  provider_tos_commercial: ok
+  tos_note: "zero-retention by contract only (gate3), not a platform-wide default"
+  provenance: Mistral
+  release_date: "2026-03-01"           # from the 2603 datestamp (YYMM); no announcement page found
+                                        # carrying a day. POST-CUTOFF (2026-05-24)? No — 2026-03 is
+                                        # pre-cutoff, so this row is NOT contamination-flagged.
