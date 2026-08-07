@@ -548,7 +548,16 @@ def _check_stale_renders(layout: RunLayout, rows: list[dict], render_cache: dict
     row still references its `image_sha` is itself a failure — recorded as RENDER-UNAVAILABLE and
     returned in the same failing dict as a hash mismatch (STALE-RENDER), never silently treated as
     "presumably fine". Rows with no image at all (the no-image control) carry `image_sha: None`
-    and are skipped — there is nothing to compare."""
+    and are skipped — there is nothing to compare.
+
+    C3: a `pdf-direct` row (`mistral-docqna`: the provider rasterizes server-side) never rendered
+    anything, so its condition legitimately carries NO `render` block and its `image_sha` is the
+    sha256 of the PDF BYTES, not of a PNG. Re-rendering such a row raises `KeyError: 'render'`,
+    which the C2 `except` would silently reclassify as RENDER-UNAVAILABLE — flagging every
+    pdf-direct leg as un-verifiable when nothing is actually wrong with it. These rows are still
+    fully checked, just against the artifact they actually sent: the current PDF bytes. Detection
+    is keyed on the row's own recorded `input`, never on transport, so a future pdf-direct
+    transport inherits the correct check without touching this function."""
     from ocr_eval_ext.direct import _render_page, condition_hash
 
     stale: dict[str, str] = {}
@@ -558,11 +567,17 @@ def _check_stale_renders(layout: RunLayout, rows: list[dict], render_cache: dict
             continue
         stem = r.get("source_file")
         condition = r.get("condition") or {}
+        pdf_direct = condition.get("input") == "pdf-direct"
         key = (stem, condition_hash(condition))
         if key not in render_cache:
             try:
-                png = _render_page(layout, stem, condition, render_dir)
-                render_cache[key] = hashlib.sha256(png).hexdigest()
+                if pdf_direct:
+                    data = (layout.docs_dir / f"{stem}.pdf").read_bytes()
+                    if not data:                      # a truncated-to-empty PDF must not "pass"
+                        raise ValueError(f"{stem}.pdf is empty")
+                else:
+                    data = _render_page(layout, stem, condition, render_dir)
+                render_cache[key] = hashlib.sha256(data).hexdigest()
             except Exception:
                 render_cache[key] = _RENDER_FAILED
         current = render_cache[key]

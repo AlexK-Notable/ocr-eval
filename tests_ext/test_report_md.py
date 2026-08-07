@@ -539,6 +539,89 @@ def test_c2_render_unavailable_when_pdf_deleted_after_caching(tmp_path):
     assert "RENDER-UNAVAILABLE" in md
 
 
+# ── C3: a pdf-direct row is verified against the PDF BYTES, and that check can still fail ────────
+
+def _docqna_layout(tmp_path, sha_of: bytes | None = None):
+    """A one-row `mistral-docqna` fixture. Its condition carries NO `render` block — that is the
+    whole point: the provider rasterizes server-side, so `_condition_for` drops it, and
+    `image_sha` is the sha256 of the PDF bytes rather than of any PNG."""
+    layout = _minimal_layout(tmp_path, with_pdf=True)
+    items = [{"question_id": "cb0", "source_file": "doc_0", "domain": "test",
+             "question": "checked?", "capabilities": ["checkbox_state"],
+             "gold_dict": {"checked": True}}]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    pdf_bytes = (layout.docs_dir / "doc_0.pdf").read_bytes()
+    cond = {k: v for k, v in STAGE1_CONDITION.items() if k != "render"}
+    cond["input"] = "pdf-direct"
+    pk = parser_key("mistral-small-4@mistral-docqna", cond)
+    rec = {"qid": "cb0", "parser": pk, "source_file": "doc_0", "domain": "test",
+           "condition": cond, "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+           "image_sha": hashlib.sha256(sha_of if sha_of is not None else pdf_bytes).hexdigest(),
+           "image_px": None, "image_bytes": len(pdf_bytes),
+           "resolved_provider": "mistral:api",
+           "answer": {"checked": True}, "field_matches": {"checked": True}, "match": True,
+           "error_class": "none"}
+    cpath = layout.cache_path("cb0", pk)
+    cpath.parent.mkdir(parents=True, exist_ok=True)
+    cpath.write_text(json.dumps(rec))
+    entry = RegistryEntry(id="mistral-small-4@mistral-docqna", shape="vlm-chat",
+                          transport="mistral-docqna", model="mistral-small-2603",
+                          api_key_env="MISTRAL_API_KEY", input_mode="pdf-direct",
+                          precision="provider-default", weights_licence="apache-2.0",
+                          provider_tos_commercial="ok", provenance="Mistral",
+                          release_date="2026-03-01")
+    return layout, entry
+
+
+def test_c3_pdf_direct_row_is_not_flagged_render_unavailable(tmp_path):
+    """Regression: `_render_page` reads `condition["render"]["dpi"]`, so a pdf-direct row raised
+    KeyError, which C2's blanket `except` reclassified as RENDER-UNAVAILABLE. That failed the
+    whole report over a leg where nothing was wrong — observed 2026-08-07 on the real run, where
+    it blocked the rebuild for `vlm__mistral-small-4@mistral-docqna__a37c368fa220`."""
+    layout, entry = _docqna_layout(tmp_path)
+    md = build_markdown_report(layout, [entry], iters=50)      # must not raise
+    assert "RENDER-UNAVAILABLE" not in md
+    # Assert on the SECTION, not the bare string: the standing caveats block names STALE-RENDER in
+    # prose, so `"STALE-RENDER" not in md` can never hold and would silently pass for nothing.
+    assert "## STALE-RENDER" not in md
+
+
+def test_c3_pdf_direct_positive_control_swapped_pdf_is_still_detected(tmp_path):
+    """The negative case must be capable of firing, or the test above proves nothing. A
+    pdf-direct row whose PDF no longer hashes to its recorded `image_sha` IS stale — the check
+    just compares PDF bytes instead of a render."""
+    layout, entry = _docqna_layout(tmp_path, sha_of=b"%PDF-1.4 a DIFFERENT document entirely")
+    with pytest.raises(StaleRenderError):
+        build_markdown_report(layout, [entry], iters=50)
+    # Assert the REASON, not just that it raised. The error message always leads with the literal
+    # "STALE-RENDER:", so `match="STALE-RENDER"` also passes when the row was actually classified
+    # RENDER-UNAVAILABLE (the pre-fix behaviour) — i.e. it would pass for the wrong reason and
+    # prove nothing. Read the classification out of the rendered section instead.
+    md = build_markdown_report(layout, [entry], iters=50, allow_stale_render=True)
+    # The per-doc bullet, not the section prose — the section's own explanatory paragraph defines
+    # both reasons, so a substring test over the whole section matches either way.
+    doc_line = next(ln for ln in md.splitlines() if "doc_0 (" in ln)
+    assert "doc_0 (STALE-RENDER)" in doc_line
+
+
+def test_c3_pdf_direct_missing_pdf_is_render_unavailable(tmp_path):
+    """C2 still applies to pdf-direct rows: a doc that is gone cannot be confirmed either way."""
+    layout, entry = _docqna_layout(tmp_path)
+    (layout.docs_dir / "doc_0.pdf").unlink()
+    with pytest.raises(StaleRenderError, match="RENDER-UNAVAILABLE"):
+        build_markdown_report(layout, [entry], iters=50)
+
+
+def test_c3_pdf_direct_empty_pdf_cannot_pass_as_verified(tmp_path):
+    """An empty read must never be hashed and compared — sha256(b"") is a perfectly stable digest,
+    so a truncated-to-zero PDF would otherwise be reported as a clean mismatch rather than as an
+    unverifiable doc, and `--allow-stale-render` would wave it through as merely 'stale'."""
+    layout, entry = _docqna_layout(tmp_path)
+    (layout.docs_dir / "doc_0.pdf").write_bytes(b"")
+    with pytest.raises(StaleRenderError, match="RENDER-UNAVAILABLE"):
+        build_markdown_report(layout, [entry], iters=50)
+
+
 # ── I1: D3/D4 are keyed on the vlm__ prefix, not on registry resolution ──────────────────────────
 
 def test_i1_unregistered_vlm_key_still_gets_d4_guard(tmp_path):
