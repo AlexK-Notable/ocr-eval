@@ -1,0 +1,1 @@
+{"qid": "mortgage_q300", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_136", "domain": "mortgage", "answer": {"22a": "No", "Is it to be sold?": "No", "22e": "No", "22f": "No"}, "field_matches": {"22a": true, "Is it to be sold?": true, "22e": true, "22f": true}, "match": true, "extractor": "gemini-3.6-flash"}

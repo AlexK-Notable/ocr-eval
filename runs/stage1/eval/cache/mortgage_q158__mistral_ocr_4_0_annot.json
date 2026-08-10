@@ -1,0 +1,1 @@
+{"qid": "mortgage_q158", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_69", "domain": "mortgage", "answer": {"home_constructed_for_zone": null}, "field_matches": {"home_constructed_for_zone": false}, "match": false, "extractor": "gemini-3.6-flash"}

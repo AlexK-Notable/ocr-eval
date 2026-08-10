@@ -1,0 +1,1 @@
+{"qid": "finance_q326", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_158", "domain": "finance", "answer": {"delaware_eitc_percentage": 0.2}, "field_matches": {"delaware_eitc_percentage": true}, "match": true, "extractor": "gemini-3.6-flash"}

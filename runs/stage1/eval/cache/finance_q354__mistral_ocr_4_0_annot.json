@@ -1,0 +1,1 @@
+{"qid": "finance_q354", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_24", "domain": "finance", "answer": {"manufacturing": true, "office": true}, "field_matches": {"manufacturing": true, "office": false}, "match": false, "extractor": "gemini-3.6-flash"}

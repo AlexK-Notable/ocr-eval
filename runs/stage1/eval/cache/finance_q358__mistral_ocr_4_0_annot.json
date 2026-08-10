@@ -1,0 +1,1 @@
+{"qid": "finance_q358", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_16", "domain": "finance", "answer": {"checked_box": "none"}, "field_matches": {"checked_box": true}, "match": true, "extractor": "gemini-3.6-flash"}

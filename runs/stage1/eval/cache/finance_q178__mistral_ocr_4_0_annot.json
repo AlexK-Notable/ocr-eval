@@ -1,0 +1,1 @@
+{"qid": "finance_q178", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_86", "domain": "finance", "answer": {"amount_of_each_receipt": 300, "receipt_for_primary_marked": true}, "field_matches": {"amount_of_each_receipt": true, "receipt_for_primary_marked": true}, "match": true, "extractor": "gemini-3.6-flash"}

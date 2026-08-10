@@ -1,0 +1,1 @@
+{"qid": "mortgage_q426", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_197", "domain": "mortgage", "answer": {"Sale Price": "785,000", "List Price": "849,000", "Trend": "Stable"}, "field_matches": {"Sale Price": true, "List Price": true, "Trend": true}, "match": true, "extractor": "gemini-3.6-flash"}

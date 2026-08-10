@@ -1,0 +1,1 @@
+{"qid": "mortgage_q465", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_211", "domain": "mortgage", "answer": {"Exhibit D": "+ -", "Exhibit E": "+ -", "Exhibit F": "+ -"}, "field_matches": {"Exhibit D": true, "Exhibit E": true, "Exhibit F": true}, "match": true, "extractor": "gemini-3.6-flash"}

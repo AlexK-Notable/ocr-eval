@@ -1,0 +1,1 @@
+{"qid": "finance_q95", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_44", "domain": "finance", "answer": {"figure_title": "Figure 9 – Independence-Related Comment Forms, 2021 to 2023", "legend_categories": null}, "field_matches": {"figure_title": true, "legend_categories": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q106", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_39", "domain": "supply_chain", "answer": {"Prepaid": "yes", "Collect": "no", "3rd Party": "no"}, "field_matches": {"Prepaid": true, "Collect": true, "3rd Party": true}, "match": true, "extractor": "gemini-3.6-flash"}

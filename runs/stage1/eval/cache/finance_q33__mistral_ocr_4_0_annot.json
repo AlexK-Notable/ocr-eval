@@ -1,0 +1,1 @@
+{"qid": "finance_q33", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_13", "domain": "finance", "answer": {"radioactive_exposure_selection": "both", "machinery_loaned_selection": "both"}, "field_matches": {"radioactive_exposure_selection": true, "machinery_loaned_selection": true}, "match": true, "extractor": "gemini-3.6-flash"}

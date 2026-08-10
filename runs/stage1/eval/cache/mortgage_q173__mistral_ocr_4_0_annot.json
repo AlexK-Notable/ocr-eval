@@ -1,0 +1,1 @@
+{"qid": "mortgage_q173", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_77", "domain": "mortgage", "answer": {"driveway_storage_info": "2, Asphalt"}, "field_matches": {"driveway_storage_info": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q53", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_20", "domain": "mortgage", "answer": {"short_term_checkbox": false, "disaster_hardship_checkbox": true}, "field_matches": {"short_term_checkbox": false, "disaster_hardship_checkbox": true}, "match": false, "extractor": "gemini-3.6-flash"}

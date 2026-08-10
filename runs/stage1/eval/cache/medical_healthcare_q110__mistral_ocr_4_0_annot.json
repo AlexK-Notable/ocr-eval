@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q110", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_49", "domain": "medical_healthcare", "answer": {"full_name": "Margaret Louise Henderson", "last_name_value": "Henderson"}, "field_matches": {"full_name": true, "last_name_value": false}, "match": false, "extractor": "gemini-3.6-flash"}

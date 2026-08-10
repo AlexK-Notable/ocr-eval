@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q23", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_10", "domain": "supply_chain", "answer": {"mens_clothing_net_weight": 2.5}, "field_matches": {"mens_clothing_net_weight": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q313", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_112", "domain": "supply_chain", "answer": {"answer": ["Flame resistant clothing", "Eye protection", "Hard hats", "Respirators", "Boots"]}, "field_matches": {"answer": true}, "match": true, "extractor": "gemini-3.6-flash"}

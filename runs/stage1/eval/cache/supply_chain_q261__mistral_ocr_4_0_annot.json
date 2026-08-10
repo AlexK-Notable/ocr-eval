@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q261", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_85", "domain": "supply_chain", "answer": {"16": "3", "17": "UN1987", "18": "N/A", "19": "14,000 Gallon"}, "field_matches": {"16": true, "17": true, "18": true, "19": false}, "match": false, "extractor": "gemini-3.6-flash"}

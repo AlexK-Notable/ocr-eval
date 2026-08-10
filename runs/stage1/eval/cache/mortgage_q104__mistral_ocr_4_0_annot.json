@@ -1,0 +1,1 @@
+{"qid": "mortgage_q104", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"buyer_initials": "LLC", "seller_initials": "Estate"}, "field_matches": {"buyer_initials": true, "seller_initials": true}, "match": true, "extractor": "gemini-3.6-flash"}

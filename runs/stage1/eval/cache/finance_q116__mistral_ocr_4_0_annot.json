@@ -1,0 +1,1 @@
+{"qid": "finance_q116", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_57", "domain": "finance", "answer": {"inspector_name": "Kyle Shadowens", "inspector_title": "United States Postal Inspector"}, "field_matches": {"inspector_name": true, "inspector_title": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q145", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_63", "domain": "mortgage", "answer": {"client_reference_id": "39284M12"}, "field_matches": {"client_reference_id": true}, "match": true, "extractor": "gemini-3.6-flash"}

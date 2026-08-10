@@ -1,0 +1,40 @@
+Contract Concerning
+
+Page 3 of 11
+
+11-08-2021
+
+(Address of Property)
+
+C. SURVEY: The survey must be made by a registered professional land surveyor acceptable to the Title Company and Buyer's lender(s). (Check one box only)
+
+☐(1)Within ____ days after the Effective Date of this contract, Seller shall furnish to Buyer and Title Company Seller's existing survey of the Property and a Residential Real Property Affidavit promulgated by the Texas Department of Insurance (T-47 Affidavit). If Seller fails to furnish the existing survey or affidavit within the time prescribed, Buyer shall obtain a new survey at Seller's expense no later than 3 days prior to Closing Date. If the existing survey or affidavit is not acceptable to Title Company or Buyer's lender(s), Buyer shall obtain a new survey at ☐Seller's ☐Buyer's expense no later than 3 days prior to Closing Date.
+☐(2)Within ____ days after the Effective Date of this contract, Buyer shall obtain a new survey at Buyer's expense. Buyer is deemed to receive the survey on the date of actual receipt or the date specified in this paragraph, whichever is earlier.
+☐(3)Within ____ days after the Effective Date of this contract, Seller, at Seller's expense shall furnish a new survey to Buyer.
+
+D. OBJECTIONS: Buyer may object in writing to defects, exceptions, or encumbrances to title: disclosed on the survey other than items 6A(1) through (7) above; disclosed in the Commitment other than items 6A(1) through (9) above; or which prohibit the following use or activity:
+
+Buyer must object the earlier of (i) the Closing Date or (ii) ____ days after Buyer receives the Commitment, Exception Documents, and the survey. Buyer's failure to object within the time allowed will constitute a waiver of Buyer's right to object; except that the requirements in Schedule C of the Commitment are not waived by Buyer. Provided Seller is not obligated to incur any expense, Seller shall cure any timely objections of Buyer or any third party lender within 15 days after Seller receives the objections (Cure Period) and the Closing Date will be extended as necessary. If objections are not cured within the Cure Period, Buyer may, by delivering notice to Seller within 5 days after the end of the Cure Period: (i) terminate this contract and the earnest money will be refunded to Buyer; or (ii) waive the objections. If Buyer does not terminate within the time required, Buyer shall be deemed to have waived the objections. If the Commitment or Survey is revised or any new Exception Document(s) is delivered, Buyer may object to any new matter revealed in the revised Commitment or Survey or new Exception Document(s) within the same time stated in this paragraph to make objections beginning when the revised Commitment, Survey, or Exception Document(s) is delivered to Buyer.
+
+E. TITLE NOTICES:
+
+(1) ABSTRACT OR TITLE POLICY: Broker advises Buyer to have an abstract of title covering the Property examined by an attorney of Buyer's selection, or Buyer should be furnished with or obtain a Title Policy. If a Title Policy is furnished, the Commitment should be promptly reviewed by an attorney of Buyer's choice due to the time limitations on Buyer's right to object.
+
+(2) MEMBERSHIP IN PROPERTY OWNERS ASSOCIATION(S): The Property ☐is ☐is not subject to mandatory membership in a property owners association(s). If the Property is subject to mandatory membership in a property owners association(s), Seller notifies Buyer under §5.012, Texas Property Code, that, as a purchaser of property in the residential community identified in Paragraph 2A in which the Property is located, you are obligated to be a member of the property owners association(s). Restrictive covenants governing the use and occupancy of the Property and all dedicatory instruments governing the establishment, maintenance, or operation of this residential community have been or will be recorded in the Real Property Records of the county in which the Property is located. Copies of the restrictive covenants and dedicatory instruments may be obtained from the county clerk. You are obligated to pay assessments to the property owners association(s). The amount of the assessments is subject to change. Your failure to pay the assessments could result in enforcement of the association's lien on and the foreclosure of the Property.
+
+Section 207.003, Property Code, entitles an owner to receive copies of any document that governs the establishment, maintenance, or operation of a subdivision, including, but not limited to, restrictions, bylaws, rules and regulations, and a resale certificate from a property owners' association. A resale certificate contains information including, but not limited to, statements specifying the amount and frequency of regular assessments and the style and cause number of lawsuits to which the property owners' association is a party, other than lawsuits relating to unpaid ad valorem taxes of an individual member of the association. These documents must be made available to you by the property owners' association or the association's agent on your request.
+
+If Buyer is concerned about these matters, the TREC promulgated Addendum for Property Subject to Mandatory Membership in a Property Owners Association(s) should be used.
+
+(3) STATUTORY TAX DISTRICTS: If the Property is situated in a utility or other statutorily created district providing water, sewer, drainage, or flood control facilities and services,
+
+Initialed for identification by Buyer False Daniel and Seller 500
+
+TREC NO. 20-16
+
+## Checkbox states (document_annotation)
+
+☐ (1) Within ____ days after the Effective Date of this contract, Seller shall furnish to Buyer and Title Company Seller's existing survey of the Property and a Residential Real Property Affidavit promulgated by the Texas Department of Insurance (T-47 Affidavit). If Seller fails to furnish the existing survey or affidavit within the time prescribed, Buyer shall obtain a new survey at Seller's expense no later than 3 days prior to Closing Date. If the existing survey or affidavit is not acceptable to Title Company or Buyer's lender(s), Buyer shall obtain a new survey at ☐Seller's ☐Buyer's expense no later than 3 days prior to Closing Date.
+☐ (2) Within ____ days after the Effective Date of this contract, Buyer shall obtain a new survey at Buyer's expense. Buyer is deemed to receive the survey on the date of actual receipt or the date specified in this paragraph, whichever is earlier.
+☐ (3) Within ____ days after the Effective Date of this contract, Seller, at Seller's expense shall furnish a new survey to Buyer.
+☐ The Property ☐is ☐is not subject to mandatory membership in a property owners association(s).

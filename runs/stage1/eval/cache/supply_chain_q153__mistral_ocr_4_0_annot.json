@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q153", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_50", "domain": "supply_chain", "answer": {"2 Initials": "☑", "4 Initials": "☑", "6 Initials": "☑", "9 Initials": "☑"}, "field_matches": {"2 Initials": false, "4 Initials": false, "6 Initials": false, "9 Initials": false}, "match": false, "extractor": "gemini-3.6-flash"}

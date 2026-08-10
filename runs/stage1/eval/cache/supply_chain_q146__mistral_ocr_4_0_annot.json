@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q146", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_49", "domain": "supply_chain", "answer": {"ITN_1": "X20241122319229", "ITN_2": "X20241122319383", "ITN_3": "X20241122319460"}, "field_matches": {"ITN_1": true, "ITN_2": true, "ITN_3": true}, "match": true, "extractor": "gemini-3.6-flash"}

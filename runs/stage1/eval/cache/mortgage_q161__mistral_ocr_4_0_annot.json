@@ -1,0 +1,1 @@
+{"qid": "mortgage_q161", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_70", "domain": "mortgage", "answer": {"fireplace_amenity_category": "Whole Home", "fireplace_subject_property_amenity": "Indoor Fireplace"}, "field_matches": {"fireplace_amenity_category": true, "fireplace_subject_property_amenity": true}, "match": true, "extractor": "gemini-3.6-flash"}

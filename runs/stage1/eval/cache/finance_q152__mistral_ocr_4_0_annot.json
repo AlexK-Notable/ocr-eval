@@ -1,0 +1,1 @@
+{"qid": "finance_q152", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_76", "domain": "finance", "answer": {"total_credits_cancelled": "86,956 metric tons"}, "field_matches": {"total_credits_cancelled": true}, "match": true, "extractor": "gemini-3.6-flash"}

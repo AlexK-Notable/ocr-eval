@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q22", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_10", "domain": "supply_chain", "answer": {"consignee_country_territory": "United States", "gray_box_text": "Argentina"}, "field_matches": {"consignee_country_territory": true, "gray_box_text": false}, "match": false, "extractor": "gemini-3.6-flash"}

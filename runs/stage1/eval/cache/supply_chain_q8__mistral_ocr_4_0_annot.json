@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q8", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_3", "domain": "supply_chain", "answer": {"shipper_name": "Detroit Precision Components Manufacturing LLC"}, "field_matches": {"shipper_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

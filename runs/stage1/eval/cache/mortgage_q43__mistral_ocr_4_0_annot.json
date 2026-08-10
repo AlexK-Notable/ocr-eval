@@ -1,0 +1,1 @@
+{"qid": "mortgage_q43", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_16", "domain": "mortgage", "answer": {"loan_servicer_phone": "(888) 555-0555"}, "field_matches": {"loan_servicer_phone": true}, "match": true, "extractor": "gemini-3.6-flash"}

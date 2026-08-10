@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q175", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_72", "domain": "medical_healthcare", "answer": {"answer": []}, "field_matches": {"answer": false}, "match": false, "extractor": "gemini-3.6-flash"}

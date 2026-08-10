@@ -1,0 +1,1 @@
+{"qid": "mortgage_q333", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_160", "domain": "mortgage", "answer": {"Conventional": "checked", "FHA": "unchecked", "VA": "unchecked", "Fixed Rate": "checked", "GPM": "unchecked"}, "field_matches": {"Conventional": true, "FHA": true, "VA": true, "Fixed Rate": true, "GPM": true}, "match": true, "extractor": "gemini-3.6-flash"}

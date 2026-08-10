@@ -1,0 +1,1 @@
+{"qid": "mortgage_q429", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_198", "domain": "mortgage", "answer": {"Amount Paid": null, "Debenture Interest": null}, "field_matches": {"Amount Paid": false, "Debenture Interest": true}, "match": false, "extractor": "gemini-3.6-flash"}

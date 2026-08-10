@@ -1,0 +1,1 @@
+{"qid": "finance_q329", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_159", "domain": "finance", "answer": {"line_41_total_income_loss": 3236764}, "field_matches": {"line_41_total_income_loss": true}, "match": true, "extractor": "gemini-3.6-flash"}

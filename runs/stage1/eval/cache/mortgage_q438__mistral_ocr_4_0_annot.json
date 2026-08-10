@@ -1,0 +1,1 @@
+{"qid": "mortgage_q438", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_203", "domain": "mortgage", "answer": {"Co-Borrower Name": "Renee K. Ellison", "Checked Option": "BORROWER(S) WILL OCCUPY THE PROPERTY"}, "field_matches": {"Co-Borrower Name": true, "Checked Option": true}, "match": true, "extractor": "gemini-3.6-flash"}

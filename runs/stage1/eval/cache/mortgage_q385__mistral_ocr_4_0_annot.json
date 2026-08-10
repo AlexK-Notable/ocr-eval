@@ -1,0 +1,1 @@
+{"qid": "mortgage_q385", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_149", "domain": "mortgage", "answer": {"Renee": "Purchaser", "Luis": "Seller", "Morgan": "Broker"}, "field_matches": {"Renee": true, "Luis": true, "Morgan": true}, "match": true, "extractor": "gemini-3.6-flash"}

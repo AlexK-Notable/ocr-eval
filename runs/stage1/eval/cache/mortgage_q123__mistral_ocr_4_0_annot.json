@@ -1,0 +1,1 @@
+{"qid": "mortgage_q123", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_52", "domain": "mortgage", "answer": {"appraisal_version": "#3", "appraiser_reference_id": "1234SHI"}, "field_matches": {"appraisal_version": true, "appraiser_reference_id": false}, "match": false, "extractor": "gemini-3.6-flash"}

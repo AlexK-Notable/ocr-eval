@@ -1,0 +1,1 @@
+{"qid": "mortgage_q132", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_58", "domain": "mortgage", "answer": {"kitchen_level_1_update_status": "Fully Updated", "bath_full_level_1_update_status": "Fully Updated"}, "field_matches": {"kitchen_level_1_update_status": true, "bath_full_level_1_update_status": true}, "match": true, "extractor": "gemini-3.6-flash"}

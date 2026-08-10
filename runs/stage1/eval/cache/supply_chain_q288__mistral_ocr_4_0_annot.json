@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q288", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_100", "domain": "supply_chain", "answer": {"Primary 41. SCAC/CARRIER ID": "RGOC (Rio Grande Overland Carriers)", "Second 41. SCAC/CARRIER ID": null}, "field_matches": {"Primary 41. SCAC/CARRIER ID": true, "Second 41. SCAC/CARRIER ID": true}, "match": true, "extractor": "gemini-3.6-flash"}

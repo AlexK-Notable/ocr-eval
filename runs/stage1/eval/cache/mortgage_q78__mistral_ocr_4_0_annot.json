@@ -1,0 +1,1 @@
+{"qid": "mortgage_q78", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_34", "domain": "mortgage", "answer": {"page_number": "Page 3 of 11"}, "field_matches": {"page_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q184", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_83", "domain": "mortgage", "answer": {"level_2_room_labels": null, "level_1_sq_ft": 1960}, "field_matches": {"level_2_room_labels": false, "level_1_sq_ft": true}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q306", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_147", "domain": "finance", "answer": {"agency_acronym": "FEMA"}, "field_matches": {"agency_acronym": true}, "match": true, "extractor": "gemini-3.6-flash"}

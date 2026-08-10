@@ -1,0 +1,1 @@
+{"qid": "finance_q6", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_3", "domain": "finance", "answer": {"business_auto_state": true, "motor_carrier_state": true, "truckers_state": true}, "field_matches": {"business_auto_state": true, "motor_carrier_state": true, "truckers_state": true}, "match": true, "extractor": "gemini-3.6-flash"}

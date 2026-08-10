@@ -1,0 +1,1 @@
+{"qid": "finance_q201", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_95", "domain": "finance", "answer": {"sponsor_city": "Newark", "sponsor_ein": "22-3456789", "sponsor_phone": "973-555-0142"}, "field_matches": {"sponsor_city": true, "sponsor_ein": true, "sponsor_phone": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q217", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_102", "domain": "finance", "answer": {"identification_no": "22-1283988"}, "field_matches": {"identification_no": true}, "match": true, "extractor": "gemini-3.6-flash"}

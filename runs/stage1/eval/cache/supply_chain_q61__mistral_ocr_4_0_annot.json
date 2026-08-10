@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q61", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_25", "domain": "supply_chain", "answer": {"recipient_1_zip": "94621", "delivery_method": "Email"}, "field_matches": {"recipient_1_zip": true, "delivery_method": true}, "match": true, "extractor": "gemini-3.6-flash"}

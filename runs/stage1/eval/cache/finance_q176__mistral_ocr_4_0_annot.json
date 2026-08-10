@@ -1,0 +1,1 @@
+{"qid": "finance_q176", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_85", "domain": "finance", "answer": {"no_plan_within_two_years_status": false}, "field_matches": {"no_plan_within_two_years_status": false}, "match": false, "extractor": "gemini-3.6-flash"}

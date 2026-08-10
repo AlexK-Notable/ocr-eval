@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q34", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_14", "domain": "supply_chain", "answer": {"payment_terms": "Net 45 Days"}, "field_matches": {"payment_terms": true}, "match": true, "extractor": "gemini-3.6-flash"}

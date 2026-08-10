@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q80", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_36", "domain": "medical_healthcare", "answer": {"case_number": "2023-14789", "decedent_name": "PERRY, MATTHEW LANGFORD"}, "field_matches": {"case_number": true, "decedent_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

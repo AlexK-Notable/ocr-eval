@@ -1,0 +1,1 @@
+{"qid": "mortgage_q50", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_18", "domain": "mortgage", "answer": {"primary_phone_and_type": "(602) 555-0289 ☑ Cell", "marital_status_widowed": true}, "field_matches": {"primary_phone_and_type": true, "marital_status_widowed": true}, "match": true, "extractor": "gemini-3.6-flash"}

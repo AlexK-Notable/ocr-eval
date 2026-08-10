@@ -1,0 +1,1 @@
+{"qid": "mortgage_q114", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_48", "domain": "mortgage", "answer": {"client_reference_id": "34205-UH", "appraiser_reference_id": "1234SHI"}, "field_matches": {"client_reference_id": true, "appraiser_reference_id": false}, "match": false, "extractor": "gemini-3.6-flash"}

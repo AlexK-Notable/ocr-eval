@@ -1,0 +1,1 @@
+{"qid": "finance_q341", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_168", "domain": "finance", "answer": {"chart_title": "3-YEAR AVERAGE REVENUE & MARKET CAP VS. PEERS (2023-2025)$^{1}$", "placeholder_filename": "03_JPM_PXY_2026_Peers.jpg"}, "field_matches": {"chart_title": true, "placeholder_filename": true}, "match": true, "extractor": "gemini-3.6-flash"}

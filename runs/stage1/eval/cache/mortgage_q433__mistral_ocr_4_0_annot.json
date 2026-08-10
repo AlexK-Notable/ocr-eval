@@ -1,0 +1,1 @@
+{"qid": "mortgage_q433", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_200", "domain": "mortgage", "answer": {"text": "Single-Family Application | for Insurance Benefits | Part E Support Document (Continuation 2) | Use this form when filing for Coinsurance or Nonconveyances"}, "field_matches": {"text": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q1", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_1", "domain": "finance", "answer": {"automobile_premium": 12800}, "field_matches": {"automobile_premium": true}, "match": true, "extractor": "gemini-3.6-flash"}

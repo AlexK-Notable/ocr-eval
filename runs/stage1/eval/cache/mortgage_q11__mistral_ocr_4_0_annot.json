@@ -1,0 +1,1 @@
+{"qid": "mortgage_q11", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_5", "domain": "mortgage", "answer": {"principal_interest_increase_after_closing": false}, "field_matches": {"principal_interest_increase_after_closing": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q16", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_6", "domain": "mortgage", "answer": {"mic_number": "123987"}, "field_matches": {"mic_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

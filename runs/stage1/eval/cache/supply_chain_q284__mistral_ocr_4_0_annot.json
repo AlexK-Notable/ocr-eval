@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q284", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_98", "domain": "supply_chain", "answer": {"9": "01 - Consumption", "10": "N/A", "11": "021"}, "field_matches": {"9": true, "10": true, "11": true}, "match": true, "extractor": "gemini-3.6-flash"}

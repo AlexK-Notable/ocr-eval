@@ -106,6 +106,67 @@ def test_key_travels_as_a_bearer_header_never_in_the_url():
 
 # ── condition honesty: no render happened ─────────────────────────────────────────────────────
 
+# ── vendor-default sampling: omitted keys, not nulls ──────────────────────────────────────────
+
+def test_none_sampling_params_are_omitted_from_the_body_not_sent_as_null():
+    """`max_tokens: null` is documented as ACCEPTED (`integer|null`) but its behaviour is not,
+    while an absent key unambiguously takes the provider's own. The two are different requests and
+    only one of them means "no cap from us"."""
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json=ok_body())
+
+    c = mdq.MistralDocQnAClient("k", model="m", client=_client(handler))
+    c.generate(system="s", prompt="p", pdf=PDF, temperature=None, top_p=None, max_tokens=None)
+    body = seen["body"]
+    for key in ("temperature", "top_p", "max_tokens"):
+        assert key not in body, f"{key} must be ABSENT, not null — got {body.get(key)!r}"
+    assert body["response_format"] == {"type": "json_object"}   # still constrained
+
+
+def test_explicit_sampling_values_are_still_sent():
+    """Omission must be driven by None alone — a 0.0 temperature is a real value, not absence, and
+    `if value is not None` rather than `if value` is what keeps that true."""
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json=ok_body())
+
+    c = mdq.MistralDocQnAClient("k", model="m", client=_client(handler))
+    c.generate(system="s", prompt="p", pdf=PDF, temperature=0.0, top_p=1.0, max_tokens=64)
+    assert seen["body"]["temperature"] == 0.0      # falsy but present
+    assert seen["body"]["top_p"] == 1.0
+    assert seen["body"]["max_tokens"] == 64
+
+
+def test_docqna_condition_records_vendor_default_sampling():
+    """The Nones must reach the STORED condition, not just the wire. Mistral publishes no default
+    temperature (the API reference defers to `/models`, which reports 0.3 for mistral-small-2603),
+    so recording None says "provider's value, whatever it is" — the honest claim — while recording
+    0.3 would freeze today's reading of a number the vendor owns."""
+    cond = _condition_for(entry(), STAGE1_CONDITION)
+    assert cond["sampling"]["temperature"] is None
+    assert cond["sampling"]["top_p"] is None
+    assert cond["sampling"]["max_tokens"] is None
+    assert cond["sampling"]["seed"] is None            # was already None; carried through
+    # The shared dict must be untouched — mutating it would rehash every row on every transport.
+    assert STAGE1_CONDITION["sampling"]["temperature"] == 0.0
+    assert STAGE1_CONDITION["sampling"]["max_tokens"] == 12288
+
+
+def test_vendor_default_condition_hash_differs_from_the_temp0_run():
+    """The abandoned temp-0 Doc QnA rows hashed a37c368fa220. Sharing a hash with them would let
+    `report` merge two sampling regimes into one row — the same class of error the gemini temp-0
+    rows caused."""
+    temp0 = {k: v for k, v in STAGE1_CONDITION.items() if k != "render"}
+    temp0["input"] = DOCQNA_INPUT
+    assert condition_hash(temp0) == "a37c368fa220"          # the real hash on disk today
+    assert condition_hash(_condition_for(entry(), STAGE1_CONDITION)) != "a37c368fa220"
+
+
 def test_condition_drops_render_and_records_pdf_direct():
     """The provider rasterizes internally, so the run's pinned dpi describes nothing this row
     experienced. Keeping a `render` block would make the condition hash assert control over a

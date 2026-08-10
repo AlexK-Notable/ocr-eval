@@ -1,0 +1,11 @@
+{
+  "parser": "mistral_ocr_4_0_annot",
+  "stem": "supply_chain_79",
+  "ok": true,
+  "page_count": 1,
+  "latency_sec": 4.0105422449996695,
+  "cost_usd": 0.005,
+  "md_length": 2966,
+  "elapsed_total": 4.011802911758423,
+  "error": ""
+}

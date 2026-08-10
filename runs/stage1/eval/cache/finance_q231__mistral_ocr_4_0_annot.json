@@ -1,0 +1,1 @@
+{"qid": "finance_q231", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_107", "domain": "finance", "answer": {"second_director_name": "Grace H Wilson"}, "field_matches": {"second_director_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

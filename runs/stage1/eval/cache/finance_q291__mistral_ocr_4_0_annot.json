@@ -1,0 +1,1 @@
+{"qid": "finance_q291", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_141", "domain": "finance", "answer": {"subject_text": "FEMA Must Take Additional Steps to Demonstrate the Importance of Fraud Prevention and Awareness in FEMA Disaster Assistance Programs"}, "field_matches": {"subject_text": true}, "match": true, "extractor": "gemini-3.6-flash"}

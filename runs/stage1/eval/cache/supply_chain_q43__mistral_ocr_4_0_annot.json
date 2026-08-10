@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q43", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_18", "domain": "supply_chain", "answer": {"consignee_value": "False", "importer_value": "France"}, "field_matches": {"consignee_value": true, "importer_value": true}, "match": true, "extractor": "gemini-3.6-flash"}

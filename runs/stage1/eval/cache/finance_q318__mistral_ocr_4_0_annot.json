@@ -1,0 +1,1 @@
+{"qid": "finance_q318", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_155", "domain": "finance", "answer": {"first_sentence_left_paragraph": "FNS determines whether a retailer meets the Federal requirements to be approved as a SNAP authorized retailer."}, "field_matches": {"first_sentence_left_paragraph": true}, "match": true, "extractor": "gemini-3.6-flash"}

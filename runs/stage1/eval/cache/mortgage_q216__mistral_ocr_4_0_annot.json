@@ -1,0 +1,1 @@
+{"qid": "mortgage_q216", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_98", "domain": "mortgage", "answer": {"ethnicity_visual_observation_no": "No"}, "field_matches": {"ethnicity_visual_observation_no": true}, "match": true, "extractor": "gemini-3.6-flash"}

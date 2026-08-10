@@ -1,0 +1,1 @@
+{"qid": "mortgage_q290", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_129", "domain": "mortgage", "answer": {"Date": "2024-11-07", "Inspector Type": "Fee Inspector", "ID Number": "FI-OH-73109"}, "field_matches": {"Date": true, "Inspector Type": true, "ID Number": true}, "match": true, "extractor": "gemini-3.6-flash"}

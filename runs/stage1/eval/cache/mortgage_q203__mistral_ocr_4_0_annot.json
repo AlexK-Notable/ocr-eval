@@ -1,0 +1,1 @@
+{"qid": "mortgage_q203", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_92", "domain": "mortgage", "answer": {"scenario_name": "Single Family Scenario 5 (SF5)"}, "field_matches": {"scenario_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

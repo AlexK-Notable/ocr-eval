@@ -1,0 +1,1 @@
+{"qid": "finance_q17", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_6", "domain": "finance", "answer": {"loc_001_zip_code": "98104-2018"}, "field_matches": {"loc_001_zip_code": true}, "match": true, "extractor": "gemini-3.6-flash"}

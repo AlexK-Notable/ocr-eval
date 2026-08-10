@@ -1,0 +1,1 @@
+{"qid": "mortgage_q22", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_9", "domain": "mortgage", "answer": {"closing_date": "2023-03-10", "disbursement_date": "2023-03-10"}, "field_matches": {"closing_date": true, "disbursement_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q123", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_43", "domain": "supply_chain", "answer": {"Subtotal": 110.57, "Sales Tax": 9.38, "Fuel Taxes/Fees": 6.73, "Total Due": 126.68}, "field_matches": {"Subtotal": true, "Sales Tax": true, "Fuel Taxes/Fees": true, "Total Due": true}, "match": true, "extractor": "gemini-3.6-flash"}

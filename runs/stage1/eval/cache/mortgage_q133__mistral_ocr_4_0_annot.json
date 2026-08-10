@@ -1,0 +1,1 @@
+{"qid": "mortgage_q133", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_58", "domain": "mortgage", "answer": {"left_photo_caption": "Level 1 - Bath - Full - Bath 1", "right_photo_caption": "Level 1 - Bath - Full - Bath 2"}, "field_matches": {"left_photo_caption": true, "right_photo_caption": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,6 +1,31 @@
 # Mistral Document QnA registry (transport: mistral-docqna) — vlm-chat shape, PDF uploaded direct.
 #
-# ── WHY THIS EXISTS: IT ISOLATES FLATTENING FROM OCR QUALITY ─────────────────────────────────
+# ── ⚠️ CORRECTION 2026-08-07: THE RATIONALE BELOW NAMES THE WRONG MECHANISM ───────────────────
+# Kept verbatim as the record of what was believed when this leg was built. Two claims failed
+# checking; do not cite either as established.
+#
+#   1. "IT IS glyph POSITION" / polarity inversion is NOT the dominant failure. The real mechanism
+#      is glyph OMISSION: Mistral transcribes checkbox LABELS and drops the glyph. On finance_74 —
+#      a plain list, nothing flattened — it emits bare `Methane (CH4)` where DocStrange emits
+#      `☑ Methane (CH4)`, yet four lines up on the SAME page it does emit `☑ Organization-wide`.
+#      That yields FALSE NEGATIVES, not inversions (10 of 4-0's 24 wrong fields missed a true mark,
+#      4 invented one). Mistral even BEATS DocStrange on glyph-immediately-before-a-label, 68.9% vs
+#      61.7% — the opposite of the prediction below.
+#      Omission is mostly PARTIAL: 29 docs lose ALL glyphs, 62 lose SOME (<90% of DocStrange's
+#      count on the same page). That split localises the whole gap — retention >=90%: the engines
+#      TIE at 96.1% (n=181); glyphs lost: 75.7% vs 88.6% (n=70, p=0.064, marginal). Mistral has no
+#      intrinsic checkbox deficit, it has a per-page transcription defect.
+#
+#   2. "passes the text PLUS the page image to a vision model" is UNVERIFIED and probably wrong.
+#      Mistral's docs say only "The extracted document content is analyzed by a large language
+#      model" — no mention of pixels. On the 29 zero-glyph docs, where a pixel-reading model should
+#      dominate a glyph-free transcript, Doc QnA ties OCR 4-0 at 17/19 (n=19, nothing detectable).
+#      If it is text-only, this leg never isolated flattening at all.
+#
+# Full write-up: docs/results-checkbox-accuracy-cost-2026-08-06.md, "Correction: why Mistral OCR 4
+# loses checkboxes". Vendor guidance on checkbox glyphs: none exists (four Mistral pages checked).
+#
+# ── WHY THIS EXISTS: IT ISOLATES FLATTENING FROM OCR QUALITY (as believed 2026-08-06) ─────────
 # The two transcriber legs (mistral_ocr_4 = 4-1, mistral_ocr_4_0) scored 85.7% / 90.7% on checkbox
 # state where DocStrange scored 93.8% on the same corpus and the same gemini-3.6-flash extractor.
 # Diagnosing that gap on 2026-08-06 ruled out the obvious cause and found a subtler one:

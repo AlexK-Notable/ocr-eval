@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q162", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_52", "domain": "supply_chain", "answer": {"Auth ID": 540878, "Gallons Loaded": 28708}, "field_matches": {"Auth ID": false, "Gallons Loaded": true}, "match": false, "extractor": "gemini-3.6-flash"}

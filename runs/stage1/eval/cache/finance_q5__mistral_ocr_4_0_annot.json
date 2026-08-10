@@ -1,0 +1,1 @@
+{"qid": "finance_q5", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_2", "domain": "finance", "answer": {"automobile_expiration_date": "New"}, "field_matches": {"automobile_expiration_date": true}, "match": true, "extractor": "gemini-3.6-flash"}

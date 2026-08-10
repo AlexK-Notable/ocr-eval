@@ -202,3 +202,91 @@ def test_missing_key_raises_before_any_request(monkeypatch, pdf):
     with pytest.raises(RuntimeError, match="MISTRAL_API_KEY"):
         build("mistral_ocr_4").parse(pdf)
     assert calls["n"] == 0
+
+
+# ── document_annotation: the checkbox-schema leg ──────────────────────────────────────────────
+
+ANNOT_JSON = '{"checkbox_items":[{"label":"Methane (CH4)","checked":true},' \
+             '{"label":"Scope 1","checked":false}]}'
+
+
+def test_annot_parser_sends_the_schema_and_plain_pins_do_not(monkeypatch, pdf):
+    """The plain pins' payload must stay byte-identical to before `_extra_payload` existed —
+    an added key would rehash their config and orphan 1,162 committed transcripts."""
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen[json.loads(request.content)["model"]] = json.loads(request.content)
+        return httpx.Response(200, json=ok_body())
+
+    _patched(monkeypatch, handler)
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    build("mistral_ocr_4_0").parse(pdf)
+    assert "document_annotation_format" not in seen["mistral-ocr-4-0"]
+
+    seen.clear()
+    build("mistral_ocr_4_0_annot").parse(pdf)
+    fmt = seen["mistral-ocr-4-0"]["document_annotation_format"]
+    assert fmt["type"] == "json_schema"
+    js = fmt["json_schema"]
+    assert js["strict"] is True and js["name"] == "CheckboxStates"
+    props = js["schema"]["properties"]["checkbox_items"]["items"]["properties"]
+    assert set(props) == {"label", "checked"} and props["checked"]["type"] == "boolean"
+
+
+def test_annotation_is_appended_to_the_transcript_never_substituted(monkeypatch, pdf):
+    """Only `markdown` reaches the extractor, and 927 of the bank's 1,356 questions are NOT
+    checkbox questions. Replacing the page text with a checkbox list would blind all of them."""
+    body = {**ok_body(md="# REAL PAGE TEXT", model="mistral-ocr-4-0"),
+            "document_annotation": ANNOT_JSON}
+    _patched(monkeypatch, lambda r: httpx.Response(200, json=body))
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    md = build("mistral_ocr_4_0_annot").parse(pdf).markdown
+    assert "# REAL PAGE TEXT" in md                      # transcript survives
+    assert "## Checkbox states (document_annotation)" in md
+
+
+def test_annotation_renders_glyph_before_label_both_polarities(monkeypatch, pdf):
+    """Glyph-before-label is the convention DocStrange emits and the extractor already reads, so
+    the block needs no prompt change. Rendering `checked: true` prose would instead measure the
+    extractor's JSON reading."""
+    body = {**ok_body(model="mistral-ocr-4-0"), "document_annotation": ANNOT_JSON}
+    _patched(monkeypatch, lambda r: httpx.Response(200, json=body))
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    md = build("mistral_ocr_4_0_annot").parse(pdf).markdown
+    assert "☑ Methane (CH4)" in md        # checked  -> ballot box with check
+    assert "☐ Scope 1" in md              # unchecked -> empty ballot box
+
+
+@pytest.mark.parametrize("annot", [None, "not json", "[]", '{"other": 1}', '{"checkbox_items": []}'])
+def test_malformed_or_absent_annotation_leaves_the_transcript_intact(monkeypatch, pdf, annot):
+    """A bad annotation must never take the parse down or truncate the page — this leg's whole
+    value is that the transcript is still there when the annotation adds nothing."""
+    body = {**ok_body(md="# REAL PAGE TEXT", model="mistral-ocr-4-0")}
+    if annot is not None:
+        body["document_annotation"] = annot
+    _patched(monkeypatch, lambda r: httpx.Response(200, json=body))
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    md = build("mistral_ocr_4_0_annot").parse(pdf).markdown
+    assert md == "# REAL PAGE TEXT"            # no heading, no stray whitespace
+
+
+def test_annot_leg_is_priced_and_at_the_higher_rate():
+    """An UNPRICED parser reports cost None and `--max-spend` cannot cap what it prices at zero —
+    the bug that would have let a 581-page leg report $0.00. Annotations list at $5/1k pages vs
+    $4 plain; the response's `usage_info` is identical either way, so we cannot observe the rate
+    and price high deliberately."""
+    plain = parse_cost("mistral_ocr_4_0", pages=581)
+    annot = parse_cost("mistral_ocr_4_0_annot", pages=581)
+    assert annot is not None and plain is not None
+    assert annot > plain
+
+
+def test_annot_config_hash_differs_from_the_plain_pin():
+    """Same model id, different request. A shared hash would put both legs in one cache key."""
+    assert build("mistral_ocr_4_0_annot").config_hash() != build("mistral_ocr_4_0").config_hash()
+
+
+def test_all_three_pins_are_registered_under_distinct_names():
+    for n in ("mistral_ocr_4", "mistral_ocr_4_0", "mistral_ocr_4_0_annot"):
+        assert n in registry.names()

@@ -1,0 +1,1 @@
+{"qid": "finance_q296", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_143", "domain": "finance", "answer": {"paul_wood_title": "Acting Assistant Deputy Inspector General for Audits"}, "field_matches": {"paul_wood_title": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -94,6 +94,11 @@ So flattening is not the explanation. Its unchecked-box accuracy of **65.6%** is
 complete leg, meaning it over-reads boxes as checked. Cheapest leg measured ($0.00023/call, 15×
 cheaper than the per-page OCR) and the least accurate.
 
+> **CORRECTION 2026-08-07 — this section named the wrong mechanism.** See
+> "Correction: why Mistral OCR 4 loses checkboxes" below. Flattening is real but is *not* the
+> dominant failure, which is why removing it could not help. The dominant failure is wholesale
+> glyph omission, and the premise that Doc QnA sees page pixels is unverified.
+
 ### Polarity bias separates legs that share a headline number
 
 Two legs tie at 90.7% cb-acc with completely different profiles: **mistral-ocr-4-0** is balanced
@@ -107,6 +112,142 @@ gemini-3.1-pro-preview has a **10.1% error rate** — 43 parse errors, 3 API err
 out of 1,356. Errors count as incorrect under accuracy-over-all, which is why its 88.8% `cb-acc`
 sits *below* its 89.0% `strict` figure. Its accuracy-over-answered is far higher. Those rows are
 recoverable by deleting just the errored ones and re-running.
+
+---
+
+## Correction: why Mistral OCR 4 loses checkboxes (2026-08-07)
+
+**The mechanism recorded on 2026-08-06 was wrong.** It was written up as *glyph position* — Mistral
+flattening a block into one pipe-delimited table cell and dropping the leading glyph, producing
+**polarity inversion**. That claim is in `ocr_eval_ext/mistral_docqna.py`'s module docstring and in
+`configs/registry-mistral-docqna.yaml`'s header, both of which state it as settled. Flattening does
+happen, but it is not what costs the legs their accuracy.
+
+**The dominant failure is glyph OMISSION.** Mistral transcribes the labels correctly and does not
+emit the checkbox character. `finance_74`, same page, same question, both feeding the same
+`gemini-3.6-flash` extractor:
+
+```
+mistral_ocr_4_0                       docstrange_sync
+  Select all that apply                 Select all that apply
+  Methane (CH4)                         ☑ Methane (CH4)
+  Nitrous oxide (N2O)                   ☑ Nitrous oxide (N2O)
+  Carbon dioxide (CO2)                  ☑ Carbon dioxide (CO2)
+```
+
+Two details make this diagnostic rather than anecdotal. First, **four lines earlier on the same
+page Mistral does emit `☑ Organization-wide`** — so it is not blind to checkboxes, it dropped them
+on this construct. Second, `finance_74` is a plain list: no pipes, no table, nothing flattened. The
+mechanism cannot be flattening.
+
+`finance_5` shows the same loss inside a table cell — Mistral emits
+`SECONDARY PHONE # (469) 555-0635` where DocStrange emits
+`SECONDARY PHONE # ☐ HOME ☐ BUS ☑ CELL`. The option glyphs vanish; the phone number survives.
+
+### Why it produces false negatives, not inversions
+
+Unmarked labels read as `false`. Of `mistral_ocr_4_0`'s 24 wrong checkbox fields: **10 missed a
+true mark**, 4 invented one, 10 other/null. DocStrange is balanced at 7 vs 5. Omission has a
+direction; inversion would not.
+
+### Aggregate statistics hide this almost perfectly
+
+Every summary figure says the transcripts are comparable — which is why the first pass missed it:
+
+| Measure | mistral_ocr_4_0 | docstrange_sync |
+|---|---|---|
+| docs containing ≥1 checkbox glyph | 59.0% (343/581) | 62.0% (360/581) |
+| total glyphs emitted | 7,570 | 9,110 |
+| glyph immediately before a label | **68.9%** | 61.7% |
+
+Mistral scores *better* on glyph-label adjacency, the very statistic the flattening hypothesis
+predicted it would lose.
+
+### Omission is mostly PARTIAL, and that is what the first pass got wrong
+
+The first version of this section measured omission as "docs where Mistral emitted **zero** glyphs
+while DocStrange emitted ≥1" — 29 docs, holding only 19 of the 258 booleans, where the two legs
+tie. It concluded omission's contribution to the gap was "not established". **That conclusion was
+an artefact of the wrong measure.** Total absence is the rare case; the common one is a document
+losing *some* of its glyphs.
+
+Measuring Mistral's glyph count as a FRACTION of DocStrange's on the same document (n=360 docs
+where DocStrange found ≥1 glyph):
+
+| glyph retention | docs |
+|---|---|
+| 0% (total loss) | 29 |
+| 1–50% (major partial) | 26 |
+| 50–90% | 36 |
+| 90–110% (parity) | 243 |
+| >110% (Mistral emits more) | 26 |
+
+**62 docs lose glyphs partially against 29 losing them entirely**, so the zero-glyph test missed
+two thirds of the affected corpus.
+
+### Glyph retention predicts checkbox accuracy, and explains the whole gap
+
+Splitting the 258 booleans by their document's retention ratio:
+
+| subset | n | mistral_ocr_4_0 | docstrange_sync | gap |
+|---|---|---|---|---|
+| glyph loss ≥10% (retention <90%) | 70 | **75.7%** | 88.6% | **+12.9 pt** |
+| parity or better (retention ≥90%) | 181 | **96.1%** | 96.1% | **0.0 pt** |
+
+On documents where Mistral keeps its glyphs the two engines are **exactly tied at 96.1%** —
+Mistral has no checkbox deficit at all. The entire 90.7% vs 93.8% gap is carried by the 70 fields
+on glyph-losing documents. McNemar on that subset: DocStrange-only-right 14 vs
+Mistral-only-right 5, **p=0.064** — marginal at n=70, not significant at α=0.05, so read this as
+"consistent with, and localised by, glyph loss", not as a proven effect size.
+
+**Ceiling.** 17 of `mistral_ocr_4_0`'s 24 wrong booleans (**71% of its errors**) sit on glyph-loss
+docs. Repairing all of them would put it at **97.3%**, above DocStrange's 93.8%. That is an upper
+bound on the defect's cost, not a prediction — it assumes every such error is glyph-caused.
+
+Method, so it can be checked: retention ratio = (count of ☐☑☒□▢■✓✔ in
+`runs/stage1/parses/mistral_ocr_4_0/<stem>.md`) ÷ (same count in
+`runs/stage1/parses/docstrange_sync/<stem>.md`), per stem, docs with a zero denominator excluded.
+DocStrange is used as the reference transcript, not as ground truth — the ratio measures
+disagreement between two engines on the same page, so a doc where DocStrange itself over-emits
+would appear here as Mistral "losing" glyphs. Confirming against the PDFs is the outstanding
+follow-up.
+
+### A second premise that turns out to be unverified
+
+`mistral_docqna.py` states that Document QnA "passes the extracted text PLUS the page image to a
+vision model", which was the whole rationale for the transport: a model seeing pixels could
+recover glyph-label association that markdown lost. **Mistral's docs do not say this.** The
+Document QnA page says only *"The extracted document content is analyzed by a large language
+model"* — no mention of pixels reaching the model.
+
+Our own data is consistent with text-only: on the zero-glyph docs, where a pixel-reading model
+should have a decisive advantage over a transcript with no glyphs in it, Doc QnA scores **17/19 —
+exactly tying OCR 4-0** (n=19, nothing detectable). If Doc QnA is text-only, it is not an
+independent test of flattening at all; it is the same OCR output read by a different model, which
+would explain why it could not beat the leg it was built to beat.
+
+**Do not quote the "sees the page image" claim until it is verified.** The registry header and the
+transport docstring both need this correction.
+
+### Not to be confused with the repetition defect
+
+Separately, `mistral_ocr_4` (4-1) emits a degenerate repetition loop on `finance_1` — the phrase
+`the following services: (N)` repeated to N=1000, a 31,634-char transcript from one page whose
+source PDF has **no text layer at all**. 4-0 emits that phrase zero times on the same page.
+Phrase-repetition ≥20× affects 3 docs per pin. Excluding loop-affected docs moves the 4-0 vs 4-1
+comparison from **p=0.060 to p=0.108** (234 vs 221 → 231 vs 220, n=255), so three documents carry
+a noticeable share of that result. The direction holds; the evidence is weaker than the headline
+p-value suggests. Temperature is not exposed on `/v1/ocr`, so this is not tunable from our side.
+
+### Vendor guidance: there is none
+
+Checked 2026-08-07 — Mistral's OCR basic-usage page, annotations page, Document QnA page, and the
+OCR launch announcement. **None mentions checkboxes, checkmarks, tick marks, radio buttons,
+selection marks, or form-field state.** No documented glyph convention, and no stated limitation
+covering them. The documented limitations are about feature availability by version
+(`table_format`/headers need OCR 2512+, `include_blocks` needs OCR 4+) and about images/tables
+being replaced by placeholders. So the omission is undocumented behaviour rather than a
+configuration we chose wrongly — there is no setting the docs point to that would change it.
 
 ---
 

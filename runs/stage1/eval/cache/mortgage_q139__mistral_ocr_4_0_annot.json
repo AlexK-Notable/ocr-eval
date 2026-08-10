@@ -1,0 +1,1 @@
+{"qid": "mortgage_q139", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_60", "domain": "mortgage", "answer": {"client_reference_id": "AA-4456767", "appraiser_reference_id": "123456"}, "field_matches": {"client_reference_id": true, "appraiser_reference_id": true}, "match": true, "extractor": "gemini-3.6-flash"}

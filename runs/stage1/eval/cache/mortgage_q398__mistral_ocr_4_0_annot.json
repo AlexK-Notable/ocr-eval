@@ -1,0 +1,1 @@
+{"qid": "mortgage_q398", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_167", "domain": "mortgage", "answer": {"K1": "Loan Originations Manager", "K2": "2025-03-14", "K3": "705432", "K4": "Lender"}, "field_matches": {"K1": true, "K2": true, "K3": true, "K4": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q238", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_74", "domain": "supply_chain", "answer": {"25a": "Vessel was drifting for timed arrival at pilot station in moderate seas. At 2130 the vessel was drifting SSE.", "25c": null}, "field_matches": {"25a": true, "25c": true}, "match": true, "extractor": "gemini-3.6-flash"}

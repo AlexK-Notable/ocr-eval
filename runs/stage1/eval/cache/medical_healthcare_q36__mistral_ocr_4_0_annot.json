@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q36", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_17", "domain": "medical_healthcare", "answer": {"epsdt_family_plan_99213": "X"}, "field_matches": {"epsdt_family_plan_99213": true}, "match": true, "extractor": "gemini-3.6-flash"}

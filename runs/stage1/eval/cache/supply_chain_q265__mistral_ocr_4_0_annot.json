@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q265", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_88", "domain": "supply_chain", "answer": {"Class": "3", "ID": "UN1987", "Packing Group": "N/A", "Quantity": "500 Liquid Gallon"}, "field_matches": {"Class": true, "ID": true, "Packing Group": true, "Quantity": true}, "match": true, "extractor": "gemini-3.6-flash"}

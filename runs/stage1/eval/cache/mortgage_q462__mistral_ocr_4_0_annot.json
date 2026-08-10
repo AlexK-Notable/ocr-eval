@@ -1,0 +1,1 @@
+{"qid": "mortgage_q462", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_213", "domain": "mortgage", "answer": {"SUBJECT": null, "COMP 1": "0.1 mi W", "COMP 2": "0.4 mi NE", "COMP 3": "0.6 mi S"}, "field_matches": {"SUBJECT": true, "COMP 1": true, "COMP 2": true, "COMP 3": true}, "match": true, "extractor": "gemini-3.6-flash"}

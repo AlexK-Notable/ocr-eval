@@ -1,0 +1,1 @@
+{"qid": "mortgage_q117", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_50", "domain": "mortgage", "answer": {"location": "Suburban", "built_up": "Over 75%"}, "field_matches": {"location": true, "built_up": true}, "match": true, "extractor": "gemini-3.6-flash"}

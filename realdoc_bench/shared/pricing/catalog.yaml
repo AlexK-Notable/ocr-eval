@@ -26,6 +26,12 @@ llamaparse_cost_effective:          {unit: page,   usd: 0.00375}
 # produce measurably different markdown, and an unpriced name silently reports cost None.
 mistral_ocr_4:                      {unit: page,   usd: 0.004}   # -> mistral-ocr-4-1
 mistral_ocr_4_0:                    {unit: page,   usd: 0.004}   # -> mistral-ocr-4-0
+# Annotations ("Document AI") are listed at $5/1,000 pages vs $4 for plain OCR, so this is priced
+# at the HIGHER rate. NOT confirmed from the response: `usage_info` is byte-identical with and
+# without `document_annotation_format` ({"pages_processed":1,"doc_size_bytes":...}), so the API
+# gives no way to observe which rate applied. Erring high — an underpriced parser makes
+# `--max-spend` unable to cap what it under-reports, which is how a leg overruns its budget.
+mistral_ocr_4_0_annot:              {unit: page,   usd: 0.005}   # -> mistral-ocr-4-0 + document_annotation
 # Nanonets DocStrange cloud API: $1 = 100 credits, 1 credit = 1 page -> $0.01/page.
 # Metered against the API's own `pages_processed`, not our rendered page count.
 docstrange_sync:                    {unit: page,   usd: 0.010}

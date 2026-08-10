@@ -1,0 +1,1 @@
+{"qid": "mortgage_q28", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_11", "domain": "mortgage", "answer": {"marital_status_single": false, "marital_status_married": false}, "field_matches": {"marital_status_single": true, "marital_status_married": true}, "match": true, "extractor": "gemini-3.6-flash"}

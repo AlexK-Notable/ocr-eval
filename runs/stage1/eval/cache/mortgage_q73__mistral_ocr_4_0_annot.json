@@ -1,0 +1,1 @@
+{"qid": "mortgage_q73", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_32", "domain": "mortgage", "answer": {"initial_earnest_money": 75000, "additional_earnest_money": 75000}, "field_matches": {"initial_earnest_money": true, "additional_earnest_money": true}, "match": true, "extractor": "gemini-3.6-flash"}

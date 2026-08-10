@@ -1,0 +1,1 @@
+{"qid": "mortgage_q218", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_8", "domain": "mortgage", "answer": {"amount": 2358.85}, "field_matches": {"amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

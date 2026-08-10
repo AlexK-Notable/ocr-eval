@@ -1,0 +1,1 @@
+{"qid": "mortgage_q103", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_44", "domain": "mortgage", "answer": {"paid_by_at_settlement": null}, "field_matches": {"paid_by_at_settlement": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q125", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_54", "domain": "mortgage", "answer": {"concrete_material_amenity": "Patio"}, "field_matches": {"concrete_material_amenity": true}, "match": true, "extractor": "gemini-3.6-flash"}

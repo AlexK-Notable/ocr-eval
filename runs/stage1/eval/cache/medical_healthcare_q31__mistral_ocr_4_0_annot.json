@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q31", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_16", "domain": "medical_healthcare", "answer": {"insured_name": "Tanaka, Yuki", "patient_name": "Tanaka, Yuki"}, "field_matches": {"insured_name": true, "patient_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

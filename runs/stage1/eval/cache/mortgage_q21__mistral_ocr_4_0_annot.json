@@ -1,0 +1,1 @@
+{"qid": "mortgage_q21", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_8", "domain": "mortgage", "answer": {"in_escrow": true, "estimated_escrow_amount": 419.56}, "field_matches": {"in_escrow": true, "estimated_escrow_amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

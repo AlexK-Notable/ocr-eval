@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q73", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_31", "domain": "supply_chain", "answer": {"signature_name": "Vikram Chaudhary", "printed_name": "Vikram Suresh Chaudhary"}, "field_matches": {"signature_name": true, "printed_name": true}, "match": true, "extractor": "gemini-3.6-flash"}

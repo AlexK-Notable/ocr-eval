@@ -1,0 +1,1 @@
+{"qid": "finance_q259", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_122", "domain": "finance", "answer": {"presumptive_income_note": "(Computed @ Rs.1000 per ton per month in case tonnage exceeds 12MT, or else @ Rs.7500 per month)"}, "field_matches": {"presumptive_income_note": false}, "match": false, "extractor": "gemini-3.6-flash"}

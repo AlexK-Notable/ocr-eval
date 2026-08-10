@@ -12,6 +12,7 @@ Auth: ``MISTRAL_API_KEY`` env var. Pricing: ``mistral_ocr_4`` in catalog.yaml
 from __future__ import annotations
 
 import base64
+import json
 import os
 import time
 from pathlib import Path
@@ -111,6 +112,11 @@ class MistralOCR4Parser(ParseProvider):
         for k, v in overrides.items():
             setattr(self, k, v)
 
+    def _extra_payload(self) -> dict[str, Any]:
+        """Request keys a subclass adds. Empty on the plain pins, so their payload — and therefore
+        their cache — is byte-identical to before this hook existed."""
+        return {}
+
     def config_hash(self) -> str:
         """EVERY request-shaping parameter must appear here.
 
@@ -150,6 +156,7 @@ class MistralOCR4Parser(ParseProvider):
         ):
             if value is not None:
                 payload[key] = value
+        payload.update(self._extra_payload())
 
         t0 = time.perf_counter()
         with httpx.Client(timeout=None) as client:
@@ -163,6 +170,7 @@ class MistralOCR4Parser(ParseProvider):
         latency = time.perf_counter() - t0
 
         markdown, pages = _pages_to_markdown(raw)
+        markdown += _annotation_markdown(raw.get("document_annotation"))
         return ParseResult(
             markdown=markdown,
             page_count=pages,
@@ -176,6 +184,96 @@ class MistralOCR4Parser(ParseProvider):
             # alias resolving somewhere other than where we pinned it.
             raw={"model": raw.get("model"), "usage_info": raw.get("usage_info")},
         )
+
+
+CHECKBOX_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "checkbox_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string",
+                              "description": "The visible text label beside the checkbox."},
+                    "checked": {"type": "boolean",
+                                "description": "True if the box is ticked/filled, false if empty."},
+                },
+                "required": ["label", "checked"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["checkbox_items"],
+    "additionalProperties": False,
+}
+
+ANNOT_HEADING = "\n\n## Checkbox states (document_annotation)\n\n"
+
+
+def _annotation_markdown(annotation: str | dict | None) -> str:
+    """Render the annotation as glyph-prefixed lines APPENDED to the transcript.
+
+    Glyph-before-label (`☑ Methane (CH4)`) is deliberate: it is the convention DocStrange already
+    emits and the one the extractor demonstrably reads, so this block needs no prompt change to be
+    understood. Rendering it as `checked: true` prose would make this leg a test of the extractor's
+    JSON reading rather than of Mistral's checkbox recovery.
+    """
+    if annotation is None:
+        return ""
+    parsed: Any = annotation
+    if isinstance(parsed, str):
+        try:
+            parsed = json.loads(parsed)
+        except (ValueError, TypeError):
+            return ""      # a non-JSON annotation must not take the whole parse down
+    if not isinstance(parsed, dict):
+        return ""
+    items = parsed.get("checkbox_items") or []
+    lines = [f"{'☑' if it.get('checked') else '☐'} {it.get('label') or ''}".rstrip()
+             for it in items if isinstance(it, dict)]
+    return ANNOT_HEADING + "\n".join(lines) if lines else ""
+
+
+@register_parser("mistral_ocr_4_0_annot", version="mistral-ocr-4-0+annot")
+class MistralOCR40AnnotParser(MistralOCR4Parser):
+    """`mistral-ocr-4-0` plus `document_annotation_format` carrying an explicit checkbox schema.
+
+    WHY: plain OCR 4 recovers checkbox LABELS but silently drops the mark on some pages. On
+    `finance_74` the markdown reads `Methane (CH4)` with no glyph while gold says checked; the
+    annotation on the same call returns `{"label": "Methane (CH4)", "checked": true}`. The engine
+    had the selection state all along — the markdown serialization loses it. Probed 2026-08-10
+    against gold on the two worst pages: 6/6 correct, including 4 `false` values, on fields plain
+    OCR got wrong.
+
+    THE ANNOTATION IS APPENDED, NEVER SUBSTITUTED. Only `markdown` reaches the extractor, and 927
+    of the bank's 1,356 questions are NOT checkbox questions — replacing the transcript with a
+    checkbox list would blind those. The block is added under its own heading so the page text
+    stays intact.
+
+    NOT COMPARABLE WITH `mistral_ocr_4_0` AS A TRANSCRIBER PAIR. Mistral's docs describe
+    annotations as a vision-capable LLM reading the OCR output, so this leg is
+    (Mistral OCR + Mistral LLM + our gemini extractor) — three stages against the plain leg's two.
+    A win here does not isolate OCR quality; it measures the product Mistral actually sells for
+    form extraction. Its own parser name gives it its own transcripts and rows.
+
+    UNDOCUMENTED REQUEST SHAPE. Mistral's annotations page documents only the bbox variant; the
+    `document_annotation_format` wrapper below was derived by live probe (HTTP 200, 2026-08-10).
+    """
+
+    model: str = "mistral-ocr-4-0"
+
+    def config_hash(self) -> str:
+        # The schema shapes the request, so it belongs in the hash — two schemas under one parser
+        # name would share a cache key and silently report each other's rows.
+        return sha256_text(super().config_hash() + "|annot=" + json.dumps(
+            CHECKBOX_SCHEMA, sort_keys=True))[:7]
+
+    def _extra_payload(self) -> dict[str, Any]:
+        return {"document_annotation_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "CheckboxStates", "schema": CHECKBOX_SCHEMA, "strict": True},
+        }}
 
 
 @register_parser("mistral_ocr_4_0", version="mistral-ocr-4-0")

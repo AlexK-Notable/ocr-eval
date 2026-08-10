@@ -1,0 +1,1 @@
+{"qid": "mortgage_q41", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_15", "domain": "mortgage", "answer": {"balance_and_interest_rate": 3.875, "loan_number": "True"}, "field_matches": {"balance_and_interest_rate": true, "loan_number": true}, "match": true, "extractor": "gemini-3.6-flash"}

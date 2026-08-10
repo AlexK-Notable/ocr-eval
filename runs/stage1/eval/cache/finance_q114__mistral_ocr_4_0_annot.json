@@ -1,0 +1,1 @@
+{"qid": "finance_q114", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_56", "domain": "finance", "answer": {"footer_case_text": "COMPLAINT/United States v. Baoke Zhang - 17"}, "field_matches": {"footer_case_text": true}, "match": true, "extractor": "gemini-3.6-flash"}

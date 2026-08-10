@@ -1,0 +1,1 @@
+{"qid": "mortgage_q197", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_90", "domain": "mortgage", "answer": {"residential_proximity": "Bordering"}, "field_matches": {"residential_proximity": true}, "match": true, "extractor": "gemini-3.6-flash"}

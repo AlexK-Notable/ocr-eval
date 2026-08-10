@@ -1,0 +1,1 @@
+{"qid": "medical_healthcare_q125", "parser": "mistral_ocr_4_0_annot", "source_file": "medical_healthcare_55", "domain": "medical_healthcare", "answer": {"item_2_client_text": "Insomnia - wake at 3am most", "item_4_client_text": "Fatigue - exhausted even"}, "field_matches": {"item_2_client_text": false, "item_4_client_text": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q304", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_146", "domain": "finance", "answer": {"website_url": "www.oig.dhs.gov", "report_identifier": "OIG-20-23"}, "field_matches": {"website_url": true, "report_identifier": true}, "match": true, "extractor": "gemini-3.6-flash"}

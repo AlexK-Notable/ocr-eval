@@ -1,0 +1,1 @@
+{"qid": "finance_q106", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_53", "domain": "finance", "answer": {"private_purpose_trust_fund_opeb": 1309}, "field_matches": {"private_purpose_trust_fund_opeb": true}, "match": true, "extractor": "gemini-3.6-flash"}

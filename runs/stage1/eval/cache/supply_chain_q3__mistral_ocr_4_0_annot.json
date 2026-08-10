@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q3", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_2", "domain": "supply_chain", "answer": {"shippers_bill_of_lading_no": "BL-EST-77109;"}, "field_matches": {"shippers_bill_of_lading_no": false}, "match": false, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "mortgage_q27", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_10", "domain": "mortgage", "answer": {"mortgage_insurance_amount": 0}, "field_matches": {"mortgage_insurance_amount": true}, "match": true, "extractor": "gemini-3.6-flash"}

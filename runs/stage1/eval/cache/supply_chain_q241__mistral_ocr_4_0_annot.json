@@ -1,0 +1,1 @@
+{"qid": "supply_chain_q241", "parser": "mistral_ocr_4_0_annot", "source_file": "supply_chain_77", "domain": "supply_chain", "answer": {"1": "checked", "10": "checked", "20": "checked", "31": "unchecked"}, "field_matches": {"1": true, "10": true, "20": true, "31": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -119,6 +119,36 @@ GEMINI_MEDIA_RESOLUTION = "MEDIA_RESOLUTION_HIGH"
 # Recorded in the condition dict (hence the condition hash), so no row can be misread as greedy.
 GEMINI_SAMPLING = {"temperature": 1.0, "top_p": 0.95}
 
+# `transport: mistral-docqna` only — send NOTHING and let the provider apply its own defaults
+# (user decision 2026-08-07). `None` here means "key omitted from the request body", which is not
+# the same as JSON `null`; see MistralDocQnAClient.generate.
+#
+# WHY, and it is a mistake this repo already paid for once. The first Doc QnA run inherited
+# STAGE1_CONDITION's temperature 0.0 / top_p 1.0 — a condition ratified for Qwen and Bedrock and
+# never checked against Mistral. Mistral publishes no default temperature at all; the API reference
+# says to call `/models`, which reports `default_model_temperature` per model:
+# `mistral-small-2603` = 0.3, the OCR models = 0.0, `mistral-medium-3-5` = 1.0. So the previous run
+# was 0.3 below this model's own default, and it set BOTH temperature and top_p against Mistral's
+# explicit "alter one or the other, not both" guidance.
+#
+# WHY max_tokens IS OMITTED RATHER THAN RAISED. `mistral-small-2603` reports `reasoning: true`
+# (verified live in `/models`, 2026-08-07). A reasoning model spends the completion budget on
+# thinking before it writes an answer, so a cap is a truncation risk that reads as a broken model
+# rather than a starved one — the exact failure already recorded here for qwen3.5-9b at 1024 and for
+# gemini-3.1-pro-preview at 64. Its context is 262,144 tokens, so there is nothing to protect
+# against by capping at 12288. Omitting asserts no number of our own.
+#
+# COSTS, both accepted:
+#  1. These rows are NOT comparable with the temperature-0 rows in Section A, and not with the
+#     Gemini rows either (those pin 1.0/0.95 explicitly). Three sampling regimes now exist in one
+#     section; the report renders the condition hash per row so each is visible.
+#  2. No cap means no ceiling on per-cell completion spend. Doc QnA is the cheapest leg measured
+#     ($0.309 for the full bank), and `--max-spend` still bounds the run, but a runaway completion
+#     is no longer bounded per cell.
+# Recorded in the condition dict — hence in the condition hash — so these rows can never be read
+# as sharing a condition with the temp-0 rows they replace.
+MISTRAL_SAMPLING = {"temperature": None, "top_p": None, "max_tokens": None}
+
 
 def condition_hash(condition: dict) -> str:
     return hashlib.sha256(json.dumps(condition, sort_keys=True).encode()).hexdigest()[:12]
@@ -155,8 +185,14 @@ def _condition_for(entry: RegistryEntry, condition: dict) -> dict:
         # `render` block describes nothing this row experienced. Dropping it and recording
         # `input: pdf-direct` keeps the stored condition an honest description of what was served —
         # leaving the dpi in would imply we controlled a resolution we never sent.
+        #
+        # `sampling` is overridden to all-None (= keys omitted on the wire, provider defaults
+        # applied) for the reasons in MISTRAL_SAMPLING. Recorded here rather than sent silently, so
+        # the None values land in the condition hash: these rows must never collide with the
+        # temperature-0 rows from the first run, which asserted a condition Mistral never ratified.
         cond = {k: v for k, v in condition.items() if k != "render"}
-        return {**cond, "input": DOCQNA_INPUT}
+        return {**cond, "input": DOCQNA_INPUT,
+                "sampling": {**condition["sampling"], **MISTRAL_SAMPLING}}
     return condition
 
 

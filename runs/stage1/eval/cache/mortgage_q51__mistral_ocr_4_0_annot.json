@@ -1,0 +1,1 @@
+{"qid": "mortgage_q51", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_18", "domain": "mortgage", "answer": {"occupancy_vacant": false, "occupancy_owner_occupied": true, "intent_for_property": null}, "field_matches": {"occupancy_vacant": false, "occupancy_owner_occupied": false, "intent_for_property": false}, "match": false, "extractor": "gemini-3.6-flash"}

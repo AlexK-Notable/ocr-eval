@@ -1,0 +1,1 @@
+{"qid": "mortgage_q309", "parser": "mistral_ocr_4_0_annot", "source_file": "mortgage_143", "domain": "mortgage", "answer": {"Borrower Self Employed": "checked", "Co-Borrower Self Employed": "checked"}, "field_matches": {"Borrower Self Employed": true, "Co-Borrower Self Employed": true}, "match": true, "extractor": "gemini-3.6-flash"}

@@ -1,0 +1,1 @@
+{"qid": "finance_q371", "parser": "mistral_ocr_4_0_annot", "source_file": "finance_119", "domain": "finance", "answer": {"sub_header": "Fin. Year in"}, "field_matches": {"sub_header": false}, "match": false, "extractor": "gemini-3.6-flash"}

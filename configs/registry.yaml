@@ -233,6 +233,36 @@
                                         # seed's implicit assumption. Flag this prominently in the
                                         # Stage 1 report.
 
+- id: mistral-ocr-4-0-annot@mistral
+  shape: transcriber
+  transport: upstream-parser
+  upstream_parser: mistral_ocr_4_0_annot
+  # mistral-ocr-4-0 + `document_annotation_format` carrying an explicit checkbox schema, appended
+  # to the transcript (never substituted — 927 of 1,356 bank questions are not checkbox questions).
+  #
+  # WHY: plain OCR 4 recovers checkbox LABELS but drops the MARK on some pages. On finance_74 the
+  # markdown reads `Methane (CH4)` with no glyph while gold says checked; the annotation on the
+  # same call returns {"label":"Methane (CH4)","checked":true}. Probed against gold on the two
+  # worst pages 2026-08-10: 6/6, including 4 `false` values, on fields plain OCR got wrong.
+  #
+  # THREE STAGES, NOT TWO. Mistral describes annotations as a vision LLM reading the OCR output, so
+  # this row is (Mistral OCR -> Mistral LLM -> our gemini extractor). A win here does NOT isolate
+  # OCR quality; it measures the product Mistral sells for form extraction. Do not read it as a
+  # like-for-like against mistral-ocr-4-0@mistral.
+  #
+  # COST BASIS UNVERIFIED: priced at the annotations rate ($0.005/page vs $0.004 plain), but
+  # `usage_info` is identical with and without the annotation, so the API never confirms which rate
+  # applied. Priced HIGH on purpose — an underpriced parser defeats --max-spend.
+  promptable: false
+  api_key_env: MISTRAL_API_KEY
+  precision: provider-default
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "zero-retention by contract only (gate3); PDF-upload endpoint, no prompt accepted"
+  provenance: Mistral
+  release_date: "2026-06-23"           # OCR 4 launch date; contamination-flagged like both plain
+                                        # pins (post-2026-05-24). Ceiling anchor, not a baseline.
+
 - id: mistral-ocr-4-0@mistral
   shape: transcriber
   transport: upstream-parser
