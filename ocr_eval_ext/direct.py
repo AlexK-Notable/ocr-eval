@@ -150,6 +150,45 @@ GEMINI_SAMPLING = {"temperature": 1.0, "top_p": 0.95}
 MISTRAL_SAMPLING = {"temperature": None, "top_p": None, "max_tokens": None}
 
 
+def billable_output_tokens(usage: dict) -> int:
+    """Output tokens the PROVIDER BILLS, which is not always the output tokens it shows you.
+
+    A reasoning model bills its internal thinking as output. Gemini reports that separately as
+    `usageMetadata.thoughtsTokenCount` and does NOT include it in `candidatesTokenCount`, which is
+    what this repo maps onto `completion_tokens`. Costing from `completion_tokens` alone therefore
+    understated every thinking-model leg — measured on the committed rows: gemini-3.6-flash by
+    672,517 tokens ($3.02 reported vs $8.06 true, +167%) and gemini-3.1-pro-preview by 447,654
+    ($4.14 vs $9.51, +130%). gemini-3.5-flash-lite emitted zero, so its figure was always right —
+    which is exactly why the bug was invisible in a side-by-side.
+
+    Read from the preserved native payload rather than from a new stored field, so ALREADY-WRITTEN
+    rows cost correctly on re-report; no cache rewrite and no condition-hash change.
+
+    `or 0` on every lookup, never `.get(k, 0)`: a provider that OMITS a field yields a
+    present-but-None key after normalization and a dict default does not fire for that. Gemini drops
+    `candidatesTokenCount` entirely on an empty completion, which killed a full-bank run ~300 paid
+    cells in.
+
+    Same class of defect as that one — a billable quantity the provider reports and we did not read.
+    Assume every new transport has one until its `usageMetadata` has been enumerated field by field.
+    """
+    visible = usage.get("completion_tokens") or 0
+    native = usage.get("gemini_usage") or {}
+    return visible + (native.get("thoughtsTokenCount") or 0)
+
+
+def unaccounted_tokens(usage: dict) -> int:
+    """`totalTokenCount - (prompt + candidates + thoughts)`, i.e. billable quantity the provider
+    counted that we do not. Zero is the only acceptable value; a positive number means a field
+    exists that no cost path reads. Exists so the NEXT such field is caught by a test rather than by
+    someone noticing a suspiciously cheap leg."""
+    native = usage.get("gemini_usage") or {}
+    total = native.get("totalTokenCount") or 0
+    if not total:
+        return 0                      # nothing to reconcile against
+    return total - ((usage.get("prompt_tokens") or 0) + billable_output_tokens(usage))
+
+
 def condition_hash(condition: dict) -> str:
     return hashlib.sha256(json.dumps(condition, sort_keys=True).encode()).hexdigest()[:12]
 
@@ -644,7 +683,11 @@ def run_direct(layout: RunLayout, entries: list[RegistryEntry], *, bank_path: Pa
             # now coerce at the source too; this is the belt-and-braces layer, because the cost of
             # being wrong here is a dead run mid-spend rather than a bad number.
             prompt_toks = u.get("prompt_tokens") or 0
-            completion_toks = u.get("completion_tokens") or 0
+            # BILLABLE output, not visible output — a reasoning model's thinking tokens are billed
+            # as output and reported outside `candidatesTokenCount`. Undercounting here does not
+            # just misreport: it makes --max-spend enforce a ceiling ~2.7x higher than the operator
+            # asked for on a thinking model. See billable_output_tokens.
+            completion_toks = billable_output_tokens(u)
             cost = (prompt_toks / 1e6) * entry.pricing["input_per_mtok"] \
                  + (completion_toks / 1e6) * entry.pricing["output_per_mtok"]
         if cost is None:

@@ -1,6 +1,6 @@
 # Stage 1 OCR Evaluation Report
 
-Generated: 2026-08-10T20:53:57.952111+00:00
+Generated: 2026-08-11T16:02:24.412692+00:00
 Dataset revision: 906170ab201d7b8238a32a9115fc66b4b72e0710 (revision_source: hf_metadata)
 Harness commit: fb26a6876481de76dc293f722ab4efa71279904d
 Extractor: gemini-3.6-flash
@@ -37,9 +37,9 @@ precision unasserted across all rows in this section
 | **INCOMPLETE (60/1356)** vlm__qwen3-vl-8b@ollama-validation__4caf39e9ac1f (unregistered) | 8.9% [4.5%, 14.2%] (n_docs=123) | checked 10.3% / unchecked 6.5% | 0.0% [0.0%, 0.0%] (n_docs=94) | 0.0% (n_answered=0, error_rate=100.0%) | 1.4% | 2.6% | no |
 
 - **claude-haiku-4.5@bedrock** — precision: unknown (not asserted) · licence: closed · ToS: ok — AWS Bedrock: no training on customer inputs by default (AWS  · contaminated: no · contract: promptable · providers seen: bedrock:us-east-1 · median latency: 1.54s · realized cost: n/a · n: 1356/1356 · error classes: api_error=20, none=1331, parse_error=5
-- **gemini-3.1-pro-preview@google-native** — precision: unknown (not asserted) · licence: closed · ToS: ok — Google AI paid tier: inputs not used for training. PREVIEW e · contaminated: no · contract: promptable · providers seen: google:generativelanguage · median latency: 6.48s · realized cost: $4.1373 · n: 1356/1356 · error classes: api_error=3, empty=1, none=1309, parse_error=43
+- **gemini-3.1-pro-preview@google-native** — precision: unknown (not asserted) · licence: closed · ToS: ok — Google AI paid tier: inputs not used for training. PREVIEW e · contaminated: no · contract: promptable · providers seen: google:generativelanguage · median latency: 6.48s · realized cost: $9.5092 · n: 1356/1356 · error classes: api_error=3, empty=1, none=1309, parse_error=43
 - **gemini-3.5-flash-lite@google-native** — precision: unknown (not asserted) · licence: closed · ToS: ok — Google AI paid tier: inputs not used for training (ai.google · contaminated: yes · contract: promptable · providers seen: google:generativelanguage · median latency: 1.39s · realized cost: $0.6663 · n: 1356/1356 · error classes: empty=1, none=1355
-- **gemini-3.6-flash@google-native** — precision: unknown (not asserted) · licence: closed · ToS: ok — Google AI paid tier: inputs not used for training. NB this m · contaminated: yes · contract: promptable · providers seen: google:generativelanguage · median latency: 3.89s · realized cost: $3.0158 · n: 1356/1356 · error classes: empty=1, none=1355
+- **gemini-3.6-flash@google-native** — precision: unknown (not asserted) · licence: closed · ToS: ok — Google AI paid tier: inputs not used for training. NB this m · contaminated: yes · contract: promptable · providers seen: google:generativelanguage · median latency: 3.89s · realized cost: $8.0597 · n: 1356/1356 · error classes: empty=1, none=1355
 - **mistral-small-4@mistral-docqna [cond 859a42584aea]** — precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok — zero-retention by contract only (gate3), not a platform-wide · contaminated: no · contract: promptable · providers seen: mistral:api · median latency: 3.68s · realized cost: $0.3095 · n: 1356/1356 · error classes: none=1356
 - **mistral-small-4@mistral-docqna [cond a37c368fa220]** — precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok — zero-retention by contract only (gate3), not a platform-wide · contaminated: no · contract: promptable · providers seen: mistral:api · median latency: 3.17s · realized cost: $0.3092 · n: 1356/1356 · error classes: none=1356
 - **qwen3-vl-8b@openrouter** — precision: unknown (not asserted) · licence: apache-2.0 · ToS: ok · contaminated: no · contract: promptable · providers seen: Alibaba · median latency: 1.49s · realized cost: $0.3897 · n: 1356/1356 · error classes: none=1353, parse_error=3

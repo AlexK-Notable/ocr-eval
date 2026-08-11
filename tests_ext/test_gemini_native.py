@@ -376,3 +376,76 @@ def test_registry_accepts_a_well_formed_gemini_native_entry():
 def test_registry_rejects_malformed_gemini_native_entries(kw, match):
     with pytest.raises(ValueError, match=match):
         entry(**kw)
+
+
+# ── billable output: thinking tokens are billed as output but reported separately ──────────────
+
+def test_thinking_tokens_count_as_billable_output():
+    """A reasoning model bills its internal thinking as OUTPUT, and Gemini reports it in
+    `thoughtsTokenCount` — NOT inside `candidatesTokenCount`, which is what this repo maps onto
+    `completion_tokens`. Costing from `completion_tokens` alone understated gemini-3.6-flash by
+    167% ($3.02 vs $8.06) across 1,356 committed rows."""
+    from ocr_eval_ext.direct import billable_output_tokens
+    usage = {"prompt_tokens": 1271, "completion_tokens": 103,
+             "gemini_usage": {"promptTokenCount": 1271, "candidatesTokenCount": 103,
+                              "thoughtsTokenCount": 1185, "totalTokenCount": 2559}}
+    assert billable_output_tokens(usage) == 103 + 1185
+
+
+def test_non_thinking_model_is_unaffected():
+    """gemini-3.5-flash-lite emitted zero thinking tokens on all 1,356 rows, so its published
+    figure was always correct — which is precisely why the bug was invisible in a side-by-side
+    against a thinking model. The fix must not move it."""
+    from ocr_eval_ext.direct import billable_output_tokens
+    usage = {"prompt_tokens": 1271, "completion_tokens": 108,
+             "gemini_usage": {"promptTokenCount": 1271, "candidatesTokenCount": 108,
+                              "totalTokenCount": 1379}}
+    assert billable_output_tokens(usage) == 108
+
+
+def test_billable_output_survives_omitted_and_none_fields():
+    """`or 0`, never `.get(k, 0)`: a provider that OMITS a field yields a present-but-None key and
+    a dict default does not fire for it. Gemini drops `candidatesTokenCount` on an empty
+    completion, which killed a full-bank run ~300 paid cells in."""
+    from ocr_eval_ext.direct import billable_output_tokens
+    assert billable_output_tokens({}) == 0
+    assert billable_output_tokens({"completion_tokens": None}) == 0
+    assert billable_output_tokens({"completion_tokens": None,
+                                   "gemini_usage": {"thoughtsTokenCount": None}}) == 0
+    assert billable_output_tokens({"completion_tokens": 5, "gemini_usage": {}}) == 5
+
+
+def test_token_reconciliation_catches_an_unread_billable_field():
+    """The generalizable guard. `totalTokenCount` MUST equal prompt + billable output; a positive
+    remainder means the provider counted something no cost path reads. This is what should have
+    caught thoughtsTokenCount, and is what will catch the next such field."""
+    from ocr_eval_ext.direct import unaccounted_tokens
+    # a real 3.6-flash row: reconciles only once thoughts are counted
+    good = {"prompt_tokens": 1271, "completion_tokens": 103,
+            "gemini_usage": {"candidatesTokenCount": 103, "thoughtsTokenCount": 1185,
+                             "totalTokenCount": 2559}}
+    assert unaccounted_tokens(good) == 0
+    # POSITIVE CONTROL: a hypothetical future field the formula ignores must be detected
+    unread = {"prompt_tokens": 1271, "completion_tokens": 103,
+              "gemini_usage": {"candidatesTokenCount": 103, "thoughtsTokenCount": 1185,
+                               "someNewBillableCount": 400, "totalTokenCount": 2959}}
+    assert unaccounted_tokens(unread) == 400
+
+
+def test_cost_for_a_thinking_leg_uses_billable_output():
+    """End-to-end through the reporting path: the rendered cost must reflect thinking tokens, or
+    a published figure understates a real bill."""
+    from ocr_eval_ext.report_md import _direct_cost_latency
+    entry = RegistryEntry(id="t@google-native", shape="vlm-chat", transport="gemini-native",
+                          model="gemini-3.6-flash", api_key_env="GEMINI_API_KEY",
+                          precision="provider-default", weights_licence="closed",
+                          provider_tos_commercial="ok", provenance="Google",
+                          release_date="2026-07-21",
+                          pricing={"input_per_mtok": 1.0, "output_per_mtok": 10.0})
+    rows = [{"latency_sec": 1.0, "usage": {
+        "prompt_tokens": 1_000_000, "completion_tokens": 100_000,
+        "gemini_usage": {"candidatesTokenCount": 100_000, "thoughtsTokenCount": 900_000,
+                         "totalTokenCount": 2_000_000}}}]
+    _lat, cost = _direct_cost_latency(entry, rows)
+    # $1 input + (1.0M billable output x $10) = $11.00, not the $2.00 the old formula gave
+    assert cost == "$11.0000"

@@ -31,8 +31,8 @@ near that is worthless regardless of price.
 ## 1. The answer
 
 **Use `gemini-3.5-flash-lite`.** It is the most accurate option to within measurement error, and the
-cheapest of the accurate ones by a wide margin: **1/5th the cost of the model it ties with**, and
-**1/10th the cost of DocStrange**, which is materially less accurate.
+cheapest of the accurate ones by a very wide margin: **1/12th the cost of the model it ties with**,
+and **1/10th the cost of DocStrange**, which is materially less accurate.
 
 If you already run a document-OCR pipeline and want the best *OCR-shaped* product rather than a
 chat model, **DocStrange** is the pick, at roughly 10× the cost and ~2.3× the error rate.
@@ -45,13 +45,13 @@ Sorted by accuracy. **Cost is all-in for the full 581-document set** — see §3
 
 | Service | Correct (of 258) | Accuracy | Errors per 1,000 checkboxes | All-in cost | Cost per 10,000 pages | Calls per answer |
 |---|---|---|---|---|---|---|
-| **gemini-3.6-flash** | 252 | **97.7%** | 23 | $3.02 | $52 | 1 |
+| **gemini-3.6-flash** | 252 | **97.7%** | 23 | $8.06 | $139 | 1 |
 | **gemini-3.5-flash-lite** ⭐ | 251 | **97.3%** | 27 | **$0.67** | **$11** | 1 |
 | DocStrange (Nanonets) | 242 | 93.8% | 62 | $6.73 | $116 | 2 |
 | Mistral OCR 4-0 | 234 | 90.7% | 93 | $3.25 | $56 | 2 |
 | qwen3-vl-8b (open-weights) | 234 | 90.7% | 93 | $0.39 | $7 | 1 |
 | Mistral OCR 4-0 + annotations | 232 | 89.9% | 101 | $3.83 | $66 | 3 |
-| gemini-3.1-pro-preview | 229 | 88.8% | 112 | $4.14 | $71 | 1 |
+| gemini-3.1-pro-preview | 229 | 88.8% | 112 | $9.51 | $164 | 1 |
 | claude-haiku-4.5 | 229 | 88.8% | 112 | *unpriced* | *unpriced* | 1 |
 | qwen3-vl-32b (self-run option) | 233 | 90.3% | 97 | *unmetered* | *unmetered* | 2 |
 | Mistral OCR 4-1 ⚠ | 221 | 85.7% | 143 | $3.25 | $56 | 2 |
@@ -73,12 +73,12 @@ Measured against the free 64% baseline — how much you pay for each checkbox er
 | qwen3-vl-8b (one-call) | +69 | **$0.006** |
 | Mistral Document QnA | +43 | $0.007 |
 | **gemini-3.5-flash-lite** ⭐ | **+86** | **$0.008** |
-| gemini-3.6-flash | +87 | $0.035 |
 | Mistral OCR 4-0 | +69 | $0.047 |
 | Mistral OCR 4-0 + annotations | +67 | $0.057 |
 | Mistral OCR 4-1 | +56 | $0.058 |
-| gemini-3.1-pro-preview | +64 | $0.065 |
 | DocStrange | +77 | $0.087 |
+| gemini-3.6-flash | +87 | $0.093 |
+| gemini-3.1-pro-preview | +64 | $0.149 |
 
 Read this column carefully: **cheap-and-inaccurate options look efficient here.** Doc QnA has a fine
 cost-per-error-avoided and is still the second-worst option available, because it avoids only 43 of
@@ -102,6 +102,16 @@ Services here work in one of three shapes, and a headline price usually covers o
 **Two-call options bill twice.** Mistral OCR's advertised price is $4 per 1,000 pages, which works
 out to $2.32 here — but you also pay ~$0.92 for the second step, so the real figure is **$3.25**.
 The table above already includes this. Vendor pricing pages do not.
+
+**"Thinking" models bill for text you never see.** Some models reason internally before answering,
+and that hidden reasoning is billed at the output rate. `gemini-3.6-flash` produced **672,517
+thinking tokens** across this run — **11× more than its visible answers** — and
+`gemini-3.1-pro-preview` produced 447,654. Counting only the visible answer understates those two
+bills by **167% and 130%**. The table above counts both.
+
+This is the single biggest reason the recommendation is as lopsided as it is:
+`gemini-3.5-flash-lite` does no hidden reasoning at all, so it is **12× cheaper than the model it
+statistically ties with** — not the ~4.5× a visible-tokens-only comparison suggests.
 
 **A subtle consequence:** more stages means more accuracy loss, not less. Each hop can drop
 information. The three-call Mistral option scores *worse* than the two-call one it was built to
@@ -168,7 +178,7 @@ scans with no text layer, expect all options to do worse.
 ## 6. If you only remember three things
 
 1. **`gemini-3.5-flash-lite`: 97.3%, $11 per 10,000 pages.** Statistically as accurate as anything
-   measured, ~4.5× cheaper than the model it ties with, ~10× cheaper than DocStrange, and one call
+   measured, **~12× cheaper** than the model it ties with, ~10× cheaper than DocStrange, and one call
    instead of two.
 2. **Advertised OCR prices understate the real cost**, because two- and three-stage pipelines bill at
    every stage. Mistral's "$4 per 1,000 pages" is $56 per 10,000 in practice.

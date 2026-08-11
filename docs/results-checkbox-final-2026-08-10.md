@@ -19,7 +19,7 @@ forward from an earlier report.
 
 | # | Leg | Shape | cb-acc | ✓chk | ✓unchk | Strict | Err | Total cost | Per call | Cost basis |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | gemini-3.6-flash | vlm-chat | **97.7%** | 100.0% | 93.5% | 92.0% | 0.0% | $3.016 | $0.00222 | token rates |
+| 1 | gemini-3.6-flash | vlm-chat | **97.7%** | 100.0% | 93.5% | 92.0% | 0.0% | $8.060 | $0.00594 | token rates, incl. thinking |
 | 2 | gemini-3.5-flash-lite | vlm-chat | 97.3% | 98.8% | 94.6% | 86.2% | 0.0% | $0.666 | $0.00049 | token rates |
 | 3 | docstrange@nanonets | transcriber | **93.8%** | 95.8% | 90.3% | 84.4% | 0.0% | $5.810 | $0.00428 | per-page, exact |
 | 4 | **mistral-ocr-4-0** | transcriber | **90.7%** | 91.5% | 89.2% | 82.2% | 0.0% | $2.324 | $0.00171 | per-page, exact |
@@ -27,7 +27,7 @@ forward from an earlier report.
 | 6 | qwen3-vl-32b | transcriber | 90.3% | 93.3% | 84.9% | 79.4% | 0.0% | unknown | unknown | §Cost gaps |
 | 7 | **mistral-ocr-4-0 + annotation** | transcriber³ | **89.9%** | 87.9% | **93.5%** | 81.7% | 0.0% | $2.905 | $0.00214 | per-page, rate unverified |
 | 8 | claude-haiku-4.5 (Bedrock) | vlm-chat | 88.8% | 96.4% | 75.3% | 71.7% | 0.0% | unknown | unknown | §Cost gaps |
-| 9 | gemini-3.1-pro-preview | vlm-chat | 88.8% | 89.7% | 87.1% | 89.0% | **10.1%** | $4.137 | $0.00305 | token rates |
+| 9 | gemini-3.1-pro-preview | vlm-chat | 88.8% | 89.7% | 87.1% | 89.0% | **10.1%** | $9.509 | $0.00701 | token rates, incl. thinking |
 | 10 | qwen3-vl-8b-instruct (ollama) | vlm-chat | 87.2% | 93.3% | 76.3% | 70.3% | 0.0% | $0 (local) | $0 | no API billing |
 | 11 | **mistral-ocr-4-1** | transcriber | 85.7% | 86.1% | 84.9% | 80.7% | 0.0% | $2.324 | $0.00171 | per-page, exact |
 | 12 | qwen3-vl-8b | transcriber | 81.8% | 77.6% | 89.2% | 72.7% | 0.0% | unknown | unknown | §Cost gaps |
@@ -69,11 +69,12 @@ high deliberately — an underpriced parser defeats `--max-spend`. True cost may
 
 ## What the numbers say
 
-### Gemini flash: tied on checkboxes, 4.5× apart on price
+### Gemini flash: tied on checkboxes, 12× apart on price
 
 McNemar over the 258 fields: 252 vs 251 correct, **p=1.0**, 96.5% agreement. The 97.7% vs 97.3%
-gap is noise. **3.5-flash-lite costs 4.5× less** ($0.666 vs $3.016), so on checkbox state it is the
-better buy. They *do* separate on `strict` (92.0% vs 86.2%) — a different, harder claim.
+gap is noise. **3.5-flash-lite costs 12× less** ($0.666 vs $8.060), so on checkbox state it is the
+better buy. The gap is that wide because 3.6-flash bills **672,517 hidden thinking tokens** — 11×
+its visible output — while flash-lite emits none. They *do* separate on `strict` (92.0% vs 86.2%) — a different, harder claim.
 
 ### Mistral OCR: 4-0 beats 4-1, and the alias points at the weaker pin
 
@@ -151,6 +152,41 @@ and the shortfall is undocumented model behaviour with no available knob. DocStr
 
 ---
 
+## Correction: thinking tokens were missing from every published cost (2026-08-10)
+
+Cost was computed from `prompt_tokens + completion_tokens`. A reasoning model bills its internal
+reasoning as **output**, and Gemini reports that in `usageMetadata.thoughtsTokenCount` — *outside*
+`candidatesTokenCount`, which is what this repo maps onto `completion_tokens`. So every
+thinking-model figure published before this date understated a real bill:
+
+| leg | thinking tokens | was | **is** | understated |
+|---|---|---|---|---|
+| gemini-3.6-flash | 672,517 | $3.016 | **$8.060** | +167% |
+| gemini-3.1-pro-preview | 447,654 | $4.137 | **$9.509** | +130% |
+| gemini-3.5-flash-lite | **0** | $0.666 | $0.666 | — |
+
+`flash-lite` emits no thinking tokens on any of its 1,356 rows, so its figure was always right —
+which is exactly why the bug survived a side-by-side against a thinking model.
+
+**Proof it is real, not a rate assumption:** `promptTokenCount + candidatesTokenCount +
+thoughtsTokenCount == totalTokenCount` **exactly**, on all 4,065 Gemini rows. Google counts them;
+we did not read them.
+
+**It also weakened `--max-spend`**, which shares the same formula: on a thinking model the guard
+was enforcing a ceiling ~2.7× higher than the operator asked for.
+
+Fixed in `direct.billable_output_tokens`, used by both cost paths. It reads the preserved native
+payload rather than a new stored field, so already-written rows now cost correctly with no cache
+rewrite and no condition-hash change. `direct.unaccounted_tokens` is the generalizable guard —
+`totalTokenCount` minus what we count must be 0 — with a positive-control test proving it detects
+a hypothetical unread field.
+
+Same family as the omitted `candidatesTokenCount` that killed a full-bank run ~300 paid cells in:
+**a billable quantity the provider reports and we did not read.** Assume every new transport has
+one until its usage payload has been enumerated field by field.
+
+---
+
 ## Caveats that travel with this table
 
 1. **Three sampling regimes in one table.** Gemini rows are at vendor default (temp 1.0/top_p 0.95);
@@ -181,12 +217,12 @@ and the shortfall is undocumented model behaviour with no available knob. DocStr
 |---|---|
 | Mistral OCR, both plain pins | $4.648 |
 | Mistral OCR + annotation (leg 7) | $2.905 |
-| gemini-3.1-pro-preview | $4.137 |
-| gemini-3.6-flash | $3.016 |
+| gemini-3.1-pro-preview | $9.509 |
+| gemini-3.6-flash | $8.060 |
 | gemini-3.5-flash-lite | $0.666 |
 | Doc QnA × 2 conditions | $0.618 |
 | Extractor (measured, 2,712 cells) | ~$1.850 |
 | Probes (models endpoint, blocks, annotation) | ~$0.04 |
-| **Total measured** | **≈$17.9** |
+| **Total measured** | **≈$28.3** |
 
 Plus three legs of unmetered prior spend (§Cost gaps).

@@ -17,24 +17,30 @@ harder bar than `cb-acc` and moves independently of it.
 
 | Parser | cb-acc | Err | ✓chk | ✓unchk | Strict | Total cost | Per call | Cost basis |
 |---|---|---|---|---|---|---|---|---|
-| gemini-3.6-flash (native) | **97.7%** | 0.0% | 100.0% | 93.5% | 92.0% | $3.016 | $0.00222 | token rates |
+| gemini-3.6-flash (native) | **97.7%** | 0.0% | 100.0% | 93.5% | 92.0% | $8.060 ⁺ | $0.00594 | token rates |
 | gemini-3.5-flash-lite (native) | 97.3% | 0.0% | 98.8% | 94.6% | 86.2% | $0.666 | $0.00049 | token rates |
 | docstrange (transcriber) | 93.8% | 0.0% | 95.8% | 90.3% | 84.4% | $5.810 | $0.00428 | per-page, exact |
 | **mistral-ocr-4-0** (transcriber) | **90.7%** | 0.0% | 91.5% | 89.2% | 82.2% | $2.324 | $0.00171 | per-page, exact |
 | qwen3-vl-8b (direct, OpenRouter) | 90.7% | 0.0% | 95.8% | 81.7% | 75.1% | $0.390 | $0.00029 | provider cost field |
 | qwen3-vl-32b (transcriber) | 90.3% | 0.0% | 93.3% | 84.9% | 79.4% | unknown | unknown | see §Cost gaps |
-| gemini-3.1-pro-preview (native) | 88.8% | **10.1%** | 89.7% | 87.1% | 89.0% | $4.137 | $0.00305 | token rates |
+| gemini-3.1-pro-preview (native) | 88.8% | **10.1%** | 89.7% | 87.1% | 89.0% | $9.509 ⁺ | $0.00701 | token rates |
 | claude-haiku-4.5 (Bedrock) | 88.8% | 0.0% | 96.4% | 75.3% | 71.7% | unknown | unknown | see §Cost gaps |
 | qwen3-vl-8b-instruct (ollama, local) | 87.2% | 0.0% | 93.3% | 76.3% | 70.3% | $0 (local) | $0 | no API billing |
 | **mistral-ocr-4-1** (transcriber) | 85.7% | 0.8% | 86.1% | 84.9% | 80.7% | $2.324 | $0.00171 | per-page, exact |
 | qwen3-vl-8b (transcriber) | 81.8% | 0.0% | 77.6% | 89.2% | 72.7% | unknown | unknown | see §Cost gaps |
 | **mistral-small-4 (Doc QnA)** | **79.5%** | 0.0% | 87.3% | 65.6% | 67.3% | $0.309 | $0.00023 | token rates |
 
-**Session total: $14.63** against a $25 authorization. No spend cap tripped.
+⁺ **CORRECTED 2026-08-10** — originally published as $3.016 and $4.137. Both understated their real
+bill because thinking tokens (`thoughtsTokenCount`) are billed as output and were not counted. See
+`results-checkbox-final-2026-08-10.md` §Correction. `gemini-3.5-flash-lite` emits none, so its
+$0.666 was always correct.
+
+**Session total: $25.04** (originally reported $14.63, before the thinking-token correction) against
+a $25 authorization.
 
 ### Costs are per-leg totals for the legs run today
 
-$4.65 Mistral OCR (both pins, exact per-page) · $4.14 gemini-3.1-pro · $3.02 gemini-3.6-flash ·
+$4.65 Mistral OCR (both pins, exact per-page) · $9.51 gemini-3.1-pro · $8.06 gemini-3.6-flash ·
 $1.85 extractor · $0.67 gemini-3.5-flash-lite · $0.31 Doc QnA.
 
 ---
@@ -68,7 +74,7 @@ one-call vlm-chat legs.
 ### The two Gemini flash models are statistically tied on checkboxes
 
 McNemar over the 258 shared fields: 252 vs 251 correct, **p=1.0**, 96.5% agreement. The 97.7% vs
-97.3% gap is noise. But **3.5-flash-lite costs 4.5× less** ($0.666 vs $3.016 per full bank), so on
+97.3% gap is noise. But **3.5-flash-lite costs 12× less** ($0.666 vs $8.060 per full bank), so on
 checkbox state specifically it is the better buy. They *do* separate on `strict` whole-answer
 accuracy — 92.0% vs 86.2% — which is a different claim about a harder task.
 

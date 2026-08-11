@@ -58,6 +58,7 @@ from itertools import combinations
 from pathlib import Path
 
 from ocr_eval_ext.config import RegistryEntry
+from ocr_eval_ext.direct import billable_output_tokens
 from ocr_eval_ext.metrics import FieldOutcome, baseline_rows, checkbox_metrics, field_outcomes, null_metrics
 from ocr_eval_ext.parsers_openai import safe_name
 from ocr_eval_ext.preconditions import BLANK_TAGS, CHECKBOX_TAGS, boolean_fields, items_with_tags, null_fields
@@ -606,8 +607,12 @@ def _direct_cost_latency(entry: RegistryEntry | None, rows: list[dict]) -> tuple
         usage = r.get("usage") or {}
         cost = usage.get("cost")
         if cost is None and entry is not None and entry.pricing:
-            cost = ((usage.get("prompt_tokens", 0) / 1e6) * entry.pricing["input_per_mtok"]
-                    + (usage.get("completion_tokens", 0) / 1e6) * entry.pricing["output_per_mtok"])
+            # `billable_output_tokens`, NOT `completion_tokens`: a reasoning model's thinking tokens
+            # bill as output and Gemini reports them outside `candidatesTokenCount`. Costing from
+            # the visible completion alone understated gemini-3.6-flash by 167% and
+            # gemini-3.1-pro-preview by 130% in every previously published figure.
+            cost = ((usage.get("prompt_tokens") or 0) / 1e6 * entry.pricing["input_per_mtok"]
+                    + billable_output_tokens(usage) / 1e6 * entry.pricing["output_per_mtok"])
         if cost is not None:
             total_cost += cost
             any_cost = True
