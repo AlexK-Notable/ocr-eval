@@ -24,11 +24,14 @@ harder bar than `cb-acc` and moves independently of it.
 | qwen3-vl-8b (direct, OpenRouter) | 90.7% | 0.0% | 95.8% | 81.7% | 75.1% | $0.390 | $0.00029 | provider cost field |
 | qwen3-vl-32b (transcriber) | 90.3% | 0.0% | 93.3% | 84.9% | 79.4% | unknown | unknown | see §Cost gaps |
 | gemini-3.1-pro-preview (native) | 88.8% | **10.1%** | 89.7% | 87.1% | 89.0% | $9.509 ⁺ | $0.00701 | token rates |
-| claude-haiku-4.5 (Bedrock) | 88.8% | 0.0% | 96.4% | 75.3% | 71.7% | unknown | unknown | see §Cost gaps |
+| claude-haiku-4.5 (Bedrock) | 88.8% | 0.0% | 96.4% | 75.3% | 71.7% | $2.871 ⁺⁺ | $0.00212 | token rates |
 | qwen3-vl-8b-instruct (ollama, local) | 87.2% | 0.0% | 93.3% | 76.3% | 70.3% | $0 (local) | $0 | no API billing |
 | **mistral-ocr-4-1** (transcriber) | 85.7% | 0.8% | 86.1% | 84.9% | 80.7% | $2.324 | $0.00171 | per-page, exact |
 | qwen3-vl-8b (transcriber) | 81.8% | 0.0% | 77.6% | 89.2% | 72.7% | unknown | unknown | see §Cost gaps |
 | **mistral-small-4 (Doc QnA)** | **79.5%** | 0.0% | 87.3% | 65.6% | 67.3% | $0.309 | $0.00023 | token rates |
+
+⁺⁺ **PRICED 2026-08-11**, single source, over the 1,336 of 1,356 cells that recorded usage — see
+`results-checkbox-final-2026-08-10.md` §Addendum. Published here as `unknown`.
 
 ⁺ **CORRECTED 2026-08-10** — originally published as $3.016 and $4.137. Both understated their real
 bill because thinking tokens (`thoughtsTokenCount`) are billed as output and were not counted. See
@@ -47,16 +50,20 @@ $1.85 extractor · $0.67 gemini-3.5-flash-lite · $0.31 Doc QnA.
 
 ## Cost gaps — read before quoting any "per call" figure
 
-**Three legs report `unknown`, not `$0`.** The distinction matters: a printed `$0.0000` would read
-as "this leg was free."
+**Three legs reported `unknown`, not `$0`** when this was written — two now, since claude-haiku-4.5
+was priced on 2026-08-11. The distinction matters: a printed `$0.0000` would read as "this leg was
+free."
 
 * **qwen3-vl-8b / qwen3-vl-32b transcribers** carry per-token rates in the registry, but their parse
   records persisted only `cost_usd: 0.0` — upstream writes `result.cost_estimate_usd or 0.0`, which
   converts an unknown into a literal zero, and the token counts were never stored. Real spend was
   roughly $0.70 per leg. **Not recoverable from disk**; it would take a re-run to measure.
-* **claude-haiku-4.5** is unpriced by design — Bedrock Converse returns no cost field and
-  `pricing:GetProducts` is IAM-denied in this account. Its token counts *are* recorded
-  (2,252,308 in / 71,464 out) so it can be priced later from published rates.
+* **claude-haiku-4.5** was unpriced here and **was priced on 2026-08-11** — exactly as this bullet
+  anticipated, from the recorded 2,252,308 in / 71,464 out at the Bedrock published rate
+  ($1.10/$5.50 per Mtok) = **$2.8706**. Bedrock Converse still returns no cost field and
+  `pricing:GetProducts` is still IAM-denied, so the rate has one source and the figure covers the
+  1,336 of 1,356 cells that recorded usage. Read
+  `results-checkbox-final-2026-08-10.md` §Addendum before quoting it.
 * **qwen3-vl-8b-instruct (ollama)** is a genuine `$0` — a `local: true` entry, run on local
   hardware, no API billing. This is a real zero, unlike the two above.
 

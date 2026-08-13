@@ -661,8 +661,17 @@ def _transcription_cost_latency(layout: RunLayout, entry: RegistryEntry | None,
         return lat, "n/a"
     if not costs:
         cost = "n/a"
-    elif sum(costs) == 0.0 and (entry is None or not entry.pricing):
-        cost = "n/a (unpriced)"
+    elif sum(costs) == 0.0:
+        # Every sidecar read back EXACTLY 0.0 across a whole leg. Two causes, and neither of them
+        # is "free" — so neither may render as a number:
+        #   * no catalog rate for this parser's pricing_key      -> genuinely unpriced;
+        #   * a rate exists, but upstream never recorded usage, so `result.cost_estimate_usd or 0.0`
+        #     wrote a literal zero over an unknown -> unRECORDED.
+        # The condition used to require `not entry.pricing`, which caught only the first. The second
+        # is real and shipped: the two qwen transcriber legs carry registry rates (0.104/0.416 per
+        # Mtok) and ~$0.70/leg of actual spend, and this column rendered them "$0.0000" — the exact
+        # printed-zero-reads-as-free failure the docstring above exists to prevent.
+        cost = "n/a (unpriced)" if (entry is None or not entry.pricing) else "n/a (unrecorded)"
     else:
         cost = f"${sum(costs):.4f}"
     return lat, cost

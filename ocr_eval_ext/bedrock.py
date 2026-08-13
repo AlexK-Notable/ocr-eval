@@ -25,6 +25,26 @@ Two Bedrock-specific facts that drive the code below:
    `ClientError` with a string error code rather than an `APIStatusError` carrying `.status_code`,
    so `direct.py`'s `_is_retryable` cannot classify these. `is_retryable_bedrock` below is the
    Bedrock-side equivalent and is consulted by `_is_retryable` for botocore exceptions.
+
+3. **Converse's "5 MB image" limit is applied to the BASE64-ENCODED payload, so the real ceiling on
+   a PNG is 3,932,160 raw bytes (5 MiB x 3/4).** First measured 2026-08-04 and written up in
+   `docs/api.md`; it is repeated here because it was rediscovered from error rows on 2026-08-11,
+   which is the cost of it living only in a prose doc. Re-confirmed across two full banks: 20 of
+   1,356 cells fail on 10 documents, identically on `claude-haiku-4.5` and `claude-sonnet-4.6`,
+   with `ValidationException: image exceeds 5 MB maximum: 7057648 bytes > 5242880 bytes`. The
+   separation is exact and it refutes the obvious reading — the LARGEST failing render is
+   3,933,782 raw bytes, which is *under* 5 MB, and every failing cell clears the cap only once
+   base64 inflation is applied (3,933,782 -> 5,245,044, over by 2,164), while the largest
+   SUCCEEDING render is 3,776,968 -> 5,035,960, under. That is consistent with fact 1 above
+   (`boto3` takes raw bytes and encodes them itself; AWS measures what it received).
+
+   Consequences worth knowing before reading a Bedrock leg's error rate: these 20 cells are a
+   deterministic payload rejection, NOT throttling, so `--workers` does not affect them and a
+   retry cannot help — `ValidationException` is correctly in `PERMANENT_ERROR_CODES`. At
+   `render.dpi: 150` they are unreachable through this transport, and lowering dpi is a different
+   condition (dpi is in the condition hash), not a fix. None of the 258 boolean checkbox fields
+   live in those cells, so no published checkbox figure is affected — verify that again before
+   assuming it holds for another metric.
 """
 from __future__ import annotations
 

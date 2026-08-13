@@ -285,11 +285,28 @@ probe finds nothing), still clamped to `[0, 60]`. The botocore client is built w
 `retries={"max_attempts": 1}` — the same no-nested-retries discipline as `OpenAI(max_retries=0)`.
 
 **Bedrock returns token counts but no cost field**, and `pricing:GetProducts` is denied to this
-role, so per-token rates cannot be verified from inside this environment. The committed entries are
-therefore **unpriced**, with two honest consequences: `--dry-run` counts their cells as
+role, so per-token rates cannot be verified from inside this environment. The **Amazon and Google
+entries remain unpriced**, with two honest consequences: `--dry-run` counts their cells as
 `unpriced_cells` and excludes them from `estimated_usd`, and `--max-spend` **fails closed** on them
-(`track()` raises rather than treating an unknowable cost as free). Add a verified
-`pricing: {input_per_mtok, output_per_mtok}` with its retrieval date to use a spend cap.
+(`track()` raises rather than treating an unknowable cost as free).
+
+The **two Anthropic entries carry rates as of 2026-08-11** ($1.10/$5.50 for Haiku 4.5,
+$3.30/$16.50 for Sonnet 4.6 per Mtok), read off the vendor's pricing page — **single-source, not the
+two-source standard the Gemini rows meet**. AWS's *public* bulk price list (no auth, unlike the
+denied `GetProducts`) carries no Claude 4.x row at all; `scripts/bedrock-price-list-claude.sh`
+re-checks and prints `CHANGED` if that ever stops being true. Anything added here needs the same
+treatment: a verified `pricing: {input_per_mtok, output_per_mtok}` with its retrieval date, and an
+explicit note when only one source exists.
+
+**Thinking tokens need no Bedrock-side handling, and this was re-verified over two full banks on
+2026-08-11.** Anthropic bills reasoning *inside* `outputTokens` rather than reporting it alongside
+(contrast Gemini's `thoughtsTokenCount`, which sits outside `candidatesTokenCount` and cost this
+repo two understated legs). Converse's `usage` carries exactly five fields and
+`inputTokens + outputTokens == totalTokens` on all 2,672 rows across the Haiku and Sonnet legs, with
+both cache counts zero throughout. `direct.unaccounted_tokens` now reconciles `bedrock_usage`
+alongside `gemini_usage`, with a positive-control test. Untested: whether a nonzero
+`cacheRead`/`cacheWriteInputTokens` would land inside `totalTokens` and so be caught — nothing here
+sends a `cachePoint`.
 
 ### The 5 MB image cap counts BASE64, not raw bytes (measured 2026-08-04)
 
@@ -298,6 +315,16 @@ base64 encoding), but the service's documented 5 MB per-image limit is enforced 
 **encoded** payload. So the effective ceiling on what this harness may hand it is
 `5 MiB × 3/4 ≈ 3.75 MiB` of raw PNG, not 5 MB. Exceeding it is a `ValidationException` — classified
 permanent, so it costs one attempt per cell, not four.
+
+**Re-confirmed at full-bank scale 2026-08-11, with the exact boundary.** Two complete Bedrock legs
+(`claude-haiku-4.5`, `claude-sonnet-4.6`) lose the **same 20 of 1,356 cells** across the same 10
+documents at `render.dpi: 150`. The separation is exact and it rules out the raw-byte reading on its
+own: the **largest failing** render is 3,933,782 raw bytes — *under* 5 MB — encoding to 5,245,044
+(over by 2,164), while the **largest succeeding** render is 3,776,968 → 5,035,960 (under). Practical
+consequences worth stating once: these are not throttling, so `--workers` is irrelevant to them; a
+retry cannot help; and lowering dpi to fit is a *different condition*, not a fix, because
+`render.dpi` is in the condition hash. None of the 258 boolean checkbox fields fall on those pages,
+so no published checkbox figure is affected — re-check that before assuming it for another metric.
 
 Measured on the full 1,356-cell bank at `render.dpi: 150`:
 

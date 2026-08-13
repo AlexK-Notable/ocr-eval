@@ -27,18 +27,33 @@
 # without re-probing: all bare `anthropic.*` ids, `us.amazon.nova-2-lite-v1:0`,
 # `us.amazon.nova-premier-v1:0`, `us.meta.llama4-*`, `us.mistral.pixtral-large-*`.
 #
-# ── PRICING IS DELIBERATELY ABSENT ───────────────────────────────────────────────────────────
-# No `pricing:` key on any entry. Bedrock's Converse response carries token counts but NO cost
-# field (unlike OpenRouter's usage.cost), and `pricing:GetProducts` is denied to this role, so
-# per-token rates cannot be verified from inside this environment. This repo's convention is that
-# unverified numbers do not get committed — so rather than paste rates from memory, these entries
-# are left unpriced, which has two honest consequences:
+# ── PRICING: THE ANTHROPIC ENTRIES ONLY, AND FROM A SINGLE SOURCE (2026-08-11) ────────────────
+# Bedrock's Converse response carries token counts but NO cost field (unlike OpenRouter's
+# usage.cost), and `pricing:GetProducts` is denied to this role, so a rate can only come from
+# outside this environment. The two Anthropic entries now carry one, read off the vendor's own
+# pricing page on 2026-08-11 (see each entry). The Amazon and Google entries remain UNPRICED,
+# which has two honest consequences for them:
 #   * `direct --dry-run` counts their cells under `unpriced_cells` and EXCLUDES them from
 #     `estimated_usd` (never folded in as $0).
 #   * `direct --max-spend N` FAILS CLOSED on them (run_direct's track() raises rather than
 #     treating an unknowable cost as free).
-# To use --max-spend with these entries, add a verified `pricing: {input_per_mtok, output_per_mtok}`
-# per entry from the AWS Bedrock pricing page, with the retrieval date, as registry.yaml does.
+#
+# ⚠ THE ANTHROPIC RATES HAVE ONE SOURCE, NOT TWO. The registry.yaml convention is two independent
+# sources agreeing exactly (Google's pricing page + OpenRouter's API, for the Gemini rows). That is
+# not achievable here, and the attempt is recorded rather than hidden:
+#   * AWS's PUBLIC Price List bulk API — no auth, no IAM (unlike `pricing:GetProducts`) — was
+#     fetched for us-east-1 at publication 2026-08-11T16:17:54Z. It carries 1,014 rate rows and
+#     FIVE Anthropic rows, all legacy: Claude Instant, 2.0, 2.1, 3 Haiku, 3 Sonnet. There is no
+#     Claude 4.x or 5 row of any kind, input or output. Re-check with
+#     `scripts/bedrock-price-list-claude.sh` — if AWS ever publishes them, that is the second
+#     source and it should be added here.
+#   * The pricing page's Anthropic table also does not survive automated extraction: two WebFetch
+#     passes over aws.amazon.com/bedrock/pricing/ returned only the two "Public Extended Access"
+#     Claude 3.5 Sonnet rows, so the figures below were read off the rendered page by the user.
+# Both Anthropic rates below are exactly 1.10x Anthropic's first-party list price. That constant
+# partner premium holds across the whole published table (Opus 5 $5.50/$27.50 vs $5.00/$25.00,
+# Sonnet 4.6 $3.30/$16.50 vs $3.00/$15.00, Haiku 4.5 $1.10/$5.50 vs $1.00/$5.00), which is
+# corroboration of the SHAPE of the number, not an independent measurement of it.
 #
 # ── COMPARABILITY ────────────────────────────────────────────────────────────────────────────
 # `precision: provider-default` on every entry: Bedrock does not document the serving precision of
@@ -78,11 +93,51 @@
   model: us.anthropic.claude-haiku-4-5-20251001-v1:0
   region: us-east-1
   precision: provider-default
+  pricing: {input_per_mtok: 1.10, output_per_mtok: 5.50}       # "Claude 4.5 Haiku" row, Anthropic
+                                      # on-demand table, aws.amazon.com/bedrock/pricing/, retrieved
+                                      # 2026-08-11. SINGLE SOURCE — see the pricing block in this
+                                      # file's header for the cross-check that was attempted and
+                                      # could not be completed. Applying it to the 1,336 rows that
+                                      # carry usage (2,252,308 in / 71,464 out) prices the completed
+                                      # leg at $2.8706; the other 20 of 1,356 cells are api_error
+                                      # rows with no usage recorded, so they are not in that figure.
   weights_licence: closed
   provider_tos_commercial: ok
   tos_note: "AWS Bedrock: no training on customer inputs by default (AWS service terms)"
   provenance: Anthropic
   release_date: "2025-10-01"         # from the model id's own date component
+
+# Added 2026-08-11. Probed live for invokability by THIS role in us-east-1 before adding, because
+# listed != invokable here (see the per-role block above). Result of that probe, so it does not
+# have to be repaid:
+#   us.anthropic.claude-sonnet-4-6                  -> ok
+#   us.anthropic.claude-sonnet-4-5-20250929-v1:0    -> ok
+#   us.anthropic.claude-sonnet-5                    -> AccessDeniedException (denied to this role;
+#                                                      do not add without re-probing)
+#   us.anthropic.claude-sonnet-4-20250514-v1:0      -> ResourceNotFoundException
+# 4.6 is chosen over 4.5 because they price identically ($3.30/$16.50) and both pre-date
+# CONTAMINATION_CUTOFF (2026-05-24), so the newer one costs nothing extra in either money or
+# contamination risk.
+#
+# NOT A THINKING ROW. Extended thinking on Bedrock is opt-in via `additionalModelRequestFields`,
+# which this transport does not send, and a live probe at temperature 0.0 / maxTokens 12288 returned
+# a single `text` block, no `reasoningContent`, and inputTokens+outputTokens == totalTokens exactly.
+# Enabling thinking would ALSO require temperature 1.0 for Anthropic models, which STAGE1_CONDITION
+# does not pin — so a thinking variant is a different condition, not a flag on this entry.
+- id: claude-sonnet-4.6@bedrock
+  shape: vlm-chat
+  transport: bedrock-converse
+  model: us.anthropic.claude-sonnet-4-6      # INFERENCE_PROFILE — bare `anthropic.` id is not invokable
+  region: us-east-1
+  precision: provider-default
+  pricing: {input_per_mtok: 3.30, output_per_mtok: 16.50}      # "Claude Sonnet 4.6" row, same table,
+                                      # same retrieval date, same single-source caveat as above.
+  weights_licence: closed
+  provider_tos_commercial: ok
+  tos_note: "AWS Bedrock: no training on customer inputs by default (AWS service terms)"
+  provenance: Anthropic
+  release_date: "2025-11-14"          # from the first-party model id's date component
+                                      # (claude-sonnet-4-6-20251114); the Bedrock id carries none.
 
 - id: gemma-3-27b@bedrock
   shape: vlm-chat

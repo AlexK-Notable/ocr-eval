@@ -1445,3 +1445,40 @@ def test_m4_m5_m9_glossary_disclosures_present(tmp_path):
     # operator-facing glossary (METRIC_DEFINITIONS), not just the internal _field_tokens docstring.
     assert "Snake_case field keys" in md
     assert "conservative undercount" in md.lower()
+
+
+def test_m1_priced_transcriber_with_all_zero_sidecars_renders_unrecorded(tmp_path):
+    """The half of M1 that shipped broken. Same all-zero sidecars as the test above, but the
+    registry entry DOES carry a rate — so "unpriced" is the wrong explanation and the old
+    `not entry.pricing` guard let it fall through to a literal "$0.0000".
+
+    This is the qwen3-vl-8b / qwen3-vl-32b transcriber situation exactly: rates in the registry,
+    ~$0.70/leg really spent, and every `cost_usd` on disk a coerced 0.0. A priced leg summing to
+    exactly zero across every document is not a cheap leg, it is an unmeasured one."""
+    layout = _minimal_layout(tmp_path)
+    items = [{"question_id": "q0", "source_file": "doc_0", "domain": "test",
+             "question": "checked?", "capabilities": ["checkbox_state"], "gold_dict": {"checked": True}}]
+    layout.bank_path.write_text(json.dumps({"items": items}))
+    t_pk = f"{safe_name('tpriced@hosted')}__{condition_hash(TRANSCRIBER_CONDITION)}"
+    rec = {"qid": "q0", "parser": t_pk, "source_file": "doc_0", "domain": "test",
+           "answer": {"checked": True}, "field_matches": {"checked": True}, "match": True}
+    cpath = layout.cache_path("q0", t_pk)
+    cpath.parent.mkdir(parents=True, exist_ok=True)
+    cpath.write_text(json.dumps(rec))
+    parser_dir = layout.parser_dir(t_pk)
+    parser_dir.mkdir(parents=True, exist_ok=True)
+    (parser_dir / "doc_0.md").write_text("## Page 1\n\nirrelevant\n")
+    (parser_dir / "doc_0.json").write_text(json.dumps({
+        "parser": t_pk, "stem": "doc_0", "ok": True, "page_count": 1,
+        "latency_sec": 1.2, "cost_usd": 0.0,   # coerced from None despite the rate below
+        "md_length": 20, "elapsed_total": 1.3, "error": "",
+    }))
+    entry = RegistryEntry(id="tpriced@hosted", shape="transcriber", transport="openai-compat",
+                          base_url="http://tpriced.invalid/v1", model="org/tp", api_key_env=None,
+                          precision="bf16", weights_licence="mit", provider_tos_commercial="ok",
+                          provenance="Test", release_date="2025-01-01", local=False,
+                          pricing={"input_per_mtok": 0.104, "output_per_mtok": 0.416})
+
+    md = build_markdown_report(layout, [entry], iters=50)
+    assert "n/a (unrecorded)" in md
+    assert "$0.0000" not in md

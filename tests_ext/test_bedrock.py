@@ -139,8 +139,36 @@ def test_committed_bedrock_registry_loads():
     assert entries, "registry-bedrock.yaml is empty"
     assert all(e.transport == "bedrock-converse" for e in entries)
     assert all(e.region and e.model for e in entries)
-    # Unpriced by design — --max-spend must fail closed rather than assume $0 (see the file header).
-    assert all(e.pricing is None for e in entries)
+
+
+def test_only_the_anthropic_bedrock_entries_are_priced():
+    """The split is deliberate and both halves matter (see the file header). Anthropic rates were
+    read off the vendor's pricing page on 2026-08-11; Amazon's and Google's were not, and an
+    unpriced entry must stay unpriced so `--max-spend` FAILS CLOSED on it rather than costing it
+    at $0. Asserting both directions means neither a dropped rate nor an invented one passes."""
+    from ocr_eval_ext.config import load_registry
+    priced, unpriced = {}, set()
+    for e in load_registry(Path("configs/registry-bedrock.yaml")):
+        (priced.__setitem__(e.id, e.pricing) if e.pricing else unpriced.add(e.id))
+    assert priced == {
+        "claude-haiku-4.5@bedrock": {"input_per_mtok": 1.10, "output_per_mtok": 5.50},
+        "claude-sonnet-4.6@bedrock": {"input_per_mtok": 3.30, "output_per_mtok": 16.50},
+    }
+    assert unpriced == {"nova-lite@bedrock", "nova-pro@bedrock", "gemma-3-27b@bedrock"}
+
+
+def test_anthropic_bedrock_entries_use_the_inference_profile_id():
+    """A bare `anthropic.*` modelId is NOT invokable on this account — the geo-prefixed
+    cross-region profile id is required, and getting it wrong surfaces as ValidationException or
+    AccessDeniedException rather than as a hint. Cheap to pin, and it is a mistake that costs a
+    preflight round-trip to diagnose."""
+    from ocr_eval_ext.config import load_registry
+    anthropic = [e for e in load_registry(Path("configs/registry-bedrock.yaml"))
+                 if e.provenance == "Anthropic"]
+    assert anthropic, "no Anthropic entries found — did the ids change?"
+    for e in anthropic:
+        assert e.model and e.model.startswith("us.anthropic."), \
+            f"{e.id}: {e.model} is not a us. cross-region profile id"
 
 
 # ── retry taxonomy ───────────────────────────────────────────────────────────────────────────
@@ -398,3 +426,54 @@ def test_run_direct_rejects_unknown_transport(tmp_path):
         provenance="Google", release_date="2026-05-19")
     with pytest.raises(ValueError, match="run_direct supports transport in"):
         run_direct(layout, [e], workers=1)
+
+
+# ── token accounting: the guard, and why Bedrock needs no thinking special case ───────────────
+
+def test_billable_output_needs_no_bedrock_special_case():
+    """Anthropic bills reasoning INSIDE `outputTokens`, unlike Gemini which reports
+    `thoughtsTokenCount` alongside `candidatesTokenCount` and outside it. So `outputTokens` is
+    already the billable figure here and `billable_output_tokens` must NOT add anything to it —
+    a Gemini-shaped fix applied blindly to this transport would double-count."""
+    from ocr_eval_ext.direct import billable_output_tokens
+    usage = {"prompt_tokens": 1641, "completion_tokens": 21, "total_tokens": 1662,
+             "bedrock_usage": {"inputTokens": 1641, "outputTokens": 21, "totalTokens": 1662,
+                               "cacheReadInputTokens": 0, "cacheWriteInputTokens": 0}}
+    assert billable_output_tokens(usage) == 21
+
+
+def test_bedrock_token_reconciliation_catches_an_unread_billable_field():
+    """Same guard the Gemini rows get, now against Converse's own `totalTokens`. The first
+    assertion is a verbatim `claude-haiku-4.5@bedrock` row: it reconciles exactly, which is what
+    established that no Gemini-style hidden field exists on this transport."""
+    from ocr_eval_ext.direct import unaccounted_tokens
+    real = {"prompt_tokens": 1641, "completion_tokens": 21,
+            "bedrock_usage": {"inputTokens": 1641, "outputTokens": 21, "totalTokens": 1662,
+                              "cacheReadInputTokens": 0, "cacheWriteInputTokens": 0}}
+    assert unaccounted_tokens(real) == 0
+    # POSITIVE CONTROL: the check must be capable of failing, or a clean result means nothing.
+    unread = {"prompt_tokens": 1641, "completion_tokens": 21,
+              "bedrock_usage": {"inputTokens": 1641, "outputTokens": 21,
+                                "someNewBillableCount": 400, "totalTokens": 2062}}
+    assert unaccounted_tokens(unread) == 400
+
+
+def test_bedrock_haiku_leg_prices_to_its_published_figure():
+    """End-to-end through the reporting path, pinning the number that goes in the docs.
+
+    2,252,308 input + 71,464 output at the committed Bedrock rates ($1.10/$5.50 per Mtok) is
+    $2.8706. Those totals are the sum over the 1,336 `claude-haiku-4.5@bedrock` cache rows that
+    carry usage; the other 20 of 1,356 are api_error rows with none, so this is the cost of the
+    completed part of the leg and not of a full bank."""
+    from ocr_eval_ext.report_md import _direct_cost_latency
+    entry = bedrock_entry(id="claude-haiku-4.5@bedrock",
+                          model="us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                          provenance="Anthropic", release_date="2025-10-01",
+                          pricing={"input_per_mtok": 1.10, "output_per_mtok": 5.50})
+    rows = [{"latency_sec": 1.0, "usage": {
+        "prompt_tokens": 2_252_308, "completion_tokens": 71_464,
+        "bedrock_usage": {"inputTokens": 2_252_308, "outputTokens": 71_464,
+                          "totalTokens": 2_323_772,
+                          "cacheReadInputTokens": 0, "cacheWriteInputTokens": 0}}}]
+    _lat, cost = _direct_cost_latency(entry, rows)
+    assert cost.startswith("$2.87"), cost

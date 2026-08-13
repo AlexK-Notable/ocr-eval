@@ -177,16 +177,44 @@ def billable_output_tokens(usage: dict) -> int:
     return visible + (native.get("thoughtsTokenCount") or 0)
 
 
+# Native usage payloads that carry a PROVIDER-COMPUTED total, per transport. The reconciliation is
+# the same arithmetic either way — only the field names differ — and a provider's own total is the
+# only thing that can testify against our accounting. openai-compat has no equivalent: its
+# `total_tokens` is the same two numbers we already read, so reconciling it proves nothing.
+NATIVE_TOKEN_TOTALS = (
+    ("gemini_usage", "totalTokenCount"),
+    ("bedrock_usage", "totalTokens"),
+)
+
+
 def unaccounted_tokens(usage: dict) -> int:
-    """`totalTokenCount - (prompt + candidates + thoughts)`, i.e. billable quantity the provider
-    counted that we do not. Zero is the only acceptable value; a positive number means a field
-    exists that no cost path reads. Exists so the NEXT such field is caught by a test rather than by
-    someone noticing a suspiciously cheap leg."""
-    native = usage.get("gemini_usage") or {}
-    total = native.get("totalTokenCount") or 0
-    if not total:
-        return 0                      # nothing to reconcile against
-    return total - ((usage.get("prompt_tokens") or 0) + billable_output_tokens(usage))
+    """Provider's own total minus what our cost paths read. Zero is the only acceptable value; a
+    positive number means a billable field exists that nothing reads.
+
+    Exists so the NEXT such field is caught by a test rather than by someone noticing a
+    suspiciously cheap leg. Verified zero on all 4,065 Gemini rows and all 1,336 Bedrock rows that
+    carry usage.
+
+    **Bedrock/Anthropic needs no thinking-token special case, and that is measured, not assumed.**
+    Anthropic bills reasoning INSIDE `outputTokens` rather than alongside it, so
+    `billable_output_tokens` is already complete for this transport. Converse's `usage` carries
+    exactly five fields — inputTokens, outputTokens, totalTokens, cacheReadInputTokens,
+    cacheWriteInputTokens — and `inputTokens + outputTokens == totalTokens` holds on every row.
+    A live probe of `us.anthropic.claude-sonnet-4-6` at temperature 0.0 / maxTokens 12288 returned a
+    single `text` block and no `reasoningContent`: extended thinking is opt-in on Bedrock via
+    `additionalModelRequestFields`, which this transport does not send.
+
+    **The honest limit.** The two cache fields are billed at their own rates and are NOT part of
+    `inputTokens`. They are 0 on every row here because nothing in this repo sends a `cachePoint`.
+    Whether a nonzero cache count would land inside `totalTokens` — and so be caught here — is
+    UNVERIFIED, because verifying it means paying to enable caching. Treat this guard as proven for
+    the thinking-token failure mode and unproven for the caching one."""
+    for payload, total_key in NATIVE_TOKEN_TOTALS:
+        native = usage.get(payload) or {}
+        total = native.get(total_key) or 0
+        if total:
+            return total - ((usage.get("prompt_tokens") or 0) + billable_output_tokens(usage))
+    return 0                          # nothing to reconcile against
 
 
 def condition_hash(condition: dict) -> str:
